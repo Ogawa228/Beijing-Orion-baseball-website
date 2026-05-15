@@ -1,4 +1,4 @@
-# 北京猎户座官网
+# 北京猎户座棒垒球队官网
 
 北京猎户座棒垒球俱乐部官网项目。当前应用代码位于 `orion-demo/`，形态为纯 HTML/CSS/JS 前端 + Express API + MySQL Serverless + COS，部署目标是微信云托管。
 

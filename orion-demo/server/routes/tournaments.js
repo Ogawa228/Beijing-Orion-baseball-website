@@ -1,7 +1,7 @@
 // /api/tournaments/* 路由
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 
 const router = express.Router();
 
@@ -65,7 +65,7 @@ router.get('/:id', wrap(async (req, res) => {
   res.json({ tournament: rowToTournament(row) });
 }));
 
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('tournaments:write'), wrap(async (req, res) => {
   await ensureLocationColumn();
   const b = req.body || {};
   if (!b.name || !b.type) return res.status(400).json({ error: 'bad_request', message: 'name / type 必填' });
@@ -79,7 +79,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ tournament: rowToTournament(await db.qOne(`${tournamentSelect} WHERE id = ?`, [id])) });
 }));
 
-router.patch('/:id', requireAdmin, wrap(async (req, res) => {
+router.patch('/:id', requirePermission('tournaments:write'), wrap(async (req, res) => {
   await ensureLocationColumn();
   const b = req.body || {};
   const map = {
@@ -97,7 +97,7 @@ router.patch('/:id', requireAdmin, wrap(async (req, res) => {
   res.json({ tournament: rowToTournament(await db.qOne(`${tournamentSelect} WHERE id = ?`, [req.params.id])) });
 }));
 
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('destructive:delete'), wrap(async (req, res) => {
   await db.q('DELETE FROM tournaments WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
 }));

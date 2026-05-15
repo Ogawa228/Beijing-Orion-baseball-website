@@ -2,7 +2,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 const { logAudit } = require('../people-helpers');
 
 const router = express.Router();
@@ -24,7 +24,7 @@ router.get('/', wrap(async (req, res) => {
   res.json({ adjustments: rows.map(rowToAdjustment) });
 }));
 
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('points:write'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.playerId)         return res.status(400).json({ error: 'bad_request', message: 'playerId 必填' });
   const delta = Number(b.delta);
@@ -46,7 +46,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ adjustment: rowToAdjustment(await db.qOne('SELECT * FROM points_adjustments WHERE id = ?', [id])) });
 }));
 
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('points:write'), wrap(async (req, res) => {
   const row = await db.qOne('SELECT * FROM points_adjustments WHERE id = ?', [req.params.id]);
   await db.q('DELETE FROM points_adjustments WHERE id = ?', [req.params.id]);
   if (row) {

@@ -2,7 +2,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 const { logAudit } = require('../people-helpers');
 
 const router = express.Router();
@@ -29,7 +29,7 @@ router.get('/', wrap(async (req, res) => {
 // POST /api/attendances - admin 录签到
 // body: { playerId, kind, refId?, date?, note? }
 // 副作用：满 8 次 training → 自动升 verified
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('attendances:write'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.playerId || !b.kind) return res.status(400).json({ error: 'bad_request', message: 'playerId / kind 必填' });
   if (b.kind !== 'training' && b.kind !== 'event') {
@@ -86,7 +86,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
 }));
 
 // DELETE /api/attendances/:id
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('attendances:write'), wrap(async (req, res) => {
   const row = await db.qOne('SELECT * FROM attendances WHERE id = ?', [req.params.id]);
   await db.q('DELETE FROM attendances WHERE id = ?', [req.params.id]);
   if (row) {

@@ -1,7 +1,7 @@
 // /api/bind-codes/* 路由
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 const { logAudit } = require('../people-helpers');
 
 const router = express.Router();
@@ -14,12 +14,12 @@ function rowToBindCode(r) {
   };
 }
 
-router.get('/', requireAdmin, wrap(async (_req, res) => {
+router.get('/', requirePermission('bind_codes:manage'), wrap(async (_req, res) => {
   const rows = await db.q('SELECT * FROM bind_codes ORDER BY created_at DESC');
   res.json({ bindCodes: rows.map(rowToBindCode) });
 }));
 
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('bind_codes:manage'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.playerId) return res.status(400).json({ error: 'bad_request', message: 'playerId 必填' });
   // 生成 ORION-XXXX-XXXX 格式
@@ -41,7 +41,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ bindCode: rowToBindCode(await db.qOne('SELECT * FROM bind_codes WHERE code = ?', [code])) });
 }));
 
-router.delete('/:code', requireAdmin, wrap(async (req, res) => {
+router.delete('/:code', requirePermission('bind_codes:manage'), wrap(async (req, res) => {
   const row = await db.qOne('SELECT * FROM bind_codes WHERE code = ?', [req.params.code]);
   await db.q('DELETE FROM bind_codes WHERE code = ?', [req.params.code]);
   if (row) {

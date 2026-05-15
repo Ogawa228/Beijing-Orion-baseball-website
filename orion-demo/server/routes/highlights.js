@@ -1,7 +1,8 @@
 // /api/highlights/* 路由
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAuth, requireAdmin } = require('../middleware');
+const { wrap, requireAuth, requirePermission } = require('../middleware');
+const { hasPermission } = require('../permissions');
 
 const router = express.Router();
 
@@ -31,17 +32,18 @@ router.post('/', requireAuth, wrap(async (req, res) => {
   if (!b.title) return res.status(400).json({ error: 'bad_request', message: 'title 必填' });
   const id = `h_${Date.now()}`;
   // admin 直接 published；其他用户 pending
-  const status = req.user.role === 'admin' ? 'published' : 'pending';
+  const canPublish = hasPermission(req.user, 'highlights:write');
+  const status = canPublish ? 'published' : 'pending';
   await db.q(
     `INSERT INTO highlights (id, game_id, player_name, title, url, cover, uploader, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, b.gameId || null, b.playerName || '', b.title, b.url || '', b.cover || null,
-     req.user.role === 'admin' ? 'admin' : req.user.id, status]
+     canPublish ? 'admin' : req.user.id, status]
   );
   res.status(201).json({ highlight: rowToHighlight(await db.qOne('SELECT * FROM highlights WHERE id = ?', [id])) });
 }));
 
 // PATCH /api/highlights/:id - admin 修改 status 或元数据
-router.patch('/:id', requireAdmin, wrap(async (req, res) => {
+router.patch('/:id', requirePermission('highlights:write'), wrap(async (req, res) => {
   const b = req.body || {};
   const fields = [], values = [];
   for (const [k, col] of Object.entries({ title:'title', url:'url', cover:'cover', status:'status' })) {
@@ -53,7 +55,7 @@ router.patch('/:id', requireAdmin, wrap(async (req, res) => {
   res.json({ highlight: rowToHighlight(await db.qOne('SELECT * FROM highlights WHERE id = ?', [req.params.id])) });
 }));
 
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('highlights:write'), wrap(async (req, res) => {
   await db.q('DELETE FROM highlights WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
 }));

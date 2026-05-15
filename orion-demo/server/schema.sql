@@ -13,11 +13,16 @@ CREATE TABLE IF NOT EXISTS users (
   display_name VARCHAR(80) NOT NULL,
   avatar VARCHAR(500) DEFAULT NULL,                 -- 用户自定义头像 URL（与 player.photo 分离）
   role ENUM('admin','player') NOT NULL DEFAULT 'player',
+  admin_level ENUM('A','B','C') DEFAULT NULL,        -- A 全站级 / B 队长级 / C 组员级；NULL = 普通用户
+  admin_permission_groups JSON DEFAULT NULL,         -- C 组员级权限包：['data'] 数据组 / ['ops'] 运营组；B/A 默认包含全部
+  admin_granted_by VARCHAR(64) DEFAULT NULL,
+  admin_granted_at DATETIME DEFAULT NULL,
   bound_player_id VARCHAR(64) DEFAULT NULL,
   app_connect_code VARCHAR(40) DEFAULT NULL,
   app_connect_code_expires_at DATETIME DEFAULT NULL,
   last_active_at DATETIME DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_admin_level (admin_level),
   INDEX idx_bound_player (bound_player_id),
   INDEX idx_app_connect_code (app_connect_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -226,7 +231,32 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============== 13. 站点级配置（site_settings）==============
+-- ============== 13. 球员绑定申请（player_bind_requests）==============
+-- Web / 小程序共用：用户可选择申请绑定正式球员档案，必须由 admin 审批
+CREATE TABLE IF NOT EXISTS player_bind_requests (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL,
+  requested_player_id VARCHAR(64) NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  real_name VARCHAR(80) NOT NULL,
+  nickname VARCHAR(80) DEFAULT '',
+  jersey_number VARCHAR(8) DEFAULT '',
+  contact_tail VARCHAR(40) DEFAULT '',
+  note TEXT DEFAULT NULL,
+  source VARCHAR(20) DEFAULT 'web',
+  reviewed_by VARCHAR(64) DEFAULT NULL,
+  reviewed_at DATETIME DEFAULT NULL,
+  review_note TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_status (user_id, status),
+  INDEX idx_player_status (requested_player_id, status),
+  INDEX idx_status_created (status, created_at),
+  CONSTRAINT fk_pbr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_pbr_player FOREIGN KEY (requested_player_id) REFERENCES players(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============== 14. 站点级配置（site_settings）==============
 -- 公开页面可读取，管理员发布后全站生效；例如球员页星阵配置
 CREATE TABLE IF NOT EXISTS site_settings (
   setting_key VARCHAR(80) PRIMARY KEY,
@@ -238,7 +268,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
   INDEX idx_updated_by (updated_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============== 14. 系统迁移记录（_migrations）==============
+-- ============== 15. 系统迁移记录（_migrations）==============
 -- schema 版本控制，避免重复执行迁移
 CREATE TABLE IF NOT EXISTS _migrations (
   name VARCHAR(120) PRIMARY KEY,

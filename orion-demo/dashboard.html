@@ -6,9 +6,9 @@
 <title>个人面板 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<link rel="stylesheet" href="assets/css/style.css?v=24">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="assets/js/db.js?v=17"></script>
+<script src="assets/js/db.js?v=18"></script>
 <style>
 .dash-online-dot {
   position: absolute; bottom: 8px; right: 8px;
@@ -142,6 +142,39 @@
   </div>
 </div>
 
+<!-- Bind request modal -->
+<div class="modal-mask" id="bindRequestModal">
+  <div class="modal" style="max-width:min(560px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('bindRequestModal').classList.remove('open')">×</button>
+    <h3>申请绑定正式球员档案</h3>
+    <p class="modal-sub">请选择你的正式球员档案，并填写少量核验信息。审核通过前，你仍可继续使用试训账号。</p>
+    <form class="form" onsubmit="submitBindRequest(event)" style="margin-top:0">
+      <input type="hidden" id="dashBindTargetId">
+      <div class="field" style="position:relative">
+        <label>目标正式球员档案</label>
+        <input type="text" id="dashBindTargetSearch" autocomplete="off" placeholder="搜索姓名 / 球衣号 / 位置">
+        <div id="dashBindTargetDropdown" class="auth-search-dropdown" style="display:none"></div>
+        <div id="dashBindTargetSelected" class="hint"></div>
+      </div>
+      <div class="field">
+        <label>队内昵称</label>
+        <input type="text" id="dashBindRealName" required maxlength="80">
+      </div>
+      <div class="field">
+        <label>微信号</label>
+        <input type="text" id="dashBindContact" maxlength="40" placeholder="便于管理员核验">
+      </div>
+      <div class="field">
+        <label>其他验证信息</label>
+        <textarea id="dashBindNote" rows="2" maxlength="240" placeholder="写一点管理员能认出你的信息"></textarea>
+        <div class="hint">例如：猎户口号、认识的队友怎么称呼你、最近参加过哪次训练等。</div>
+      </div>
+      <div class="field err" id="dashBindErr"></div>
+      <button type="submit" class="btn">提交申请</button>
+    </form>
+  </div>
+</div>
+
 <!-- Upload highlight modal -->
 <div class="modal-mask" id="uploadModal">
   <div class="modal" style="max-width:min(520px, calc(100vw - 32px))">
@@ -206,7 +239,7 @@
   <div>© 2026 Beijing Orion Baseball Club</div>
 </footer>
 
-<script src="assets/js/auth.js?v=14"></script>
+<script src="assets/js/auth.js?v=17"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -263,12 +296,47 @@ function renderBindInvitationNotices(){
   </div>`;
 }
 
+function renderBindRequestStatus(){
+  if (!currentUser || queryName) return '';
+  const latest = DB.latestBindRequest && DB.latestBindRequest();
+  if (!latest || latest.status === 'approved') return '';
+  const target = `${latest.requestedPlayerName || '目标球员'}${latest.requestedPlayerNumber ? ' · #'+latest.requestedPlayerNumber : ''}`;
+  if (latest.status === 'pending') {
+    return `<div class="notice-stack">
+      <div class="notice-card">
+        <div style="min-width:220px;flex:1">
+          <div class="notice-card-title">绑定申请审核中</div>
+          <div class="notice-card-body">你已申请绑定到「${escapeText(target)}」。审核通过前，签到和积分会先记在当前试训档案。</div>
+        </div>
+        <div class="notice-card-actions">
+          <button class="btn ghost" onclick="openBindRequestModal()">修改申请</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if (latest.status === 'rejected') {
+    return `<div class="notice-stack">
+      <div class="notice-card" style="border-color:rgba(255,138,138,.28)">
+        <div style="min-width:220px;flex:1">
+          <div class="notice-card-title" style="color:#ffb4b4">绑定申请需要补充信息</div>
+          <div class="notice-card-body">目标档案：${escapeText(target)}${latest.reviewNote ? ' · '+escapeText(latest.reviewNote) : ''}</div>
+        </div>
+        <div class="notice-card-actions">
+          <button class="btn" onclick="openBindRequestModal()">重新提交</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
 if (!currentUser && !queryName) {
   root.innerHTML = `<div class="empty">请先登录后查看个人面板</div>`;
 } else if (!player && isOwnPanel) {
   // Unbound user — prompt to bind
   root.innerHTML = `
     ${renderBindInvitationNotices()}
+    ${renderBindRequestStatus()}
     <div class="dash-hero">
       <div class="dash-avatar">${currentUser.displayName.charAt(0)}</div>
       <div class="dash-info" style="flex:1;min-width:240px">
@@ -278,7 +346,10 @@ if (!currentUser && !queryName) {
           <span class="badge" style="background:rgba(255,200,100,.15);border-color:#E4C77A;color:#E4C77A">⚠ 未绑定球员数据</span>
         </div>
       </div>
-      <button class="btn" onclick="openBindModal()">输入绑定码</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" onclick="openBindRequestModal()">申请绑定正式档案</button>
+        <button class="btn ghost" onclick="openBindModal()">输入绑定码</button>
+      </div>
     </div>
     <div class="empty" style="margin-top:20px">
       <strong style="color:var(--text)">还没有绑定到球员花名册</strong><br>
@@ -296,7 +367,8 @@ function renderDashboard(p){
   const hl = DB.highlightsForPlayer(p.name);
   const photoUrl = DB.playerPhotoUrl(p);
   const isHOF = DB.allHallOfFame().some(h => h.playerId === p.id);
-  const canUpload = currentUser && ((currentUser.role==='admin') || (currentUser.boundPlayerId===p.id));
+  const canManageHighlights = DB.hasPermission && DB.hasPermission('highlights:write');
+  const canUpload = currentUser && (canManageHighlights || (currentUser.boundPlayerId===p.id));
   const canEditSlogan = canUpload;
 
   // Build filter options — use ALL games (incl aggregate) so 2025 seasons show up.
@@ -322,7 +394,7 @@ function renderDashboard(p){
   const totalPts = DB.getPlayerPoints(p.id).total;
   const playerLevel = DB.getPlayerLevel(p);
   const isCasual = playerLevel === 'casual';
-  const canReviseData = currentUser?.role === 'admin';
+  const canReviseData = DB.hasPermission && DB.hasPermission('games:revise');
   const trainings = isCasual ? DB.getTrainingCount(p.id) : 0;
   const trainingsLeft = Math.max(0, 8 - trainings);
   const tryoutPct = Math.min(100, (trainings/8) * 100);
@@ -346,6 +418,7 @@ function renderDashboard(p){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
           <div style="font-family:var(--font-display);font-size:32px;color:var(--blue-300);line-height:1">${trainings}<span style="font-size:18px;color:var(--text-dim)">/8</span></div>
+          <button class="btn" style="padding:6px 14px;font-size:12px" onclick="openBindRequestModal()">申请绑定正式档案</button>
           <button class="btn ghost" style="padding:6px 14px;font-size:12px" onclick="openBindModal()">📋 输入绑定码</button>
         </div>
       </div>
@@ -370,6 +443,7 @@ function renderDashboard(p){
 
   root.innerHTML = `
     ${renderBindInvitationNotices()}
+    ${renderBindRequestStatus()}
     ${tryoutBanner}
     <div class="dash-hero">
       <div class="dash-avatar-shell ${canFlipAvatar ? 'flippable' : ''}" ${canFlipAvatar ? 'onclick="flipDashAvatar(event)" title="点击切换为自定义头像 / 真实照片"' : ''}>
@@ -873,6 +947,91 @@ function renderCharts(stats, player){
 
 // ---- Bind ----
 function openBindModal(){document.getElementById('bindModal').classList.add('open')}
+function renderDashBindTargets(query=''){
+  const dropdown = document.getElementById('dashBindTargetDropdown');
+  if (!dropdown) return;
+  const q = String(query || '').trim();
+  const players = DB.allPlayers()
+    .filter(p => DB.getPlayerLevel(p) === 'verified')
+    .filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position, (p.aliases || []).join(' ')))
+    .slice(0, 8);
+  if (!players.length) {
+    dropdown.innerHTML = '<div class="auth-player-empty">没有匹配的正式球员</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+  dropdown.innerHTML = players.map(p => `
+    <button type="button" class="auth-player-option" data-player-id="${escapeAttr(p.id)}">
+      <img src="${escapeAttr(DB.playerPhotoUrl(p))}" alt="">
+      <span>
+        <strong>${escapeText(p.name)}${p.number ? ' · #'+escapeText(p.number) : ''}</strong>
+        <em>${escapeText(p.position || '正式球员')}</em>
+      </span>
+    </button>
+  `).join('');
+  dropdown.style.display = 'block';
+  dropdown.querySelectorAll('.auth-player-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = DB.getPlayerById(btn.dataset.playerId);
+      if (!p) return;
+      document.getElementById('dashBindTargetId').value = p.id;
+      document.getElementById('dashBindTargetSearch').value = p.name + (p.number ? ' · #'+p.number : '');
+      document.getElementById('dashBindTargetSelected').innerHTML = `已选择 <strong style="color:var(--gold-bright)">${escapeText(p.name)}</strong>`;
+      dropdown.style.display = 'none';
+    });
+  });
+}
+function openBindRequestModal(){
+  const latest = DB.latestBindRequest && DB.latestBindRequest();
+  const modal = document.getElementById('bindRequestModal');
+  const search = document.getElementById('dashBindTargetSearch');
+  const target = document.getElementById('dashBindTargetId');
+  const selected = document.getElementById('dashBindTargetSelected');
+  document.getElementById('dashBindErr').textContent = '';
+  document.getElementById('dashBindRealName').value = latest?.nickname || currentUser?.displayName || '';
+  document.getElementById('dashBindContact').value = latest?.contactTail || '';
+  document.getElementById('dashBindNote').value = latest?.note || '';
+  target.value = latest?.requestedPlayerId || '';
+  if (latest?.requestedPlayerId) {
+    search.value = `${latest.requestedPlayerName || ''}${latest.requestedPlayerNumber ? ' · #'+latest.requestedPlayerNumber : ''}`;
+    selected.innerHTML = `已选择 <strong style="color:var(--gold-bright)">${escapeText(latest.requestedPlayerName || '目标球员')}</strong>`;
+  } else {
+    search.value = '';
+    selected.textContent = '';
+  }
+  modal.classList.add('open');
+}
+window.openBindRequestModal=openBindRequestModal;
+
+document.getElementById('dashBindTargetSearch')?.addEventListener('input', e => renderDashBindTargets(e.target.value));
+document.getElementById('dashBindTargetSearch')?.addEventListener('focus', e => renderDashBindTargets(e.target.value));
+
+async function submitBindRequest(e){
+  e.preventDefault();
+  const err = document.getElementById('dashBindErr');
+  err.textContent = '';
+  const requestedPlayerId = document.getElementById('dashBindTargetId').value;
+  const teamNick = document.getElementById('dashBindRealName').value.trim();
+  if (!requestedPlayerId) { err.textContent = '请选择要绑定的正式球员档案'; return; }
+  const targetPlayer = DB.getPlayerById(requestedPlayerId);
+  try {
+    await DB.submitBindRequest({
+      requestedPlayerId,
+      realName: targetPlayer?.name || teamNick || currentUser?.displayName || '',
+      nickname: teamNick || currentUser?.displayName || '',
+      jerseyNumber: '',
+      contactTail: document.getElementById('dashBindContact').value.trim(),
+      note: document.getElementById('dashBindNote').value.trim(),
+      source: 'web'
+    });
+    toast('绑定申请已提交给管理员', 'success');
+    document.getElementById('bindRequestModal').classList.remove('open');
+    setTimeout(()=>window.location.reload(),500);
+  } catch (ex) {
+    err.textContent = ex.message || String(ex);
+  }
+}
+window.submitBindRequest=submitBindRequest;
 
 // 3D flip avatar between real photo and custom user avatar (own view only)
 window.flipDashAvatar = function(e){
@@ -937,11 +1096,11 @@ async function submitHighlight(e){
     title:document.getElementById('hlTitle').value,
     url:url,
     cover:document.getElementById('hlCover').value || 'assets/img/photos/1fd55252ed2121c4246c8750cf732edf.JPG',
-    uploader:currentUser.role==='admin'?'admin':'player',
-    status:currentUser.role==='admin'?'approved':'pending'
+    uploader:(DB.hasPermission && DB.hasPermission('highlights:write'))?'admin':'player',
+    status:(DB.hasPermission && DB.hasPermission('highlights:write'))?'approved':'pending'
   };
   await DB.addHighlight(h);
-  toast(currentUser.role==='admin'?'已发布':'已提交审核','success');
+  toast((DB.hasPermission && DB.hasPermission('highlights:write'))?'已发布':'已提交审核','success');
   document.getElementById('uploadModal').classList.remove('open');
   setTimeout(()=>window.location.reload(),600);
 }

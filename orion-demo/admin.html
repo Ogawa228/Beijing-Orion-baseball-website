@@ -6,8 +6,8 @@
 <title>管理后台 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=22">
-<script src="assets/js/db.js?v=17"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=24">
+<script src="assets/js/db.js?v=18"></script>
 <!-- Real parsers: pdf.js for GameChanger PDF exports, SheetJS for Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
@@ -114,14 +114,14 @@
             个人标语、荣誉标签、头像、高光、绑定码、合并球员、积分明细都从球员卡进入，减少管理员在多个页面之间切换。
           </p>
           <div class="admin-panel-tools">
-            <button type="button" class="btn" onclick="openAddPlayer()">+ 添加球员</button>
-            <button type="button" class="btn ghost" onclick="document.getElementById('batchModal').classList.add('open')">批量导入</button>
+            <button type="button" class="btn" id="addPlayerBtn" onclick="openAddPlayer()">+ 添加球员</button>
+            <button type="button" class="btn ghost" id="batchImportBtn" onclick="document.getElementById('batchModal').classList.add('open')">批量导入</button>
             <details class="admin-tools-menu">
               <summary>管理工具</summary>
               <div class="admin-tools-dropdown">
-                <button type="button" onclick="openMergePlayer()">合并球员</button>
-                <button type="button" onclick="activateAdminTab('codes')">绑定码中心</button>
-                <button type="button" onclick="activateAdminTab('points')">积分管理</button>
+                <button type="button" id="mergeToolBtn" onclick="openMergePlayer()">合并球员</button>
+                <button type="button" id="codesToolBtn" onclick="activateAdminTab('codes')">绑定码中心</button>
+                <button type="button" id="pointsToolBtn" onclick="activateAdminTab('points')">积分管理</button>
               </div>
             </details>
           </div>
@@ -443,13 +443,48 @@
             对已注册用户可发送站内绑定邀请，用户登录后能一键完成绑定。
           </p>
           <div id="userStatsBar" style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap"></div>
-          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+          <div id="bindRequestPanel" style="margin-bottom:18px;padding:14px;background:rgba(46,107,255,.045);border:1px solid rgba(91,139,255,.18);border-radius:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+              <div>
+                <h4 style="margin:0;font-size:14px;color:var(--text);letter-spacing:.04em">绑定申请</h4>
+                <div style="font-size:12px;color:var(--text-mute);margin-top:4px">用户自选正式球员档案后，需要在这里核验并批准。</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="bindRequestFilter" style="padding:7px 10px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:12px">
+                  <option value="pending">待审核</option>
+                  <option value="">全部</option>
+                  <option value="approved">已通过</option>
+                  <option value="rejected">已驳回</option>
+                </select>
+                <button class="btn ghost" id="bindRequestReloadBtn" style="padding:7px 12px;font-size:12px">刷新申请</button>
+              </div>
+            </div>
+            <div id="bindRequestList" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+          <div id="userAccountTools" style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
             <input type="text" id="userSearch" placeholder="🔍 搜索 昵称 / 真实姓名 / 邮箱 / 球衣号"
                    style="flex:1;min-width:240px;padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
             <select id="userRoleFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
-              <option value="">全部角色</option>
-              <option value="admin">仅 admin</option>
-              <option value="player">仅 player</option>
+              <option value="">全部身份</option>
+              <option value="admin">管理员</option>
+              <option value="A">全站级 A</option>
+              <option value="B">队长级 B</option>
+              <option value="C">组员级 C</option>
+              <option value="player">普通用户</option>
+            </select>
+            <select id="userGroupFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+              <option value="">权限组</option>
+              <option value="data">数据组</option>
+              <option value="ops">运营组</option>
+              <option value="both">数据 + 运营</option>
+            </select>
+            <select id="userPositionFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+              <option value="">球员位置</option>
+              <option value="pitcher">投手</option>
+              <option value="catcher">捕手</option>
+              <option value="infield">内野手</option>
+              <option value="outfield">外野手</option>
+              <option value="no_position">未设位置</option>
             </select>
             <select id="userBindFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
               <option value="">绑定状态</option>
@@ -464,7 +499,7 @@
             <button class="btn ghost" id="userReloadBtn" style="padding:8px 14px;font-size:12px">🔄 刷新</button>
           </div>
           <div id="usersList" style="display:flex;flex-direction:column;gap:6px"></div>
-          <div style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div id="auditLogHeader" style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
             <h4 style="margin:0;font-size:14px;color:var(--text-dim);letter-spacing:.1em">操作记录 · Audit Log</h4>
             <button class="btn ghost" id="auditReloadBtn" style="padding:7px 12px;font-size:12px">刷新记录</button>
           </div>
@@ -991,7 +1026,7 @@
   <div>© 2026 Beijing Orion Baseball Club</div>
 </footer>
 
-<script src="assets/js/auth.js?v=14"></script>
+<script src="assets/js/auth.js?v=17"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -1000,27 +1035,76 @@ buildNav('admin');
 const u = await requireAuth('admin');
 if (!u) throw new Error('not authorized');
 
+function can(permission) {
+  return !!(DB.hasPermission && DB.hasPermission(permission));
+}
+function canAny(perms) {
+  return perms.some(can);
+}
+function adminGroupsLabel(groups = []) {
+  const list = groups.map(g => g === 'data' ? '数据组' : g === 'ops' ? '运营组' : g).filter(Boolean);
+  return list.length ? list.join(' · ') : '—';
+}
+function adminLevelLabel(user) {
+  if (!user?.adminLevel) return '普通用户';
+  if (user.adminLevel === 'A') return 'A 全站级';
+  if (user.adminLevel === 'B') return 'B 队长级';
+  return `C ${adminGroupsLabel(user.adminPermissionGroups || [])}`;
+}
+function positionTokens(position) {
+  const text = String(position || '').trim();
+  if (!text) return [];
+  return text
+    .toUpperCase()
+    .split(/[\s,，、/／|;；·+＋-]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+}
+function userMatchesPositionGroup(user, group) {
+  const position = String(user?.boundPlayerPosition || '').trim();
+  const tokens = positionTokens(position);
+  if (group === 'no_position') return !!user?.boundPlayerId && !position;
+  if (!position) return false;
+  if (group === 'pitcher') return /投手/.test(position) || tokens.some(t => ['P', 'RHP', 'LHP'].includes(t));
+  if (group === 'catcher') return /捕手/.test(position) || tokens.includes('C');
+  if (group === 'infield') {
+    return /内野|一垒|二垒|三垒|游击/.test(position) ||
+      tokens.some(t => ['IF', '1B', '2B', '3B', 'SS'].includes(t));
+  }
+  if (group === 'outfield') {
+    return /外野|左外|中外|右外/.test(position) ||
+      tokens.some(t => ['OF', 'LF', 'CF', 'RF'].includes(t));
+  }
+  return false;
+}
+
 // ===== 2 级导航：sidebar 顶级 section + 主区顶部 subtab chip =====
-const SECTIONS = {
+const RAW_SECTIONS = {
   people:  [
-    { tab: 'users',  label: '账户管理' },
-    { tab: 'pool',   label: '注册球员管理' },
+    { tab: 'users',  label: '账户 / 绑定申请', perms: ['users:read', 'bind_requests:review'] },
+    { tab: 'pool',   label: '注册球员管理', perms: ['players:write', 'players:display_write'] },
   ],
   match:   [
-    { tab: 'games',  label: '比赛管理' },
+    { tab: 'games',  label: '比赛管理', perms: ['games:draft', 'games:confirm', 'games:revise', 'tournaments:write'] },
   ],
   content: [
-    { tab: 'events',     label: '活动管理' },
-    { tab: 'hof',        label: '名人堂' },
-    { tab: 'highlights', label: '高亮审核' },
+    { tab: 'events',     label: '活动管理', perms: ['events:write'] },
+    { tab: 'hof',        label: '名人堂', perms: ['hof:write'] },
+    { tab: 'highlights', label: '高亮审核', perms: ['highlights:write'] },
   ],
   system:  [
-    { tab: 'settings',   label: '系统设置' },
+    { tab: 'settings',   label: '系统设置', perms: ['system:settings'] },
   ],
 };
+const SECTIONS = Object.fromEntries(Object.entries(RAW_SECTIONS)
+  .map(([key, tabs]) => [key, tabs.filter(t => canAny(t.perms || []))])
+  .filter(([, tabs]) => tabs.length));
 const sidebar = document.querySelectorAll('.admin-sidebar a');
 const panels = document.querySelectorAll('[data-panel]');
 const subtabHost = document.getElementById('adminSubtabs');
+sidebar.forEach(a => {
+  if (!SECTIONS[a.dataset.section]) a.style.display = 'none';
+});
 
 function activateAdminTab(tab) {
   panels.forEach(p => p.style.display = (p.dataset.panel === tab ? '' : 'none'));
@@ -1029,11 +1113,13 @@ function activateAdminTab(tab) {
   );
   // Lazy load 用户列表（防御：reloadUsers 可能还没挂到 window，init 时会跳过，
   // 末尾的兜底 setTimeout 再补一次）
-  if (tab === 'users' && !window._usersLoaded && typeof window.reloadUsers === 'function') {
+  if (tab === 'users') updateUsersPanelVisibility();
+  if (tab === 'users' && can('users:read') && !window._usersLoaded && typeof window.reloadUsers === 'function') {
     window.reloadUsers();
     window._usersLoaded = true;
   }
-  if (tab === 'users' && typeof window.reloadAuditLogs === 'function') window.reloadAuditLogs();
+  if (tab === 'users' && can('audit:read') && typeof window.reloadAuditLogs === 'function') window.reloadAuditLogs();
+  if (tab === 'users' && can('bind_requests:review') && typeof window.reloadBindRequests === 'function') window.reloadBindRequests();
   if (tab === 'codes' && typeof renderCodes === 'function') renderCodes();
 }
 window.activateAdminTab = activateAdminTab;
@@ -1055,16 +1141,55 @@ function activateAdminSection(secKey, preferredTab = '') {
 }
 window.activateAdminSection = activateAdminSection;
 
-sidebar.forEach(a => a.addEventListener('click', () => activateAdminSection(a.dataset.section)));
+sidebar.forEach(a => a.addEventListener('click', () => {
+  if (SECTIONS[a.dataset.section]) activateAdminSection(a.dataset.section);
+}));
 subtabHost.addEventListener('click', (e) => {
   const btn = e.target.closest('.subtab');
   if (btn) activateAdminTab(btn.dataset.tab);
 });
 
 const initialAdminParams = new URLSearchParams(location.search);
-const initialSection = SECTIONS[initialAdminParams.get('section')] ? initialAdminParams.get('section') : 'people';
+const firstSection = Object.keys(SECTIONS)[0] || 'people';
+const initialSection = SECTIONS[initialAdminParams.get('section')] ? initialAdminParams.get('section') : firstSection;
 // 初始：默认人员；带 section=match 时直达赛事管理
 activateAdminSection(initialSection);
+
+function updateUsersPanelVisibility() {
+  const bindPanel = document.getElementById('bindRequestPanel');
+  const statsBar = document.getElementById('userStatsBar');
+  const accountTools = document.getElementById('userAccountTools');
+  const usersList = document.getElementById('usersList');
+  const auditHeader = document.getElementById('auditLogHeader');
+  const auditList = document.getElementById('auditLogList');
+  if (bindPanel) bindPanel.style.display = can('bind_requests:review') ? '' : 'none';
+  if (statsBar) statsBar.style.display = can('users:read') ? 'flex' : 'none';
+  if (accountTools) accountTools.style.display = can('users:read') ? 'flex' : 'none';
+  if (usersList) {
+    usersList.style.display = can('users:read') ? 'flex' : 'none';
+    if (!can('users:read')) usersList.innerHTML = '';
+  }
+  if (auditHeader) auditHeader.style.display = can('audit:read') ? 'flex' : 'none';
+  if (auditList) auditList.style.display = can('audit:read') ? 'flex' : 'none';
+}
+
+function setVisible(id, visible, display = '') {
+  const el = document.getElementById(id);
+  if (el) el.style.display = visible ? display : 'none';
+}
+
+function applyPermissionVisibility() {
+  setVisible('addPlayerBtn', can('players:write'), '');
+  setVisible('batchImportBtn', can('players:write'), '');
+  setVisible('mergeToolBtn', can('players:write'), '');
+  setVisible('codesToolBtn', can('bind_codes:manage'), '');
+  setVisible('pointsToolBtn', can('points:write') || can('attendances:write'), '');
+  document.querySelectorAll('[data-ptab="adjust"]').forEach(el => el.style.display = can('points:write') ? '' : 'none');
+  document.querySelectorAll('[data-ptab="attend"]').forEach(el => el.style.display = can('attendances:write') ? '' : 'none');
+  document.querySelectorAll('[data-gtab="confirm"]').forEach(el => el.style.display = can('games:confirm') ? '' : 'none');
+  document.querySelectorAll('[data-gtab="revise"]').forEach(el => el.style.display = can('games:revise') ? '' : 'none');
+}
+applyPermissionVisibility();
 
 // ===== Users Admin =====
 window._usersCache = [];
@@ -1072,6 +1197,10 @@ window._usersCache = [];
 window.reloadUsers = async function reloadUsers() {
   const host = document.getElementById('usersList');
   if (!host) return;
+  if (!can('users:read')) {
+    host.innerHTML = '';
+    return;
+  }
   host.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-mute);font-size:13px">加载中…</div>';
   try {
     const r = await fetch('/api/admin/users', { credentials: 'include' });
@@ -1084,28 +1213,156 @@ window.reloadUsers = async function reloadUsers() {
   }
 };
 
+function userPermissionBadges(user) {
+  if (!user.adminLevel) return '<span style="color:var(--text-mute);font-size:10px;border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px">PLAYER</span>';
+  const color = user.adminLevel === 'A' ? 'var(--gold-bright)' : user.adminLevel === 'B' ? '#6ee7b7' : 'var(--blue-300)';
+  return `<span style="color:${color};font-size:10px;border:1px solid currentColor;border-radius:999px;padding:1px 7px;margin-left:6px;letter-spacing:.08em">${escapeHtml(adminLevelLabel(user))}</span>`;
+}
+
+function userPermissionControl(user) {
+  if (!can('users:grant_admin')) return '';
+  const level = user.adminLevel || '';
+  const groups = new Set(user.adminPermissionGroups || []);
+  const disabled = user.isOwner ? 'disabled' : '';
+  return `<div class="admin-perm-editor" style="margin-top:10px;padding:10px 12px;background:rgba(46,107,255,.045);border:1px solid rgba(91,139,255,.18);border-radius:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text-mute);letter-spacing:.08em">权限管理</span>
+    <select data-admin-level style="padding:6px 9px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:12px" ${disabled}>
+      <option value="" ${!level?'selected':''}>普通用户</option>
+      <option value="C" ${level==='C'?'selected':''}>C 组员级</option>
+      <option value="B" ${level==='B'?'selected':''}>B 队长级</option>
+      <option value="A" ${level==='A'?'selected':''}>A 全站级</option>
+    </select>
+    <label style="font-size:12px;color:var(--text-dim);display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-admin-group="data" ${groups.has('data')?'checked':''} ${disabled}> 数据组</label>
+    <label style="font-size:12px;color:var(--text-dim);display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-admin-group="ops" ${groups.has('ops')?'checked':''} ${disabled}> 运营组</label>
+    <button class="btn ghost" data-action="save-admin-perms" data-uid="${escapeHtml(user.id)}" data-uname="${escapeHtml(user.displayName||user.email||user.id)}" style="padding:6px 12px;font-size:12px" ${disabled}>保存权限</button>
+    ${user.isOwner ? '<span style="font-size:11px;color:var(--gold-bright)">Owner 受保护</span>' : ''}
+  </div>`;
+}
+
+window.reloadBindRequests = async function reloadBindRequests() {
+  const host = document.getElementById('bindRequestList');
+  if (!host) return;
+  if (!can('bind_requests:review')) {
+    host.innerHTML = '';
+    return;
+  }
+  host.innerHTML = '<div style="padding:12px;color:var(--text-mute);font-size:12px;text-align:center">加载绑定申请…</div>';
+  try {
+    const status = document.getElementById('bindRequestFilter')?.value || '';
+    const r = await DB.getAdminBindRequests(status);
+    window._bindRequestCache = r.requests || [];
+    renderBindRequests();
+  } catch (e) {
+    host.innerHTML = `<div style="padding:12px;color:#ff8a8a;font-size:12px;text-align:center">${escapeHtml(e.message || String(e))}</div>`;
+  }
+};
+
+function renderBindRequests() {
+  const host = document.getElementById('bindRequestList');
+  if (!host) return;
+  const items = window._bindRequestCache || [];
+  if (!items.length) {
+    host.innerHTML = '<div style="padding:12px;color:var(--text-mute);font-size:12px;text-align:center">暂无绑定申请</div>';
+    return;
+  }
+  const statusLabel = { pending:'待审核', approved:'已通过', rejected:'已驳回' };
+  host.innerHTML = items.map(r => {
+    const isPending = r.status === 'pending';
+    const target = `${escapeHtml(r.requestedPlayerName || '目标球员')}${r.requestedPlayerNumber ? ' · #'+escapeHtml(r.requestedPlayerNumber) : ''}`;
+    const created = r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN', { hour12:false }).slice(5,16) : '—';
+    const verifyLine = [
+      r.nickname ? '队内昵称 '+r.nickname : '',
+      r.contactTail ? '微信号 '+r.contactTail : '',
+      r.note ? '验证信息 '+r.note : ''
+    ].filter(Boolean).join(' · ') || '未填';
+    return `<div class="people-row" style="align-items:flex-start">
+      <div style="flex:1;min-width:260px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <strong style="font-size:14px">${escapeHtml(r.realName || r.userDisplayName || '未命名')}</strong>
+          <span style="font-size:10px;color:${isPending?'var(--gold-bright)':r.status==='approved'?'#6ee7b7':'#ff8a8a'};border:1px solid currentColor;border-radius:999px;padding:1px 7px">${statusLabel[r.status] || r.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px">
+          账号：${escapeHtml(r.userDisplayName || '—')} · ${escapeHtml(r.userEmail || '无邮箱')} · 当前：${escapeHtml(r.currentPlayerName || '未绑定')}
+        </div>
+        <div style="font-size:12px;color:var(--text);margin-top:4px">申请绑定：${target}</div>
+        <div style="font-size:11px;color:var(--text-mute);margin-top:4px">${escapeHtml(verifyLine)} · ${created}</div>
+        ${r.reviewNote ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">审批意见：${escapeHtml(r.reviewNote)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${isPending ? `<button class="btn" data-bind-request-action="approve" data-rid="${escapeHtml(r.id)}" style="padding:6px 12px;font-size:12px">批准绑定</button>
+        <button class="btn ghost" data-bind-request-action="reject" data-rid="${escapeHtml(r.id)}" style="padding:6px 12px;font-size:12px;border-color:rgba(255,138,138,.35);color:#ff8a8a">驳回</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('bindRequestFilter')?.addEventListener('change', () => window.reloadBindRequests());
+document.getElementById('bindRequestReloadBtn')?.addEventListener('click', () => window.reloadBindRequests());
+document.getElementById('bindRequestList')?.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-bind-request-action]');
+  if (!btn) return;
+  const id = btn.dataset.rid;
+  const action = btn.dataset.bindRequestAction;
+  const item = (window._bindRequestCache || []).find(x => x.id === id);
+  if (!item) return;
+  try {
+    if (action === 'approve') {
+      if (!confirm(`批准「${item.realName}」绑定到「${item.requestedPlayerName}」？\n试训签到和手动积分会自动迁移。`)) return;
+      await DB.approveBindRequest(id, '');
+      toast('已批准绑定申请', 'success');
+    } else if (action === 'reject') {
+      const note = prompt(`驳回「${item.realName}」的绑定申请，填写给用户看的原因（可空）：`, '');
+      if (note === null) return;
+      await DB.rejectBindRequest(id, note);
+      toast('已驳回绑定申请', 'success');
+    }
+    await window.reloadBindRequests();
+    await window.reloadUsers();
+    await window.reloadAuditLogs();
+    renderPool();
+  } catch (ex) {
+    toast(ex.message || String(ex), 'error');
+  }
+});
+
 window.renderUsers = function renderUsers() {
   const host = document.getElementById('usersList');
   if (!host) return;
+  if (!can('users:read')) {
+    host.innerHTML = '';
+    return;
+  }
   const cache = window._usersCache || [];
 
   const q = (document.getElementById('userSearch')?.value || '').trim().toLowerCase();
   const roleF = document.getElementById('userRoleFilter')?.value || '';
+  const groupF = document.getElementById('userGroupFilter')?.value || '';
+  const positionF = document.getElementById('userPositionFilter')?.value || '';
   const bindF = document.getElementById('userBindFilter')?.value || '';
   const sortBy = document.getElementById('userSort')?.value || 'recent';
 
   // 顶部统计条
-  const totals = { all: cache.length, admin: 0, player: 0, bound: 0, unbound: 0 };
+  const totals = { all: cache.length, owner: 0, captain: 0, data: 0, ops: 0, player: 0, bound: 0, unbound: 0 };
   for (const u of cache) {
-    if (u.role === 'admin') totals.admin++; else totals.player++;
+    if (u.adminLevel === 'A') totals.owner++;
+    else if (u.adminLevel === 'B') totals.captain++;
+    else if ((u.adminPermissionGroups || []).length) {
+      if ((u.adminPermissionGroups || []).includes('data')) totals.data++;
+      if ((u.adminPermissionGroups || []).includes('ops')) totals.ops++;
+    } else {
+      totals.player++;
+    }
     if (u.boundPlayerId) totals.bound++; else totals.unbound++;
   }
   const statsBar = document.getElementById('userStatsBar');
   if (statsBar) {
     statsBar.innerHTML = [
       ['全部', totals.all, 'var(--gold-bright)'],
-      ['Admin', totals.admin, '#ffd86a'],
-      ['Player', totals.player, 'var(--blue-300)'],
+      ['全站级', totals.owner, '#ffd86a'],
+      ['队长级', totals.captain, '#6ee7b7'],
+      ['数据组', totals.data, 'var(--blue-300)'],
+      ['运营组', totals.ops, '#b8c7ff'],
+      ['普通', totals.player, 'var(--text-dim)'],
       ['已绑定', totals.bound, '#6ee7b7'],
       ['未绑定', totals.unbound, '#ff8a8a'],
     ].map(([label, n, color]) => `
@@ -1117,12 +1374,22 @@ window.renderUsers = function renderUsers() {
 
   // 过滤
   let filtered = cache.filter(u => {
-    if (roleF && u.role !== roleF) return false;
+    const groups = u.adminPermissionGroups || [];
+    const isAdminAccount = !!(u.adminLevel || groups.length || u.role === 'admin');
+    if (roleF === 'admin' && !isAdminAccount) return false;
+    if (roleF === 'A' && u.adminLevel !== 'A') return false;
+    if (roleF === 'B' && u.adminLevel !== 'B') return false;
+    if (roleF === 'C' && u.adminLevel !== 'C') return false;
+    if (roleF === 'player' && (u.adminLevel || groups.length)) return false;
+    if (groupF === 'data' && !groups.includes('data')) return false;
+    if (groupF === 'ops' && !groups.includes('ops')) return false;
+    if (groupF === 'both' && !(groups.includes('data') && groups.includes('ops'))) return false;
+    if (positionF && !userMatchesPositionGroup(u, positionF)) return false;
     if (bindF === 'bound' && !u.boundPlayerId) return false;
     if (bindF === 'unbound' && u.boundPlayerId) return false;
     if (q) {
       const hay = [
-        u.displayName, u.email, u.boundPlayerName, u.boundPlayerNumber, u.id
+        u.displayName, u.email, u.boundPlayerName, u.boundPlayerNumber, u.boundPlayerPosition, u.id, u.adminLevel, ...(u.adminPermissionGroups || [])
       ].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
@@ -1142,10 +1409,10 @@ window.renderUsers = function renderUsers() {
     host.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-mute);font-size:13px">没有匹配的用户 · 共 ${cache.length} 个账户</div>`;
     return;
   }
+  const currentUserId = DB.currentUser()?.id || '';
   host.innerHTML = filtered.map(u => {
-    const isAdmin = u.role === 'admin';
     const bound = u.boundPlayerName
-      ? `<span style="color:var(--gold-bright)">📁 ${escapeHtml(u.boundPlayerName)}${u.boundPlayerNumber?' · #'+escapeHtml(u.boundPlayerNumber):''}</span>`
+      ? `<span style="color:var(--gold-bright)">📁 ${escapeHtml(u.boundPlayerName)}${u.boundPlayerNumber?' · #'+escapeHtml(u.boundPlayerNumber):''}${u.boundPlayerPosition?' · '+escapeHtml(u.boundPlayerPosition):''}</span>`
       : `<span style="color:#ff8a8a">⊘ 未绑定球员</span>`;
     const last = u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('zh-CN', {hour12:false}).slice(5,16) : '—';
     const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '—';
@@ -1153,27 +1420,31 @@ window.renderUsers = function renderUsers() {
       <div style="flex:1;min-width:200px">
         <div style="font-weight:600;font-size:14px">
           ${escapeHtml(u.displayName||'(no name)')}
-          ${isAdmin?'<span style="color:var(--gold-bright);font-size:10px;border:1px solid var(--gold);border-radius:999px;padding:1px 7px;margin-left:6px;letter-spacing:.1em">ADMIN</span>':''}
+          ${userPermissionBadges(u)}
         </div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px">${escapeHtml(u.email||'—')}</div>
         <div style="font-size:11px;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap">
           ${bound}
           <span style="color:var(--text-mute)">最近活跃 ${last}</span>
           <span style="color:var(--text-mute)">注册于 ${created}</span>
+          <span style="color:var(--text-mute)">权限 ${escapeHtml(adminLevelLabel(u))}</span>
         </div>
+        ${userPermissionControl(u)}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn ghost" data-action="bind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" data-current-player="${escapeHtml(u.boundPlayerId||'')}" style="padding:6px 12px;font-size:12px">${u.boundPlayerId?'更换绑定':'绑定球员'}</button>
-        <button class="btn ghost" data-action="invite" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">站内信</button>
-        ${u.boundPlayerId ? `<button class="btn ghost" data-action="unbind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px;border-color:rgba(255,138,138,.35);color:#ff8a8a">解绑</button>` : ''}
-        <button class="btn ghost" data-action="reset" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">🔑 重置密码</button>
+        ${can('users:bind_direct') ? `<button class="btn ghost" data-action="bind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" data-current-player="${escapeHtml(u.boundPlayerId||'')}" style="padding:6px 12px;font-size:12px">${u.boundPlayerId?'更换绑定':'绑定球员'}</button>` : ''}
+        ${can('bind_codes:manage') ? `<button class="btn ghost" data-action="invite" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">站内信</button>` : ''}
+        ${can('users:app_connect_code') && !u.email ? `<button class="btn ghost" data-action="connect-code" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.id)}" style="padding:6px 12px;font-size:12px">网页关联码</button>` : ''}
+        ${can('users:bind_direct') && u.boundPlayerId ? `<button class="btn ghost" data-action="unbind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px;border-color:rgba(255,138,138,.35);color:#ff8a8a">解绑</button>` : ''}
+        ${can('users:password_reset') ? `<button class="btn ghost" data-action="reset" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">🔑 重置密码</button>` : ''}
+        ${can('destructive:delete') && !u.isOwner && u.id !== currentUserId ? `<button class="btn ghost" data-action="delete-user" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" data-bound-player="${escapeHtml(u.boundPlayerName||'')}" style="padding:6px 12px;font-size:12px;border-color:rgba(255,96,96,.5);color:#ff8a8a">删除账户</button>` : ''}
       </div>
     </div>`;
   }).join('');
 };
 
 // Wire 搜索 + 筛选 + 刷新按钮（在 DOM 已 ready 后）
-['userSearch','userRoleFilter','userBindFilter','userSort'].forEach(id => {
+['userSearch','userRoleFilter','userGroupFilter','userPositionFilter','userBindFilter','userSort'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', window.renderUsers);
   if (el) el.addEventListener('change', window.renderUsers);
@@ -1188,8 +1459,60 @@ document.getElementById('usersList')?.addEventListener('click', (e) => {
   if (action === 'reset') window.openResetPwd(btn.dataset.uid, btn.dataset.uname);
   if (action === 'bind') window.openUserBindModal(btn.dataset.uid, btn.dataset.uname, false, btn.dataset.currentPlayer || '');
   if (action === 'invite') window.openUserBindModal(btn.dataset.uid, btn.dataset.uname, true, '');
+  if (action === 'connect-code') window.createUserConnectCode(btn.dataset.uid, btn.dataset.uname);
   if (action === 'unbind') window.unbindUserPlayer(btn.dataset.uid, btn.dataset.uname);
+  if (action === 'save-admin-perms') window.saveAdminPermissions(btn);
+  if (action === 'delete-user') window.deleteUserAccount(btn.dataset.uid, btn.dataset.uname, btn.dataset.boundPlayer || '');
 });
+
+window.deleteUserAccount = async function(userId, name, boundPlayerName = '') {
+  if (!can('destructive:delete')) return toast('权限不足：只有全站级可删除账户', 'error');
+  const suffix = boundPlayerName ? `\n\n若该账号只绑定一个试训档案「${boundPlayerName}」，该试训档案也会一起删除；正式球员档案不会被删除。` : '';
+  if (!confirm(`确定删除账户「${name}」？\n\n这会删除登录身份、站内信和绑定申请，操作不可撤销。${suffix}`)) return;
+  try {
+    await DB.deleteAdminUser(userId);
+    toast('账户已删除', 'success');
+    await window.reloadUsers();
+    if (can('audit:read')) await window.reloadAuditLogs();
+    renderPool();
+  } catch (ex) {
+    toast(ex.message || String(ex), 'error');
+  }
+};
+
+window.saveAdminPermissions = async function(btn) {
+  if (!can('users:grant_admin')) return;
+  const row = btn.closest('.people-row');
+  const level = row?.querySelector('[data-admin-level]')?.value || '';
+  const groups = [...(row?.querySelectorAll('[data-admin-group]:checked') || [])].map(x => x.dataset.adminGroup);
+  const userId = btn.dataset.uid;
+  const name = btn.dataset.uname || userId;
+  if (level === 'C' && !groups.length) {
+    toast('C 组员级至少选择数据组或运营组', 'error');
+    return;
+  }
+  const label = level ? `${level}${level === 'C' ? ' · ' + adminGroupsLabel(groups) : ''}` : '普通用户';
+  if (!confirm(`确认将「${name}」的后台权限调整为：${label}？`)) return;
+  try {
+    await DB.updateAdminLevel(userId, level || null, groups);
+    toast('权限已更新', 'success');
+    await window.reloadUsers();
+    await window.reloadAuditLogs();
+  } catch (e) {
+    toast(e.message || String(e), 'error');
+  }
+};
+
+window.createUserConnectCode = async function(userId, name) {
+  try {
+    const r = await DB.createAppConnectCode(userId);
+    alert(`「${name}」的网页关联码：\n\n${r.code}\n\n${r.expiresInMinutes || 30} 分钟内有效。用户在注册弹窗底部选择“用关联码绑定网页邮箱”即可。`);
+    toast('已生成网页关联码', 'success');
+    await window.reloadAuditLogs();
+  } catch (e) {
+    toast(e.message || String(e), 'error');
+  }
+};
 
 window.openResetPwd = function(userId, name) {
   const pwd = prompt(`重置「${name}」的密码 — 输入新密码（≥ 6 位）`);
@@ -1297,6 +1620,10 @@ window.unbindUserPlayer = async function(userId, name) {
 window.reloadAuditLogs = async function reloadAuditLogs() {
   const host = document.getElementById('auditLogList');
   if (!host) return;
+  if (!can('audit:read')) {
+    host.innerHTML = '';
+    return;
+  }
   host.innerHTML = '<div style="padding:14px;text-align:center;color:var(--text-mute);font-size:12px">加载操作记录…</div>';
   try {
     const r = await DB.getAuditLogs(80);
@@ -1329,6 +1656,7 @@ window.setPoolLevelFilter = function(level) {
 };
 
 function openPlayerCodes(playerId) {
+  if (!can('bind_codes:manage')) return toast('权限不足：需要队长级以上权限', 'error');
   const p = DB.getPlayerById(playerId);
   activateAdminTab('codes');
   const search = document.getElementById('codeSearch');
@@ -1344,6 +1672,7 @@ function openPlayerCodes(playerId) {
 window.openPlayerCodes = openPlayerCodes;
 
 function openPlayerHighlights(playerId) {
+  if (!can('highlights:write')) return toast('权限不足：需要高亮管理权限', 'error');
   const p = DB.getPlayerById(playerId);
   activateAdminSection('content');
   activateAdminTab('highlights');
@@ -1355,6 +1684,12 @@ window.openPlayerHighlights = openPlayerHighlights;
 
 function renderPool(){
   const grid=document.getElementById('poolGrid');
+  const canWritePlayers = can('players:write');
+  const canDisplayPlayers = can('players:display_write');
+  const canBindCodes = can('bind_codes:manage');
+  const canHighlights = can('highlights:write');
+  const canPoints = can('points:write');
+  const canDelete = can('destructive:delete');
   const q = (document.getElementById('poolSearch')?.value || '').trim();
   const players=DB.allPlayers().filter(p => {
     const level = DB.getPlayerLevel(p);
@@ -1384,14 +1719,24 @@ function renderPool(){
     const levelBadge = isCasual
       ? `<div class="pool-status-pill tryout">试训 ${trainings}/8</div>`
       : `<div class="pool-status-pill official">★ 正式</div>`;
-    const primaryActions = isCasual
-      ? `<button type="button" class="pool-action primary" onclick="quickUpgradePlayer('${p.id}')" title="跳过 8 次门槛，直接升为正式队员">升级</button>
-         <button type="button" class="pool-action" onclick="openEditPlayer('${p.id}')">编辑</button>`
-      : `<button type="button" class="pool-action primary" onclick="openEditPlayer('${p.id}')">编辑</button>
-         <button type="button" class="pool-action" onclick="openPlayerCodes('${p.id}')">绑定</button>`;
-    const moreBindAction = isCasual
-      ? `<button type="button" onclick="openPlayerCodes('${p.id}')">绑定码</button>`
+    const editAction = (canWritePlayers || canDisplayPlayers)
+      ? `<button type="button" class="pool-action primary" onclick="openEditPlayer('${p.id}')">编辑</button>`
       : '';
+    const upgradeAction = (isCasual && canWritePlayers)
+      ? `<button type="button" class="pool-action primary" onclick="quickUpgradePlayer('${p.id}')" title="跳过 8 次门槛，直接升为正式队员">升级</button>`
+      : '';
+    const bindAction = (!isCasual && canBindCodes)
+      ? `<button type="button" class="pool-action" onclick="openPlayerCodes('${p.id}')">绑定</button>`
+      : '';
+    const primaryActions = isCasual ? `${upgradeAction}${editAction}` : `${editAction}${bindAction}`;
+    const moreActions = [
+      isCasual && canBindCodes ? `<button type="button" onclick="openPlayerCodes('${p.id}')">绑定码</button>` : '',
+      canHighlights ? `<button type="button" onclick="openPlayerHighlights('${p.id}')">管理高光</button>` : '',
+      `<button type="button" onclick="window.location.href='player-points.html?id=${encodeURIComponent(p.id)}'">积分明细</button>`,
+      canWritePlayers ? `<button type="button" onclick="openMergePlayer('${p.id}')">合并档案</button>` : '',
+      `<button type="button" onclick="window.location.href='dashboard.html?player=${encodeURIComponent(p.name)}'">查看主页</button>`,
+      canDelete ? `<button type="button" class="danger" onclick="deletePoolPlayer('${p.id}')">删除球员</button>` : '',
+    ].filter(Boolean).join('');
     const aliasLine = Array.isArray(p.aliases) && p.aliases.length
       ? `<div class="pool-alias-line" title="别名：${escapeHtml(p.aliases.join(' / '))}">别名 ${escapeHtml(p.aliases.slice(0,3).join(' / '))}${p.aliases.length>3?' …':''}</div>`
       : '';
@@ -1412,21 +1757,16 @@ function renderPool(){
       <div class="pool-mini-stats">
         <span>${points} 分</span>
         <span>${highCount} 高光</span>
-        <span>${unusedCodes}/${codes.length} 码</span>
+        <span>${canBindCodes ? `${unusedCodes}/${codes.length} 码` : '绑定码 —'}</span>
       </div>
       <div class="pool-card-actions">
         ${primaryActions}
-        <details class="pool-more">
+        ${moreActions ? `<details class="pool-more">
           <summary>更多</summary>
           <div class="pool-more-menu">
-            ${moreBindAction}
-            <button type="button" onclick="openPlayerHighlights('${p.id}')">管理高光</button>
-            <button type="button" onclick="window.location.href='player-points.html?id=${encodeURIComponent(p.id)}'">积分明细</button>
-            <button type="button" onclick="openMergePlayer('${p.id}')">合并档案</button>
-            <button type="button" onclick="window.location.href='dashboard.html?player=${encodeURIComponent(p.name)}'">查看主页</button>
-            <button type="button" class="danger" onclick="deletePoolPlayer('${p.id}')">删除球员</button>
+            ${moreActions}
           </div>
-        </details>
+        </details>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1434,6 +1774,7 @@ function renderPool(){
 window.renderPool = renderPool;
 
 function quickUpgradePlayer(playerId){
+  if (!can('players:write')) return toast('权限不足：需要队长级权限', 'error');
   const p = DB.getPlayerById(playerId);
   if (!p) return;
   if (!confirm(`确定将「${p.name}」升级为正式队员？\n（这会跳过满 8 次训练的自动门槛）`)) return;
@@ -1443,6 +1784,7 @@ function quickUpgradePlayer(playerId){
 }
 
 window.deletePoolPlayer = function(playerId){
+  if (!can('destructive:delete')) return toast('权限不足：只有全站级可执行高风险删除', 'error');
   const p = DB.getPlayerById(playerId);
   if (!p) return;
   if (!confirm(`删除球员「${p.name}」？\n这会移除该球员档案，请确认不是要做“合并”。`)) return;
@@ -1493,6 +1835,7 @@ function _fillMergeSelects(sourceId = '', targetId = '') {
 }
 
 function openMergePlayer(sourceId = '') {
+  if (!can('players:write')) return toast('权限不足：需要队长级权限', 'error');
   activateAdminTab('pool');
   _fillMergeSelects(sourceId);
   document.getElementById('mergeKeepAlias').checked = true;
@@ -1574,10 +1917,13 @@ async function submitMergePlayer(e) {
 window.submitMergePlayer = submitMergePlayer;
 
 function openEditPlayer(pid){
+  if (!can('players:write') && !can('players:display_write')) return toast('权限不足：不能编辑球员资料', 'error');
   const p = DB.getPlayerById(pid);
   if (!p) return;
   document.getElementById('editPlayerId').value = p.id;
-  document.getElementById('editPlayerSubtitle').textContent = `编辑「${p.name}」的信息、照片和荣誉`;
+  document.getElementById('editPlayerSubtitle').textContent = can('players:write')
+    ? `编辑「${p.name}」的信息、照片和荣誉`
+    : `编辑「${p.name}」的展示资料（头像、标语）`;
   document.getElementById('editName').value = p.name || '';
   document.getElementById('editNumber').value = p.number || '';
   document.getElementById('editPosition').value = p.position || '';
@@ -1621,12 +1967,16 @@ function submitEditPlayer(e){
   const id = document.getElementById('editPlayerId').value;
   const p = DB.getPlayerById(id);
   if (!p) { err.textContent = '球员不存在'; return; }
+  const canFullEdit = can('players:write');
+  if (!canFullEdit && !can('players:display_write')) { err.textContent = '权限不足'; return; }
   const name = document.getElementById('editName').value.trim();
-  if (!name) { err.textContent = '姓名不能为空'; return; }
-  const conflict = DB.getPlayerByName(name);
-  if (conflict && conflict.id !== id) { err.textContent = '已有同名球员'; return; }
+  if (canFullEdit) {
+    if (!name) { err.textContent = '姓名不能为空'; return; }
+    const conflict = DB.getPlayerByName(name);
+    if (conflict && conflict.id !== id) { err.textContent = '已有同名球员'; return; }
+  }
 
-  const updates = {
+  const updates = canFullEdit ? {
     name,
     number: document.getElementById('editNumber').value.trim(),
     position: document.getElementById('editPosition').value.trim(),
@@ -1635,6 +1985,8 @@ function submitEditPlayer(e){
     joinYear: parseInt(document.getElementById('editJoinYear').value) || '',
     slogan: document.getElementById('editSlogan').value,
     titles: document.getElementById('editTitles').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,5),
+  } : {
+    slogan: document.getElementById('editSlogan').value,
   };
 
   // Photo handling: new upload / delete / keep current
@@ -1653,11 +2005,15 @@ function submitEditPlayer(e){
   renderAll();
 }
 window.submitEditPlayer = submitEditPlayer;
-function openAddPlayer(){document.getElementById('addPlayerModal').classList.add('open')}
+function openAddPlayer(){
+  if (!can('players:write')) return toast('权限不足：需要队长级权限', 'error');
+  document.getElementById('addPlayerModal').classList.add('open');
+}
 window.openAddPlayer=openAddPlayer;
 function submitAddPlayer(e){
   e.preventDefault();
   const err=document.getElementById('newPlayerErr');err.textContent='';
+  if (!can('players:write')) { err.textContent = '权限不足'; return; }
   const name=document.getElementById('newName').value.trim();
   if(!name){err.textContent='请填写姓名';return}
   if(DB.getPlayerByName(name)){err.textContent='该姓名已存在于花名册';return}
@@ -1705,6 +2061,7 @@ window.onBatchPhotos=onBatchPhotos;
 
 function submitBatch(){
   const err=document.getElementById('batchErr');err.textContent='';
+  if (!can('players:write')) { err.textContent = '权限不足：需要队长级权限'; return; }
   const raw=document.getElementById('batchText').value.trim();
   if(!raw){err.textContent='请粘贴球员名单';return}
   const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
@@ -1739,6 +2096,10 @@ window.submitBatch=submitBatch;
 function renderCodes(){
   _setupCodePlayerSearch();    // 幂等：内部检查 _wired，重复调用不会重复绑事件
   const list=document.getElementById('codeList');
+  if (!can('bind_codes:manage')) {
+    if (list) list.innerHTML = '<div class="empty">权限不足：绑定码中心仅队长级以上可用</div>';
+    return;
+  }
   const q=(document.getElementById('codeSearch')?.value||'').trim();
   const codes=DB.allBindCodes().slice().reverse().filter(c=>{
     const p=DB.getPlayerById(c.playerId);
@@ -1780,6 +2141,7 @@ function _setupCodePlayerSearch(){
   );
 }
 function genCode(){
+  if (!can('bind_codes:manage')) return toast('权限不足：需要队长级以上权限', 'error');
   const pid=document.getElementById('codePlayerId').value;
   if(!pid){toast('请先在搜索框选择球员','error');return}
   const p=DB.getPlayerById(pid);
@@ -1853,7 +2215,7 @@ function renderTournaments(){
         </div>
         <div class="actions">
           <button onclick="openTournamentModal('${t.id}')">编辑</button>
-          <button class="danger" onclick="if(confirm('删除赛事 ${t.name.replace(/[\\n\\r\\u0027\\u0022]/g,'')}?（关联的比赛不会被删除）')){DB.deleteTournament('${t.id}');renderAll()}">删</button>
+	          ${can('destructive:delete') ? `<button class="danger" onclick="if(confirm('删除赛事 ${t.name.replace(/[\\n\\r\\u0027\\u0022]/g,'')}?（关联的比赛不会被删除）')){DB.deleteTournament('${t.id}');renderAll()}">删</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -2507,7 +2869,7 @@ function renderGames(){
         <button onclick="openGameCoverEdit('${g.id}')">换封面</button>
         <button onclick="openGameRevision('${g.id}')">修订</button>
         <button onclick="window.location.href='game-detail.html?id=${g.id}'">查看</button>
-        <button class="danger" onclick="if(confirm('删除此比赛?')){DB.deleteGame('${g.id}');renderAll()}">删</button>
+        ${can('destructive:delete') ? `<button class="danger" onclick="if(confirm('删除此比赛?')){DB.deleteGame('${g.id}');renderAll()}">删</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -2524,7 +2886,7 @@ function updateGameBatchBar(){
   const bar = document.getElementById('gameBatchBar');
   const cnt = document.getElementById('gameBatchCount');
   if (!bar) return;
-  bar.style.display = gameSelection.size > 0 ? 'flex' : 'none';
+  bar.style.display = gameSelection.size > 0 && can('destructive:delete') ? 'flex' : 'none';
   if (cnt) cnt.textContent = gameSelection.size;
 }
 
@@ -2546,6 +2908,7 @@ function clearGameSelection(){
 window.clearGameSelection = clearGameSelection;
 
 function batchDeleteGames(){
+  if (!can('destructive:delete')) return toast('权限不足：只有全站级可批量删除比赛', 'error');
   const n = gameSelection.size;
   if (!n) return;
   if (!confirm(`确认删除选中的 ${n} 场比赛？此操作不可撤销。`)) return;
@@ -3875,7 +4238,12 @@ applyAdminDeepLink();
 // 兜底：IIFE 末尾再补一次"用户"懒加载（init 时 reloadUsers 可能还没挂到 window 上）
 if (typeof window.reloadUsers === 'function' && !window._usersLoaded) {
   const visibleUsers = document.querySelector('[data-panel="users"]')?.style.display !== 'none';
-  if (visibleUsers) { window.reloadUsers(); window.reloadAuditLogs(); window._usersLoaded = true; }
+  if (visibleUsers) {
+    window.reloadUsers();
+    window.reloadAuditLogs();
+    if (typeof window.reloadBindRequests === 'function') window.reloadBindRequests();
+    window._usersLoaded = true;
+  }
 }
 })();
 </script>

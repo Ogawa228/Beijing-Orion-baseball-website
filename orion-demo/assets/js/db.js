@@ -52,7 +52,7 @@ const _cache = {
   players: [], games: [], tournaments: [], events: [],
   hallOfFame: [], highlights: [], bindCodes: [],
   attendances: [], pointsAdjustments: [],
-  notifications: [],
+  notifications: [], bindRequests: [],
   user: null, player: null,
   rules: null,
   _loaded: false,
@@ -81,11 +81,19 @@ const DB = {
       _api('GET', '/api/points-adjustments'),
       _api('GET', '/api/points/rules'),
     ];
-    if (cu.user?.role === 'admin') {
-      promises.push(_api('GET', '/api/bind-codes').catch(() => ({ bindCodes: [] })));
+    const extras = { bindCodes: [], notifications: [], bindRequests: [] };
+    if ((cu.user?.permissions || []).includes('bind_codes:manage')) {
+      promises.push(_api('GET', '/api/bind-codes')
+        .then(r => { extras.bindCodes = r.bindCodes || []; })
+        .catch(() => {}));
     }
     if (cu.user) {
-      promises.push(_api('GET', '/api/notifications').catch(() => ({ notifications: [] })));
+      promises.push(_api('GET', '/api/notifications')
+        .then(r => { extras.notifications = r.notifications || []; })
+        .catch(() => {}));
+      promises.push(_api('GET', '/api/bind-requests/mine')
+        .then(r => { extras.bindRequests = r.requests || []; })
+        .catch(() => {}));
     }
     const results = await Promise.all(promises);
     _cache.players = results[0].players || [];
@@ -98,8 +106,9 @@ const DB = {
     _cache.pointsAdjustments = results[7].adjustments || [];
     _cache.rules = results[8].rules || {};
     DB.POINTS_RULES = _cache.rules;
-    _cache.bindCodes = results[9]?.bindCodes || [];
-    _cache.notifications = (cu.user?.role === 'admin' ? results[10] : results[9])?.notifications || [];
+    _cache.bindCodes = extras.bindCodes;
+    _cache.notifications = extras.notifications;
+    _cache.bindRequests = extras.bindRequests;
     _cache._loaded = true;
     _cache._lastLoadAt = Date.now();
   },
@@ -497,8 +506,49 @@ const DB = {
   async sendBindInvitation(userId, playerId, message = '') {
     return _api('POST', '/api/admin/bind-invitations', { userId, playerId, message });
   },
+  async createAppConnectCode(userId) {
+    return _api('POST', `/api/admin/users/${encodeURIComponent(userId)}/app-connect-code`, {});
+  },
   async getAuditLogs(limit = 80) {
     return _api('GET', `/api/admin/audit-logs?limit=${encodeURIComponent(limit)}`);
+  },
+  async updateAdminLevel(userId, adminLevel, adminPermissionGroups = []) {
+    return _api('PATCH', `/api/admin/users/${encodeURIComponent(userId)}/admin-level`, {
+      adminLevel,
+      adminPermissionGroups,
+    });
+  },
+  async deleteAdminUser(userId) {
+    const r = await _api('DELETE', `/api/admin/users/${encodeURIComponent(userId)}`);
+    await DB.reload();
+    return r;
+  },
+
+  // ==================== Player bind requests ====================
+  bindRequests() { return [..._cache.bindRequests]; },
+  latestBindRequest() { return [..._cache.bindRequests].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''))[0] || null; },
+  async reloadBindRequests() {
+    if (!_cache.user) return [];
+    const r = await _api('GET', '/api/bind-requests/mine');
+    _cache.bindRequests = r.requests || [];
+    return _cache.bindRequests;
+  },
+  async submitBindRequest(payload) {
+    const r = await _api('POST', '/api/bind-requests', payload);
+    await DB.reloadBindRequests();
+    return r.request;
+  },
+  async getAdminBindRequests(status = 'pending') {
+    const q = status ? `?status=${encodeURIComponent(status)}` : '';
+    return _api('GET', `/api/admin/bind-requests${q}`);
+  },
+  async approveBindRequest(id, reviewNote = '') {
+    const r = await _api('POST', `/api/admin/bind-requests/${encodeURIComponent(id)}/approve`, { reviewNote });
+    await DB.reload();
+    return r;
+  },
+  async rejectBindRequest(id, reviewNote = '') {
+    return _api('POST', `/api/admin/bind-requests/${encodeURIComponent(id)}/reject`, { reviewNote });
   },
 
   // ==================== Notifications ====================
@@ -588,14 +638,33 @@ const DB = {
 
   // ==================== Auth ====================
   currentUser() { return _cache.user; },
+  hasPermission(permission) {
+    return !!permission && Array.isArray(_cache.user?.permissions) && _cache.user.permissions.includes(permission);
+  },
+  isAdminUser() {
+    return !!(_cache.user?.adminLevel || (_cache.user?.adminPermissionGroups || []).length || _cache.user?.role === 'admin');
+  },
+  adminLevel() {
+    return _cache.user?.adminLevel || null;
+  },
+  adminPermissionGroups() {
+    return [...(_cache.user?.adminPermissionGroups || [])];
+  },
   findUserByEmail(_email) { /* 老 API：服务器端校验，前端无需 */ return null; },
-  async register({ email, password, displayName }) {
-    const r = await _api('POST', '/api/auth/register', { email, password, displayName });
+  async register(payload) {
+    const r = await _api('POST', '/api/auth/register', payload);
     _cache.user = r.user;
     if (r.player) {
       _cache.player = r.player;
       _cache.players.push(r.player);
     }
+    if (r.bindRequest) _cache.bindRequests = [r.bindRequest, ..._cache.bindRequests];
+    return r.user;
+  },
+  async linkEmail({ code, email, password, displayName }) {
+    const r = await _api('POST', '/api/auth/link-email', { code, email, password, displayName });
+    _cache.user = r.user;
+    await DB.reload();
     return r.user;
   },
   async login(email, password) {

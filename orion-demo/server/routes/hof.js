@@ -1,7 +1,7 @@
 // /api/hall-of-fame/* 路由
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.get('/', wrap(async (_req, res) => {
 }));
 
 // POST /api/hall-of-fame - admin 添加入选
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('hof:write'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.playerId) return res.status(400).json({ error: 'bad_request', message: 'playerId 必填' });
   await db.q(
@@ -31,7 +31,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ entry: rowToHOF(row) });
 }));
 
-router.delete('/:playerId', requireAdmin, wrap(async (req, res) => {
+router.delete('/:playerId', requirePermission('hof:write'), wrap(async (req, res) => {
   await db.q('DELETE FROM hall_of_fame WHERE player_id = ?', [req.params.playerId]);
   res.json({ ok: true });
 }));

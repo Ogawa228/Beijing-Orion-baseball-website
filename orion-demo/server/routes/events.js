@@ -1,7 +1,7 @@
 // /api/events/* 路由
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ router.get('/:id', wrap(async (req, res) => {
   res.json({ event: rowToEvent(row) });
 }));
 
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('events:write'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.title) return res.status(400).json({ error: 'bad_request', message: 'title 必填' });
   const id = b.id || `ev_${Date.now()}`;
@@ -40,7 +40,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ event: rowToEvent(await db.qOne('SELECT * FROM events WHERE id = ?', [id])) });
 }));
 
-router.patch('/:id', requireAdmin, wrap(async (req, res) => {
+router.patch('/:id', requirePermission('events:write'), wrap(async (req, res) => {
   const b = req.body || {};
   const map = { tag:'tag', title:'title', cover:'cover', date:'date', location:'location', body:'body', sourceLink:'source_link' };
   const fields = [], values = [];
@@ -54,7 +54,7 @@ router.patch('/:id', requireAdmin, wrap(async (req, res) => {
   res.json({ event: rowToEvent(await db.qOne('SELECT * FROM events WHERE id = ?', [req.params.id])) });
 }));
 
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('events:write'), wrap(async (req, res) => {
   await db.q('DELETE FROM events WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
 }));

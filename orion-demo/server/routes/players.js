@@ -2,11 +2,23 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
+const { hasPermission } = require('../permissions');
 const { canonicalNameKey } = require('../name-utils');
 const { logAudit } = require('../people-helpers');
 
 const router = express.Router();
+
+function canPatchPlayer(req, body) {
+  const keys = Object.keys(body || {}).filter(k => !k.startsWith('_'));
+  if (!keys.length) return false;
+  if (hasPermission(req.user, 'players:write')) return true;
+  const displayOnly = keys.every(k => ['photo', 'slogan'].includes(k));
+  if (displayOnly && hasPermission(req.user, 'players:display_write')) return true;
+  const aliasOnly = keys.every(k => ['aliases'].includes(k));
+  if (aliasOnly && hasPermission(req.user, 'games:revise')) return true;
+  return false;
+}
 
 function parseJsonArray(v) {
   if (!v) return [];
@@ -72,7 +84,7 @@ router.get('/', wrap(async (req, res) => {
 // 所有 player_id 引用迁到 target，最后删除 source。
 // 比赛 JSON 里的 batting/pitching 原始姓名不批量改，保留 GameChanger 原始记录；
 // 后续统计靠 aliases 把 "Andy" 等名字归并到目标球员。
-router.post('/merge', requireAdmin, wrap(async (req, res) => {
+router.post('/merge', requirePermission('players:write'), wrap(async (req, res) => {
   const { sourceId, targetId, keepSourceAsAlias = true } = req.body || {};
   if (!sourceId || !targetId) {
     return res.status(400).json({ error: 'bad_request', message: 'sourceId / targetId 必填' });
@@ -220,7 +232,7 @@ router.get('/:id', wrap(async (req, res) => {
 }));
 
 // POST /api/players - 新建（admin only）
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('players:write'), wrap(async (req, res) => {
   const b = req.body || {};
   if (!b.name) return res.status(400).json({ error: 'bad_request', message: 'name 必填' });
   const id = b.id || `p_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
@@ -248,7 +260,13 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
 }));
 
 // PATCH /api/players/:id - 更新（admin only）
-router.patch('/:id', requireAdmin, wrap(async (req, res) => {
+router.patch('/:id', wrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'unauthorized', message: '请先登录' });
+  if (!canPatchPlayer(req, req.body || {})) {
+    return res.status(403).json({ error: 'forbidden', message: '权限不足', permission: 'players:write' });
+  }
+  next();
+}), wrap(async (req, res) => {
   const b = req.body || {};
   const fields = [], values = [];
   const map = {
@@ -277,7 +295,7 @@ router.patch('/:id', requireAdmin, wrap(async (req, res) => {
 }));
 
 // DELETE /api/players/:id (admin only)
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('destructive:delete'), wrap(async (req, res) => {
   const before = await db.qOne('SELECT * FROM players WHERE id = ?', [req.params.id]);
   await db.q('DELETE FROM players WHERE id = ?', [req.params.id]);
   await logAudit({
@@ -293,7 +311,7 @@ router.delete('/:id', requireAdmin, wrap(async (req, res) => {
 
 // POST /api/players/:id/upgrade - admin 手动升级 casual → verified
 // 重名检测：如果已有 verified player 同名，拒绝直接升级，提示走绑定码合并
-router.post('/:id/upgrade', requireAdmin, wrap(async (req, res) => {
+router.post('/:id/upgrade', requirePermission('players:write'), wrap(async (req, res) => {
   const player = await db.qOne('SELECT * FROM players WHERE id = ?', [req.params.id]);
   if (!player) return res.status(404).json({ error: 'not_found' });
   if (player.level === 'verified') return res.json({ player: rowToPlayer(player), already: true });

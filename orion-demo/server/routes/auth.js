@@ -11,16 +11,36 @@ const crypto = require('crypto');
 const db = require('../db');
 const { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie } = require('../auth-helpers');
 const { wrap, requireAuth } = require('../middleware');
-const { bindUserToPlayer } = require('../people-helpers');
+const { bindUserToPlayer, ensurePeopleTables, logAudit, createNotification } = require('../people-helpers');
+const { ensurePermissionsSchema, serializeUserPermissions } = require('../permissions');
 
 const router = express.Router();
 
+function publicUserPayload(row) {
+  if (!row) return null;
+  const permissions = serializeUserPermissions(row);
+  return {
+    id: row.id || row.user_id,
+    displayName: row.display_name,
+    avatar: row.avatar,
+    role: row.role,
+    adminLevel: permissions.adminLevel,
+    adminPermissionGroups: permissions.adminPermissionGroups,
+    permissions: permissions.permissions,
+    boundPlayerId: row.bound_player_id,
+    lastActiveAt: row.last_active_at,
+  };
+}
+
 // 1. POST /api/auth/register
-// body: { email, password, displayName }
+// body: { email, password, displayName, playerName?, registrationMode?, bindRequest? }
 // 副作用：建 user + email identity + casual player（boundPlayerId 立即关联）
 router.post('/register', wrap(async (req, res) => {
-  const { email, password, displayName } = req.body || {};
-  if (!email || !password || !displayName) {
+  await ensurePermissionsSchema();
+  const { email, password, displayName, registrationMode = 'trial', bindRequest = {} } = req.body || {};
+  const accountName = String(displayName || '').trim();
+  const playerName = String(req.body?.playerName || displayName || '').trim();
+  if (!email || !password || !accountName || !playerName) {
     return res.status(400).json({ error: 'bad_request', message: '邮箱 / 密码 / 昵称都必填' });
   }
   // 邮箱已注册？
@@ -30,19 +50,31 @@ router.post('/register', wrap(async (req, res) => {
   );
   if (existing) return res.status(409).json({ error: 'email_taken', message: '该邮箱已被注册' });
 
+  let targetPlayer = null;
+  const wantsBindRequest = registrationMode === 'bind_request';
+  if (wantsBindRequest) {
+    const requestedPlayerId = String(bindRequest.requestedPlayerId || bindRequest.playerId || '').trim();
+    if (!requestedPlayerId) return res.status(400).json({ error: 'bad_request', message: '请选择要绑定的正式球员档案' });
+    targetPlayer = await db.qOne('SELECT id, name, number, position, level FROM players WHERE id = ?', [requestedPlayerId]);
+    if (!targetPlayer) return res.status(404).json({ error: 'player_missing', message: '目标球员不存在' });
+    if (targetPlayer.level !== 'verified') {
+      return res.status(400).json({ error: 'bad_player_level', message: '只能申请绑定正式球员档案' });
+    }
+  }
+
   // 1. 建 casual player
   const rand = crypto.randomBytes(3).toString('hex');
   const ts = Date.now();
   const playerId = `p_user_${ts}_${rand}`;
   await db.q(
     `INSERT INTO players (id, name, level, join_year) VALUES (?, ?, 'casual', ?)`,
-    [playerId, displayName, new Date().getFullYear()]
+    [playerId, playerName, new Date().getFullYear()]
   );
   // 2. 建 user
   const userId = `u_${ts}_${rand}`;
   await db.q(
     `INSERT INTO users (id, display_name, role, bound_player_id, last_active_at) VALUES (?, ?, 'player', ?, NOW())`,
-    [userId, displayName, playerId]
+    [userId, accountName, playerId]
   );
   // 3. 建 email identity（密码哈希）
   await db.q(
@@ -50,22 +82,130 @@ router.post('/register', wrap(async (req, res) => {
     [userId, email.toLowerCase(), hashPassword(password)]
   );
 
+  let request = null;
+  if (wantsBindRequest) {
+    await ensurePeopleTables();
+    const requestId = `pbr_${ts}_${crypto.randomBytes(3).toString('hex')}`;
+    const realName = String(bindRequest.realName || playerName).trim().slice(0, 80);
+    const nickname = String(bindRequest.nickname || accountName).trim().slice(0, 80);
+    const jerseyNumber = String(bindRequest.jerseyNumber || '').trim().slice(0, 8);
+    const contactTail = String(bindRequest.contactTail || '').trim().slice(0, 40);
+    const note = String(bindRequest.note || '').trim().slice(0, 1000);
+    await db.q(
+      `INSERT INTO player_bind_requests
+       (id, user_id, requested_player_id, real_name, nickname, jersey_number, contact_tail, note, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'web')`,
+      [requestId, userId, targetPlayer.id, realName, nickname, jerseyNumber, contactTail, note || null]
+    );
+    request = {
+      id: requestId,
+      userId,
+      requestedPlayerId: targetPlayer.id,
+      requestedPlayerName: targetPlayer.name,
+      status: 'pending',
+      realName,
+      nickname,
+      jerseyNumber,
+      contactTail,
+      note,
+      source: 'web',
+    };
+    const admins = await db.q(`SELECT id FROM users WHERE admin_level IN ('A', 'B')`);
+    await Promise.all(admins.map(a => createNotification({
+      userId: a.id,
+      type: 'bind_request_submitted',
+      title: `新的球员绑定申请：${realName}`,
+      body: `${realName} 申请绑定到「${targetPlayer.name}」。`,
+      payload: { requestId, userId, playerId: targetPlayer.id },
+      createdBy: userId,
+    }).catch(() => null)));
+    await logAudit({
+      actorUserId: userId,
+      action: 'submit_bind_request',
+      targetType: 'bind_request',
+      targetId: requestId,
+      summary: `注册时申请绑定球员「${targetPlayer.name}」`,
+      metadata: { playerId: targetPlayer.id, source: 'web' },
+    }).catch(() => {});
+  }
+
   setSessionCookie(res, userId);
   res.json({
-    user: { id: userId, displayName, role: 'player', boundPlayerId: playerId },
-    player: { id: playerId, name: displayName, level: 'casual' },
+    user: { id: userId, displayName: accountName, role: 'player', adminLevel: null, adminPermissionGroups: [], permissions: [], boundPlayerId: playerId },
+    player: { id: playerId, name: playerName, level: 'casual' },
+    bindRequest: request,
+  });
+}));
+
+// 1b. POST /api/auth/link-email
+// 小程序等已有 user 后，用一次性关联码给同一 user 增加 email 登录身份。
+router.post('/link-email', wrap(async (req, res) => {
+  await ensurePermissionsSchema();
+  const { code, email, password, displayName } = req.body || {};
+  const cleanCode = String(code || '').trim().toUpperCase();
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanCode || !cleanEmail || !password) {
+    return res.status(400).json({ error: 'bad_request', message: '关联码 / 邮箱 / 密码都必填' });
+  }
+  const existingEmail = await db.qOne(
+    'SELECT user_id FROM user_identities WHERE type = ? AND value = ?',
+    ['email', cleanEmail]
+  );
+  if (existingEmail) return res.status(409).json({ error: 'email_taken', message: '该邮箱已被注册' });
+
+  const user = await db.qOne(
+    `SELECT * FROM users
+     WHERE app_connect_code = ? AND app_connect_code_expires_at > NOW()`,
+    [cleanCode]
+  );
+  if (!user) return res.status(404).json({ error: 'invalid_code', message: '关联码无效或已过期' });
+
+  const hasEmail = await db.qOne(
+    `SELECT id FROM user_identities WHERE user_id = ? AND type = 'email' LIMIT 1`,
+    [user.id]
+  );
+  if (hasEmail) return res.status(409).json({ error: 'already_linked', message: '该账号已经绑定过网页邮箱' });
+
+  await db.q(
+    `INSERT INTO user_identities (user_id, type, value, password_hash) VALUES (?, 'email', ?, ?)`,
+    [user.id, cleanEmail, hashPassword(password)]
+  );
+  const name = String(displayName || '').trim();
+  if (name) await db.q('UPDATE users SET display_name = ? WHERE id = ?', [name, user.id]);
+  await db.q(
+    `UPDATE users
+     SET app_connect_code = NULL, app_connect_code_expires_at = NULL, last_active_at = NOW()
+     WHERE id = ?`,
+    [user.id]
+  );
+  await logAudit({
+    actorUserId: user.id,
+    action: 'link_email_identity',
+    targetType: 'user',
+    targetId: user.id,
+    summary: '通过一次性关联码绑定网页邮箱',
+    metadata: { email: cleanEmail },
+  }).catch(() => {});
+  const updated = await db.qOne('SELECT * FROM users WHERE id = ?', [user.id]);
+  setSessionCookie(res, user.id);
+  res.json({
+    ok: true,
+    user: publicUserPayload(updated),
   });
 }));
 
 // 2. POST /api/auth/login
 // body: { email, password }
 router.post('/login', wrap(async (req, res) => {
+  await ensurePermissionsSchema();
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: 'bad_request', message: '邮箱密码必填' });
   }
   const id = await db.qOne(
-    `SELECT ui.user_id, ui.password_hash, u.id, u.display_name, u.role, u.bound_player_id
+    `SELECT ui.user_id, ui.password_hash, u.id, u.display_name, u.avatar, u.role, u.admin_level,
+            u.admin_permission_groups,
+            u.admin_granted_by, u.admin_granted_at, u.bound_player_id, u.last_active_at
      FROM user_identities ui JOIN users u ON u.id = ui.user_id
      WHERE ui.type = 'email' AND ui.value = ?`,
     [email.toLowerCase()]
@@ -78,12 +218,7 @@ router.post('/login', wrap(async (req, res) => {
   await db.q('UPDATE users SET last_active_at = NOW() WHERE id = ?', [id.user_id]);
   setSessionCookie(res, id.user_id);
   res.json({
-    user: {
-      id: id.user_id,
-      displayName: id.display_name,
-      role: id.role,
-      boundPlayerId: id.bound_player_id,
-    },
+    user: publicUserPayload({ ...id, id: id.user_id, last_active_at: new Date() }),
   });
 }));
 
@@ -100,14 +235,7 @@ router.get('/me', wrap(async (req, res) => {
     ? await db.qOne('SELECT id, name, level, photo, position, number FROM players WHERE id = ?', [req.user.bound_player_id])
     : null;
   res.json({
-    user: {
-      id: req.user.id,
-      displayName: req.user.display_name,
-      avatar: req.user.avatar,
-      role: req.user.role,
-      boundPlayerId: req.user.bound_player_id,
-      lastActiveAt: req.user.last_active_at,
-    },
+    user: publicUserPayload(req.user),
     player,
   });
 }));
@@ -151,13 +279,7 @@ router.patch('/me', requireAuth, wrap(async (req, res) => {
   }
   const updated = await db.qOne('SELECT * FROM users WHERE id = ?', [req.user.id]);
   res.json({
-    user: {
-      id: updated.id,
-      displayName: updated.display_name,
-      avatar: updated.avatar,
-      role: updated.role,
-      boundPlayerId: updated.bound_player_id,
-    }
+    user: publicUserPayload(updated)
   });
 }));
 

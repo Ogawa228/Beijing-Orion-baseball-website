@@ -1,7 +1,7 @@
 // /api/games/* 路由 —— games 是核心表，JSON 字段最多
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 const { resolveRegisteredPlayerName } = require('../name-utils');
 const { logAudit } = require('../people-helpers');
 
@@ -71,7 +71,7 @@ router.get('/:id', wrap(async (req, res) => {
   res.json({ game: rowToGame(row) });
 }));
 
-router.post('/', requireAdmin, wrap(async (req, res) => {
+router.post('/', requirePermission('games:confirm'), wrap(async (req, res) => {
   const players = await loadPlayerPool();
   const b = normalizeGamePayload(req.body || {}, players);
   if (!b.id) b.id = `g_${Date.now()}`;
@@ -94,7 +94,7 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
   res.status(201).json({ game: rowToGame(row) });
 }));
 
-router.patch('/:id', requireAdmin, wrap(async (req, res) => {
+router.patch('/:id', requirePermission('games:revise'), wrap(async (req, res) => {
   const beforeRow = await db.qOne('SELECT * FROM games WHERE id = ?', [req.params.id]);
   if (!beforeRow) return res.status(404).json({ error: 'not_found' });
   const players = await loadPlayerPool();
@@ -142,7 +142,7 @@ router.patch('/:id', requireAdmin, wrap(async (req, res) => {
   res.json({ game });
 }));
 
-router.delete('/:id', requireAdmin, wrap(async (req, res) => {
+router.delete('/:id', requirePermission('destructive:delete'), wrap(async (req, res) => {
   await db.q('DELETE FROM games WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
 }));

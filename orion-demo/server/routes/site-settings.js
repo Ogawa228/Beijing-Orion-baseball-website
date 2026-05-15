@@ -4,7 +4,7 @@
 
 const express = require('express');
 const db = require('../db');
-const { wrap, requireAdmin } = require('../middleware');
+const { wrap, requirePermission } = require('../middleware');
 const { logAudit } = require('../people-helpers');
 
 const router = express.Router();
@@ -124,7 +124,7 @@ router.get('/:key', wrap(async (req, res) => {
   res.json({ setting: rowToSetting(key, row) });
 }));
 
-router.put('/:key', requireAdmin, wrap(async (req, res) => {
+router.put('/:key', requirePermission('system:settings'), wrap(async (req, res) => {
   const key = String(req.params.key || '').trim();
   if (!assertAllowedKey(key, res)) return;
   await ensureSiteSettingsTable();

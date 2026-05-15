@@ -56,11 +56,13 @@ api.use('/events',       require('./server/routes/events').router);
 api.use('/attendances',  require('./server/routes/attendances').router);
 api.use('/points-adjustments', require('./server/routes/adjustments').router);
 api.use('/bind-codes',   require('./server/routes/bindcodes').router);
+api.use('/bind-requests', require('./server/routes/bind-requests').router);
 api.use('/notifications', require('./server/routes/notifications').router);
 api.use('/highlights',   require('./server/routes/highlights').router);
 api.use('/hall-of-fame', require('./server/routes/hof').router);
 api.use('/site-settings', require('./server/routes/site-settings'));
 api.use('/upload',       require('./server/routes/upload'));
+api.use('/admin/bind-requests', require('./server/routes/bind-requests').adminRouter);
 api.use('/admin',        require('./server/routes/admin'));
 // leaderboard 包含多个端点：/leaderboard /players/:id/points /points/rules
 api.use('/',             require('./server/routes/leaderboard'));

@@ -3,13 +3,13 @@
 > 面向下一轮 Codex/Claude 接手。这里只保留当前状态、硬规则、关键契约和排障入口；逐轮历史已压缩，旧长版已备份到 `orion-demo/backups/`。
 
 最后整理：2026-05-15  
-本轮状态：仅压缩整理 `HANDOFF.md` 与 `../DESIGN_BRIEF.md`，未改功能代码，未部署。
+本轮状态：管理员权限等级 + 数据/运营权限组拆分已部署到微信云托管；部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
 
 ---
 
 ## 0. 先读这几条
 
-- 当前线上版本：`express-knlw-030-20260515114335`，2026-05-15 11:46 部署。
+- 当前线上版本：`express-knlw-031-20260515155850`，2026-05-15 16:01 部署。
 - 线上域名：`https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com`
 - 云托管控制台：`https://cloud.weixin.qq.com/cloudrun/service/express-knlw`
 - 部署必须走“本地预览 -> 用户确认 -> 云部署”。每一次部署都要用户本轮明确同意，不能沿用旧授权。
@@ -54,12 +54,14 @@
 
 | 版本 | 时间 | 摘要 | 验证 |
 |---|---:|---|---|
+| `express-knlw-031-20260515155850` | 2026-05-15 16:01 | 管理员权限 A/B/C + 数据组/运营组权限点；后台按权限显示；账户列表三维筛选；A 级删除账户；注册绑定申请/网页关联码流程 | `deploy:verify` 通过；线上 `/api/health` 200；线上 `admin.html`/`db.js?v=18`/`auth.js?v=17` 资源检查通过 |
 | `express-knlw-030-20260515114335` | 2026-05-15 11:46 | 球员页 `STARDUST` 高级粒子项、WebGL `three.core.js` 白名单、星阵热路径性能优化 | `deploy:verify` 通过；线上 `/api/health` 200；线上可访问 `three.core.js` |
 
 重要里程碑：
 
 | 版本 | 摘要 |
 |---|---|
+| `031` | 管理员权限分级、数据/运营权限组、账户筛选、A 级删除账户、绑定申请/网页关联码 |
 | `029` / `028` | 球员页 WebGL 粒子可见性与轻量 DOM 星尘兜底，管理员可切换星尘模式 |
 | `027` | 顶部导航顺序：首页 / 球员 / 活动 / 比赛 / 积分榜 / 名人堂 / 联系 |
 | `026` | 年份字阵、分层密度、粒子局部排斥打散、静态托管白名单 |
@@ -73,8 +75,9 @@
 
 当前未部署内容：
 
-- 本轮只整理文档，没有功能代码未部署。
-- 如果后续改动只更新文档，一般不需要云部署；如果改 HTML/CSS/JS/server，按部署闸门执行。
+- 无已知运行时代码未部署。
+- 部署后仅更新了本文件和 `../DESIGN_BRIEF.md` 的记录性内容；不影响线上运行。
+- 如果后续要上线新功能，仍需先本地预览并获得用户本轮明确同意，再执行云部署和 `deploy:verify`。
 
 ---
 
@@ -149,6 +152,7 @@ MySQL：
 - 本地 `.env`：`DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`
 - 库名：`orion`
 - 表：`users`、`user_identities`、`players`、`tournaments`、`games`、`events`、`hall_of_fame`、`highlights`、`bind_codes`、`attendances`、`points_adjustments`、`admin_audit_logs`、`user_notifications`、`site_settings`、`_migrations`
+- `users` 保留 `role`，并新增 `admin_level`、`admin_permission_groups`、`admin_granted_by`、`admin_granted_at`；权限以 `requirePermission(...)` 为后端准绳。
 - `server/db.js` 的 Serverless 自动重试不要去掉。
 - `scripts/migrate.js` 是 localStorage -> MySQL 一次性迁移脚本，已经跑过，不要重跑，避免 TRUNCATE。
 
@@ -164,6 +168,7 @@ COS：
 
 - admin 邮箱：`admin@orion.cn`
 - admin 密码：`Orion@2010`
+- `admin@orion.cn` 强制为 A 全站级；B 队长级包含数据组 + 运营组；C 组员级可授予 `data` / `ops` 同级权限包。
 - `SESSION_SECRET` 在云托管环境变量里，不要贴到聊天或文档。
 
 ---
@@ -183,6 +188,17 @@ bound_player_id -----------------> player.id
 - casual 注册占位档案：`p_user_*`。
 - verified 预置档案：如 `p_xute`、`p_lijiaqi`。
 - 测试双身份：后台生成绑定码 -> 新账号兑换 -> dashboard 看真实球员主名 + 自己昵称辅助；公开 `dashboard.html?player=...` 仍显示真实球员。
+
+### 5.1b 注册 / 绑定申请
+
+- 注册入口提供两条主路径：`试训队员` 与 `绑定正式球员档案`；默认是试训，减少表单复杂度。
+- 基础字段始终是昵称、邮箱、密码、确认密码；没有邮箱验证，注册入口保持轻量。
+- 试训注册时，`user.display_name` 与临时 `casual player.name` 都先使用昵称；后续可由管理员调整，不影响已记录的签到和积分。
+- 选择绑定正式档案时，才显示目标正式球员搜索、队内昵称、微信号、其他验证信息；不再重复要求填写真实姓名或球衣号。
+- 目标球员搜索候选列表必须在表单流内展开，不能绝对定位覆盖后续字段；搜索框下方保留固定说明小字，不使用“取消”按钮，收起触发包括再次点击搜索框、点击外部字段、点击下拉内空白、输入框失焦和 Esc。
+- 绑定申请写入 `player_bind_requests`，状态为 `pending / approved / rejected`；批准必须由 admin 执行，不能按姓名或球衣号自动通过。
+- 批准时复用 `bindUserToPlayer`，把 casual 签到和手动积分迁移到 verified 球员；驳回时保留试训档案，用户可重新提交申请。
+- 小程序先注册、网页后来注册的用户，使用 `users.app_connect_code` 关联网页邮箱身份；同一人只增加 `user_identities.email`，不新建第二个账号或第二个试训档案。
 
 ### 5.2 试训到正式
 
@@ -266,7 +282,7 @@ bound_player_id -----------------> player.id
 - 公共搜索用 `DB.fuzzyMatch(query, ...fields)` + `DB.debounce(fn, 200)`；admin 选择器优先复用 `_attachSearchPicker`。
 - `DB.isOrionTeam(name)` 同时识别棒球“猎户星”和慢垒“猎户座”，不要改窄。
 - `game-detail.html` 4 张数据表保留：猎户/对手 batting + pitching；列头点击排序；`tfoot` 合计行永不参与排序。
-- `players.html` 星阵配置通过 `site_settings` 发布；自定义模板仍在管理员本机 `localStorage`。
+- `players.html` 星阵配置通过 `site_settings` 发布；自定义模板仍在管理员本机 `localStorage`。群星排列 / 全站视觉配置属于 A 全站级权限。
 - 普通访客的低动效偏好优先于管理员发布配置。
 - Three.js r184 需要静态放行 `three.module.js` 和 `three.core.js`，不要只白名单 module。
 
@@ -282,7 +298,7 @@ bound_player_id -----------------> player.id
 | `games.html` / `tournament.html` | 赛事索引与赛事详情，排行榜可排序 |
 | `game-detail.html` | box score、逐局、图表、4 张 sortable 表、MVP、highlights |
 | `ranking.html` / `player-points.html` | 积分榜、积分构成和时间线 |
-| `admin.html` | CRUD、GameChanger 导入、数据确认/修订、合并球员、积分管理、签到、上传 |
+| `admin.html` | 按权限显示后台：A 管账号权限/系统设置，B 管球员/绑定/积分/荣誉，数据组管比赛数据，运营组管活动/高光/展示资料 |
 | `hall-of-fame.html` | 名人堂，空状态有仪式感 |
 | `events.html` | 占位待补 |
 | `contact.html` | 已被 `index.html#contact` 取代，仅直接访问兜底 |
@@ -338,7 +354,7 @@ Web 页面 / Admin 后台 / 微信小程序
 - 后台 admin 收到绑定审批提示，核对微信身份/头像/姓名备注与注册球员是否一致；批准后后端自动写 `users.bound_player_id`，必要时合并 casual 试训档案的签到和积分流水。
 - 建议新增 `player_bind_requests` 或等价表：`user_id`、`requested_player_id`、`status(pending/approved/rejected)`、`note`、`reviewed_by`、`reviewed_at`、`created_at`。
 - 可复用 `user_notifications`：用户提交后通知管理员；管理员批准/驳回后通知用户。
-- 网页端后续按 A 方案升级：邮箱注册后也允许用户提交“绑定注册球员申请”，选择目标 registered/verified player，并填写真实姓名、队内昵称、球衣号、微信号/手机号后四位、备注等辅助核验信息。
+- 网页端后续按 A 方案升级：邮箱注册后也允许用户提交“绑定注册球员申请”，选择目标 registered/verified player，并填写队内昵称、微信号、其他验证信息等辅助核验信息。
 - 网页端申请同样进入 `player_bind_requests`，必须由 admin 审批后才自动绑定；不能因为姓名或邮箱相似就自动通过。
 - 绑定码在网页端保留为备用/管理员主动邀请路径，不再作为唯一高效路径。原因是网页邮箱注册缺少微信 openid 身份上下文，审批流比用户自绑更安全。
 

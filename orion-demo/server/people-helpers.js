@@ -42,6 +42,30 @@ async function ensurePeopleTables() {
       INDEX idx_created_at (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await db.q(`
+    CREATE TABLE IF NOT EXISTS player_bind_requests (
+      id VARCHAR(64) PRIMARY KEY,
+      user_id VARCHAR(64) NOT NULL,
+      requested_player_id VARCHAR(64) NOT NULL,
+      status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+      real_name VARCHAR(80) NOT NULL,
+      nickname VARCHAR(80) DEFAULT '',
+      jersey_number VARCHAR(8) DEFAULT '',
+      contact_tail VARCHAR(40) DEFAULT '',
+      note TEXT DEFAULT NULL,
+      source VARCHAR(20) DEFAULT 'web',
+      reviewed_by VARCHAR(64) DEFAULT NULL,
+      reviewed_at DATETIME DEFAULT NULL,
+      review_note TEXT DEFAULT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_user_status (user_id, status),
+      INDEX idx_player_status (requested_player_id, status),
+      INDEX idx_status_created (status, created_at),
+      CONSTRAINT fk_pbr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_pbr_player FOREIGN KEY (requested_player_id) REFERENCES players(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
   peopleTablesReady = true;
 }
 
@@ -80,6 +104,35 @@ function rowToNotification(r) {
     readAt: r.read_at,
     createdBy: r.created_by,
     createdAt: r.created_at,
+  };
+}
+
+function rowToBindRequest(r) {
+  if (!r) return null;
+  return {
+    id: r.id,
+    userId: r.user_id,
+    userDisplayName: r.user_display_name || '',
+    userEmail: r.user_email || '',
+    currentPlayerId: r.current_player_id || '',
+    currentPlayerName: r.current_player_name || '',
+    requestedPlayerId: r.requested_player_id,
+    requestedPlayerName: r.requested_player_name || '',
+    requestedPlayerNumber: r.requested_player_number || '',
+    requestedPlayerPosition: r.requested_player_position || '',
+    status: r.status,
+    realName: r.real_name || '',
+    nickname: r.nickname || '',
+    jerseyNumber: r.jersey_number || '',
+    contactTail: r.contact_tail || '',
+    note: r.note || '',
+    source: r.source || 'web',
+    reviewedBy: r.reviewed_by,
+    reviewerName: r.reviewer_name || '',
+    reviewedAt: r.reviewed_at,
+    reviewNote: r.review_note || '',
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
   };
 }
 
@@ -212,6 +265,7 @@ module.exports = {
   ensurePeopleTables,
   rowToAuditLog,
   rowToNotification,
+  rowToBindRequest,
   logAudit,
   createNotification,
   generateBindCode,

@@ -103,6 +103,10 @@ function toast(msg, type='info'){
 }
 window.toast = toast;
 
+function authEscape(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // Apply nav visibility based on current user
 async function renderAuthNav(){
   // 等 db.preload() 完成（拿到 currentUser）
@@ -112,9 +116,10 @@ async function renderAuthNav(){
   const playerLinks = document.querySelectorAll('[data-auth="player"]');
   const guestLinks = document.querySelectorAll('[data-auth="guest"]');
   const authedLinks = document.querySelectorAll('[data-auth="authed"]');
+  const isAdmin = !!(u && (u.adminLevel || (u.adminPermissionGroups || []).length || u.role === 'admin'));
 
-  adminLinks.forEach(el => el.style.display = (u && u.role==='admin') ? '' : 'none');
-  playerLinks.forEach(el => el.style.display = (u && u.role==='player') ? '' : 'none');
+  adminLinks.forEach(el => el.style.display = isAdmin ? '' : 'none');
+  playerLinks.forEach(el => el.style.display = (u && !isAdmin) ? '' : 'none');
   guestLinks.forEach(el => el.style.display = u ? 'none' : '');
   authedLinks.forEach(el => el.style.display = u ? '' : 'none');
 
@@ -149,7 +154,12 @@ async function requireAuth(role){
   if (window.dbReady) await window.dbReady();
   const u = DB.currentUser();
   if (!u) { toast('请先登录','error'); setTimeout(()=>window.location.href='index.html',800); return null; }
-  if (role && u.role !== role) { toast('权限不足','error'); setTimeout(()=>window.location.href='index.html',800); return null; }
+  if (role === 'admin') {
+    const isAdmin = !!(u.adminLevel || (u.adminPermissionGroups || []).length || u.role === 'admin');
+    if (!isAdmin) { toast('权限不足','error'); setTimeout(()=>window.location.href='index.html',800); return null; }
+  } else if (role && u.role !== role) {
+    toast('权限不足','error'); setTimeout(()=>window.location.href='index.html',800); return null;
+  }
   return u;
 }
 window.requireAuth = requireAuth;
@@ -201,17 +211,30 @@ window.ensureAuthModal = function ensureAuthModal(){
       <!-- Register -->
       <div data-mpanel="register" style="display:none">
         <h3>加入北京猎户座</h3>
-        <p class="modal-sub">注册即可签到 · 训练满 8 次（80 积分）自动升级正式队员，或联系管理员获得绑定码立即升级</p>
+        <p class="modal-sub">先选择你的身份，后续可以由管理员调整，不会影响已记录的签到和积分。</p>
         <form class="form" onsubmit="handleRegister(event)" style="margin-top:0">
-          <div class="field">
-            <label>昵称</label>
-            <input type="text" id="regName" required placeholder="任意昵称（不需真实姓名）" minlength="2" maxlength="20">
-            <div class="hint">2-20 个字符，可任意填。绑定球员档案后，公开页面（球员墙、排行榜）显示档案的真实姓名，你的昵称只在「我的面板」可见。</div>
+          <input type="hidden" id="regMode" value="trial">
+          <input type="hidden" id="regTargetPlayerId" value="">
+          <div class="reg-mode-grid" role="group" aria-label="注册身份">
+            <button type="button" class="reg-mode-card active" data-reg-mode="trial" onclick="setRegisterMode('trial')">
+              <strong>试训队员</strong>
+              <span>第一次来训练、还没有正式球员档案，选这个。注册后可以签到、累计积分，之后可申请转为正式队员。</span>
+            </button>
+            <button type="button" class="reg-mode-card" data-reg-mode="bind_request" onclick="setRegisterMode('bind_request')">
+              <strong>绑定正式球员档案</strong>
+              <span>你已经在球队正式名单里，想把账号关联到自己的真实球员数据，选这个。提交后由管理员核验。</span>
+            </button>
           </div>
-          <div class="field">
-            <label>邮箱</label>
-            <input type="email" id="regEmail" required placeholder="you@example.com">
-            <div class="err" id="regEmailErr"></div>
+          <div class="reg-account-grid">
+            <div class="field">
+              <label>昵称</label>
+              <input type="text" id="regName" required placeholder="例如：小宇" minlength="2" maxlength="20">
+            </div>
+            <div class="field">
+              <label>邮箱</label>
+              <input type="email" id="regEmail" required placeholder="you@example.com">
+              <div class="err" id="regEmailErr"></div>
+            </div>
           </div>
           <div class="field">
             <label>密码</label>
@@ -233,12 +256,69 @@ window.ensureAuthModal = function ensureAuthModal(){
             </div>
             <div class="err" id="regPwd2Err"></div>
           </div>
+          <div class="reg-bind-panel" id="regBindFields" style="display:none">
+            <div class="reg-bind-hint">请选择你的球员档案，并填写少量核验信息。审核通过前，你仍可先作为试训账号使用。</div>
+            <div class="field" style="position:relative">
+              <label>目标正式球员档案</label>
+              <input type="text" id="regTargetPlayerSearch" autocomplete="off" placeholder="搜索姓名 / 位置">
+              <div class="hint reg-target-help">从正式名单里选择你的球员档案。选错可以取消，审核通过前仍可先作为试训账号使用。</div>
+              <div id="regTargetPlayerDropdown" class="auth-search-dropdown" style="display:none"></div>
+              <div id="regTargetPlayerSelected" class="hint"></div>
+            </div>
+            <div class="field">
+              <label>队内昵称</label>
+              <input type="text" id="regTeamNickname" maxlength="40" placeholder="例如：小宇 / Andy">
+            </div>
+            <div class="field">
+              <label>微信号</label>
+              <input type="text" id="regWechatId" maxlength="40" placeholder="便于管理员核验">
+            </div>
+            <div class="field">
+              <label>其他验证信息</label>
+              <textarea id="regVerifyInfo" rows="2" maxlength="240" placeholder="写一点管理员能认出你的信息"></textarea>
+              <div class="hint">例如：猎户口号、认识的队友怎么称呼你、最近参加过哪次训练等。</div>
+            </div>
+          </div>
           <div class="captcha-row">
             <div class="field"><label>验证码</label><input type="text" id="regCap" required placeholder="请输入" maxlength="4" style="text-transform:uppercase"></div>
             <div class="captcha-img" id="captcha2" onclick="refreshCaptcha('captcha2')">M5X9</div>
           </div>
           <div class="field err" id="regErr"></div>
           <button type="submit" class="btn">注册账号</button>
+          <div class="auth-mini-link">
+            已经在小程序注册过？
+            <a href="#" onclick="event.preventDefault();openLinkEmailPanel()">用关联码绑定网页邮箱</a>
+          </div>
+        </form>
+      </div>
+      <!-- Existing mini-program account → email identity -->
+      <div data-mpanel="link-email" style="display:none">
+        <h3>关联网页邮箱</h3>
+        <p class="modal-sub">如果你已经在小程序注册过，请输入管理员给你的一次性关联码。系统会给原账号增加邮箱登录，不会新建第二个试训档案。</p>
+        <form class="form" onsubmit="handleLinkEmail(event)" style="margin-top:0">
+          <div class="field">
+            <label>一次性关联码</label>
+            <input type="text" id="linkCode" required placeholder="APP-XXXXXX-XXXX" style="text-transform:uppercase;letter-spacing:.08em">
+            <div class="hint">关联码 30 分钟内有效，可向管理员索取。</div>
+          </div>
+          <div class="field">
+            <label>邮箱</label>
+            <input type="email" id="linkEmail" required placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label>网页昵称（可选）</label>
+            <input type="text" id="linkName" placeholder="不填则沿用原账号昵称" maxlength="20">
+          </div>
+          <div class="field">
+            <label>设置网页密码</label>
+            <div class="pwd-wrap">
+              <input type="password" id="linkPwd" required placeholder="至少 8 位，包含字母和数字" minlength="8">
+              <button type="button" class="pwd-toggle" onclick="togglePwd('linkPwd',this)" aria-label="显示密码">👁</button>
+            </div>
+          </div>
+          <div class="field err" id="linkErr"></div>
+          <button type="submit" class="btn">完成关联</button>
+          <button type="button" class="btn ghost" onclick="switchMTab('register')">返回注册</button>
         </form>
       </div>
     </div>
@@ -279,6 +359,142 @@ window.ensureAuthModal = function ensureAuthModal(){
     const err = modal.querySelector('#regPwd2Err');
     err.textContent = e.target.value && e.target.value !== regPwd.value ? '两次密码不一致' : '';
   });
+
+  const targetSearch = modal.querySelector('#regTargetPlayerSearch');
+  if (targetSearch) {
+    targetSearch.addEventListener('pointerdown', e => {
+      const dropdown = document.getElementById('regTargetPlayerDropdown');
+      if (document.activeElement === targetSearch && isRegisterPlayerDropdownOpen(dropdown)) {
+        e.preventDefault();
+        targetSearch.dataset.skipDropdownClick = '1';
+        hideRegisterPlayerDropdown({ blur: true });
+      }
+    });
+    targetSearch.addEventListener('input', () => {
+      const targetId = document.getElementById('regTargetPlayerId');
+      const selected = document.getElementById('regTargetPlayerSelected');
+      if (targetId) targetId.value = '';
+      if (selected) selected.textContent = '';
+      renderRegisterPlayerOptions(targetSearch.value);
+    });
+    targetSearch.addEventListener('focus', () => renderRegisterPlayerOptions(targetSearch.value));
+    targetSearch.addEventListener('click', () => {
+      if (targetSearch.dataset.skipDropdownClick) {
+        delete targetSearch.dataset.skipDropdownClick;
+        return;
+      }
+      const dropdown = document.getElementById('regTargetPlayerDropdown');
+      if (!isRegisterPlayerDropdownOpen(dropdown)) renderRegisterPlayerOptions(targetSearch.value);
+    });
+    targetSearch.addEventListener('blur', () => {
+      window.setTimeout(() => {
+        const dropdown = document.getElementById('regTargetPlayerDropdown');
+        if (dropdown && document.activeElement !== targetSearch && !dropdown.contains(document.activeElement)) {
+          hideRegisterPlayerDropdown();
+        }
+      }, 0);
+    });
+  }
+  document.addEventListener('pointerdown', e => {
+    const dropdown = document.getElementById('regTargetPlayerDropdown');
+    const search = document.getElementById('regTargetPlayerSearch');
+    if (!dropdown || !search || !isRegisterPlayerDropdownOpen(dropdown)) return;
+    if (e.target === search) return;
+    if (dropdown.contains(e.target)) {
+      if (e.target.closest('.auth-player-option')) return;
+      hideRegisterPlayerDropdown();
+      return;
+    }
+    hideRegisterPlayerDropdown();
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    hideRegisterPlayerDropdown({ blur: true });
+  });
+};
+
+window.setRegisterMode = function(mode){
+  const next = mode === 'bind_request' ? 'bind_request' : 'trial';
+  const input = document.getElementById('regMode');
+  if (input) input.value = next;
+  document.querySelectorAll('#authModal .reg-mode-card').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.regMode === next);
+  });
+  const panel = document.getElementById('regBindFields');
+  if (panel) panel.style.display = next === 'bind_request' ? '' : 'none';
+  if (next === 'trial') {
+    const targetId = document.getElementById('regTargetPlayerId');
+    const targetText = document.getElementById('regTargetPlayerSearch');
+    const selected = document.getElementById('regTargetPlayerSelected');
+    const dropdown = document.getElementById('regTargetPlayerDropdown');
+    if (targetId) targetId.value = '';
+    if (targetText) targetText.value = '';
+    if (selected) selected.textContent = '';
+    if (dropdown) hideRegisterPlayerDropdown();
+    const nick = document.getElementById('regTeamNickname');
+    const wechat = document.getElementById('regWechatId');
+    const verify = document.getElementById('regVerifyInfo');
+    if (nick) nick.value = '';
+    if (wechat) wechat.value = '';
+    if (verify) verify.value = '';
+  }
+};
+
+function isRegisterPlayerDropdownOpen(dropdown){
+  return !!dropdown && dropdown.style.display !== 'none';
+}
+
+function hideRegisterPlayerDropdown(opts = {}){
+  const dropdown = document.getElementById('regTargetPlayerDropdown');
+  const search = document.getElementById('regTargetPlayerSearch');
+  if (dropdown) dropdown.style.display = 'none';
+  if (opts.blur && search && document.activeElement === search) search.blur();
+}
+
+function renderRegisterPlayerOptions(query = ''){
+  const dropdown = document.getElementById('regTargetPlayerDropdown');
+  if (!dropdown) return;
+  const q = String(query || '').trim();
+  const players = DB.allPlayers()
+    .filter(p => DB.getPlayerLevel(p) === 'verified')
+    .filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position, (p.aliases || []).join(' ')))
+    .slice(0, 8);
+  if (!players.length) {
+    dropdown.innerHTML = '<div class="auth-player-empty">没有匹配的正式球员</div>';
+    dropdown.style.display = 'block';
+    bindRegisterPlayerDropdownActions(dropdown);
+    return;
+  }
+  dropdown.innerHTML = players.map(p => `
+    <button type="button" class="auth-player-option" data-player-id="${authEscape(p.id)}">
+      <img src="${authEscape(DB.playerPhotoUrl(p))}" alt="">
+      <span>
+        <strong>${authEscape(p.name)}${p.number ? ' · #'+authEscape(p.number) : ''}</strong>
+        <em>${authEscape(p.position || '正式球员')}</em>
+      </span>
+    </button>
+  `).join('');
+  dropdown.style.display = 'block';
+  bindRegisterPlayerDropdownActions(dropdown);
+}
+
+function bindRegisterPlayerDropdownActions(dropdown){
+  dropdown.querySelectorAll('.auth-player-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = DB.getPlayerById(btn.dataset.playerId);
+      if (!p) return;
+      document.getElementById('regTargetPlayerId').value = p.id;
+      document.getElementById('regTargetPlayerSearch').value = p.name + (p.number ? ' · #'+p.number : '');
+      document.getElementById('regTargetPlayerSelected').innerHTML = `已选择 <strong style="color:var(--gold-bright)">${authEscape(p.name)}</strong>`;
+      dropdown.style.display = 'none';
+    });
+  });
+}
+
+window.openLinkEmailPanel = function(){
+  ensureAuthModal();
+  document.getElementById('authModal').classList.add('open');
+  switchMTab('link-email');
 };
 
 // ----- Global modal control helpers -----
@@ -286,6 +502,7 @@ window.openModal = function(which){
   ensureAuthModal();
   document.getElementById('authModal').classList.add('open');
   switchMTab(which || 'login');
+  if ((which || 'login') === 'register') setRegisterMode('trial');
   // 验证码初始值在 HTML 里写死（"A8K2"/"M5X9"）只是占位符；
   // 每次打开 modal 都要刷一次成真随机码，否则用户每次看到的都是同一组
   if (typeof window.refreshCaptcha === 'function') {
@@ -364,7 +581,7 @@ window.handleLogin = async function(e){
     // 拉新 cache（特别是 bind_codes 在 admin 登录后需要）
     await DB.reload();
     setTimeout(() => {
-      if (u.role === 'admin') window.location.href = 'admin.html';
+      if (DB.isAdminUser && DB.isAdminUser()) window.location.href = 'admin.html';
       else window.location.href = 'dashboard.html';
     }, 600);
   } catch (ex) {
@@ -382,20 +599,59 @@ window.handleRegister = async function(e){
   if (cap !== expected) { err.textContent = '验证码错误'; refreshCaptcha('captcha2'); return; }
   const pwd = document.getElementById('regPwd').value;
   const pwd2 = document.getElementById('regPwd2').value;
+  const mode = document.getElementById('regMode')?.value || 'trial';
   if (pwd !== pwd2) { err.textContent = '两次密码不一致'; return; }
   if (pwdScore(pwd) < 2) { err.textContent = '密码强度不足，至少包含字母和数字'; return; }
+  const displayName = document.getElementById('regName').value.trim();
+  const payload = {
+    email: document.getElementById('regEmail').value,
+    password: pwd,
+    displayName,
+    playerName: displayName,
+    registrationMode: mode
+  };
+  if (mode === 'bind_request') {
+    const targetId = document.getElementById('regTargetPlayerId').value;
+    if (!targetId) { err.textContent = '请选择要绑定的正式球员档案'; return; }
+    const targetPlayer = DB.getPlayerById(targetId);
+    payload.bindRequest = {
+      requestedPlayerId: targetId,
+      realName: targetPlayer?.name || displayName,
+      nickname: document.getElementById('regTeamNickname').value.trim() || payload.displayName,
+      jerseyNumber: '',
+      contactTail: document.getElementById('regWechatId').value.trim(),
+      note: document.getElementById('regVerifyInfo').value.trim()
+    };
+  }
   try {
-    await DB.register({
-      email: document.getElementById('regEmail').value,
-      password: pwd,
-      displayName: document.getElementById('regName').value
-    });
-    toast('注册成功！你现在是「试训队员」，参加 8 次训练自动升正式 ★', 'success');
+    await DB.register(payload);
+    toast(mode === 'bind_request' ? '注册成功，绑定申请已提交给管理员' : '注册成功！你现在是试训队员，可以签到累计积分', 'success');
     closeModal();
     setTimeout(() => window.location.href = 'dashboard.html', 1200);
   } catch (ex) {
     err.textContent = ex.message;
     refreshCaptcha('captcha2');
+  }
+};
+
+window.handleLinkEmail = async function(e){
+  e.preventDefault();
+  const err = document.getElementById('linkErr');
+  err.textContent = '';
+  const pwd = document.getElementById('linkPwd').value;
+  if (pwdScore(pwd) < 2) { err.textContent = '密码强度不足，至少包含字母和数字'; return; }
+  try {
+    const u = await DB.linkEmail({
+      code: document.getElementById('linkCode').value,
+      email: document.getElementById('linkEmail').value,
+      password: pwd,
+      displayName: document.getElementById('linkName').value
+    });
+    toast('关联成功，欢迎 ' + u.displayName, 'success');
+    closeModal();
+    setTimeout(() => window.location.href = 'dashboard.html', 800);
+  } catch (ex) {
+    err.textContent = ex.message;
   }
 };
 

@@ -3,13 +3,13 @@
 > 面向下一轮 Codex/Claude 接手。这里只保留当前状态、硬规则、关键契约和排障入口；逐轮历史已压缩，旧长版已备份到 `orion-demo/backups/`。
 
 最后整理：2026-05-15  
-本轮状态：管理员权限等级 + 数据/运营权限组拆分已部署到微信云托管；部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
+本轮状态：`players.html?wallpaper=1` 动态壁纸模式已部署到微信云托管；部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
 
 ---
 
 ## 0. 先读这几条
 
-- 当前线上版本：`express-knlw-031-20260515155850`，2026-05-15 16:01 部署。
+- 当前线上版本：`express-knlw-032`，2026-05-15 16:28 部署。
 - 线上域名：`https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com`
 - 云托管控制台：`https://cloud.weixin.qq.com/cloudrun/service/express-knlw`
 - 部署必须走“本地预览 -> 用户确认 -> 云部署”。每一次部署都要用户本轮明确同意，不能沿用旧授权。
@@ -54,6 +54,7 @@
 
 | 版本 | 时间 | 摘要 | 验证 |
 |---|---:|---|---|
+| `express-knlw-032` | 2026-05-15 16:28 | `players.html?wallpaper=1` 动态壁纸模式；全屏星阵；复用管理员全站发布的星阵/星尘动效；隐藏导航、筛选、HUD、弹卡和管理员面板 | `deploy:verify --expected-version express-knlw-032` 通过；线上 `/api/health` 200；线上 `players.html?wallpaper=1` 含 `wallpaper-mode`；浏览器实测 52 个节点、WebGL 运行中、操作 UI 隐藏 |
 | `express-knlw-031-20260515155850` | 2026-05-15 16:01 | 管理员权限 A/B/C + 数据组/运营组权限点；后台按权限显示；账户列表三维筛选；A 级删除账户；注册绑定申请/网页关联码流程 | `deploy:verify` 通过；线上 `/api/health` 200；线上 `admin.html`/`db.js?v=18`/`auth.js?v=17` 资源检查通过 |
 | `express-knlw-030-20260515114335` | 2026-05-15 11:46 | 球员页 `STARDUST` 高级粒子项、WebGL `three.core.js` 白名单、星阵热路径性能优化 | `deploy:verify` 通过；线上 `/api/health` 200；线上可访问 `three.core.js` |
 
@@ -61,6 +62,7 @@
 
 | 版本 | 摘要 |
 |---|---|
+| `032` | `players.html?wallpaper=1` 动态壁纸模式，复用管理员全站星阵发布配置 |
 | `031` | 管理员权限分级、数据/运营权限组、账户筛选、A 级删除账户、绑定申请/网页关联码 |
 | `029` / `028` | 球员页 WebGL 粒子可见性与轻量 DOM 星尘兜底，管理员可切换星尘模式 |
 | `027` | 顶部导航顺序：首页 / 球员 / 活动 / 比赛 / 积分榜 / 名人堂 / 联系 |
@@ -77,7 +79,6 @@
 
 - 无已知运行时代码未部署。
 - 部署后仅更新了本文件和 `../DESIGN_BRIEF.md` 的记录性内容；不影响线上运行。
-- 如果后续要上线新功能，仍需先本地预览并获得用户本轮明确同意，再执行云部署和 `deploy:verify`。
 
 ---
 
@@ -283,7 +284,7 @@ bound_player_id -----------------> player.id
 - `DB.isOrionTeam(name)` 同时识别棒球“猎户星”和慢垒“猎户座”，不要改窄。
 - `game-detail.html` 4 张数据表保留：猎户/对手 batting + pitching；列头点击排序；`tfoot` 合计行永不参与排序。
 - `players.html` 星阵配置通过 `site_settings` 发布；自定义模板仍在管理员本机 `localStorage`。群星排列 / 全站视觉配置属于 A 全站级权限。
-- 普通访客的低动效偏好优先于管理员发布配置。
+- 普通访客的低动效偏好优先于管理员发布配置；`players.html?wallpaper=1` 是例外，壁纸模式强制保留动态效果以便 Wallpaper Engine 使用。
 - Three.js r184 需要静态放行 `three.module.js` 和 `three.core.js`，不要只白名单 module。
 
 ---
@@ -293,7 +294,7 @@ bound_player_id -----------------> player.id
 | 页面 | 当前状态 |
 |---|---|
 | `index.html` | 首页 Hero + 报刊式卷首 + Quick Nav + 积分规则 + 负责人/球队信息；联系锚点为 `#contact` |
-| `players.html` | 星阵首屏、题字、管理员编队台、`STARDUST` 高级项、点击星点弹 v2.4 球星卡 |
+| `players.html` | 星阵首屏、题字、管理员编队台、`STARDUST` 高级项、点击星点弹 v2.4 球星卡；`?wallpaper=1` 进入全屏动态壁纸模式 |
 | `dashboard.html` | 个人能力剖面、真实身份优先、昵称/自定义头像为 own-view 辅助 |
 | `games.html` / `tournament.html` | 赛事索引与赛事详情，排行榜可排序 |
 | `game-detail.html` | box score、逐局、图表、4 张 sortable 表、MVP、highlights |

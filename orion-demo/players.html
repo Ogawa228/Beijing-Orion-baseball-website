@@ -8,6 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=24">
 <script src="assets/js/db.js?v=18"></script>
+<script>
+(() => {
+  try {
+    if (new URLSearchParams(window.location.search).get('wallpaper') === '1') {
+      document.documentElement.classList.add('wallpaper-mode');
+    }
+  } catch (_) {}
+})();
+</script>
 <style>
 @font-face {
   font-family: "OrionQijiTitle";
@@ -2284,6 +2293,133 @@ body.arm-card-open {
     animation: none !important;
   }
 }
+
+/* Wallpaper Engine mode: /players.html?wallpaper=1 */
+html.wallpaper-mode,
+html.wallpaper-mode body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020814;
+}
+html.wallpaper-mode body {
+  margin: 0;
+}
+html.wallpaper-mode .nav,
+html.wallpaper-mode footer,
+html.wallpaper-mode .toast-wrap,
+html.wallpaper-mode .modal-mask {
+  display: none !important;
+}
+html.wallpaper-mode .roster-experience {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+html.wallpaper-mode .roster-arm-wrap {
+  width: 100vw;
+  height: 100vh;
+  margin-left: 0;
+  margin-right: 0;
+}
+html.wallpaper-mode .orion-arm-stage {
+  min-height: 100vh;
+  height: 100vh;
+  background-position: center 42%;
+}
+html.wallpaper-mode .orion-arm-stage::before {
+  background:
+    radial-gradient(ellipse at 50% 44%, transparent 0 34%, rgba(5,11,24,.12) 58%, rgba(5,11,24,.66) 100%),
+    linear-gradient(90deg, rgba(5,11,24,.62), transparent 18% 82%, rgba(5,11,24,.62));
+}
+html.wallpaper-mode .orion-arm-stage::after {
+  opacity: .62;
+}
+html.wallpaper-mode .arm-stage-controls {
+  top: clamp(26px, 5.5vh, 72px);
+  width: min(860px, calc(100vw - 56px));
+  pointer-events: none;
+}
+html.wallpaper-mode .orion-arm-stage.has-arm-admin-panel .arm-stage-controls {
+  left: 50%;
+  width: min(860px, calc(100vw - 56px));
+  transform: translateX(-50%);
+}
+html.wallpaper-mode .arm-title-script {
+  font-size: clamp(46px, 7.2vw, 112px);
+  opacity: .94;
+}
+html.wallpaper-mode .arm-title-script::after {
+  width: min(520px, 68vw);
+  opacity: .72;
+}
+html.wallpaper-mode .arm-stage-mark {
+  opacity: .76;
+}
+html.wallpaper-mode .arm-search-console,
+html.wallpaper-mode .arm-hud,
+html.wallpaper-mode .arm-focus-panel,
+html.wallpaper-mode .arm-motion-toggle,
+html.wallpaper-mode .arm-admin-panel,
+html.wallpaper-mode .arm-card-modal,
+html.wallpaper-mode .arm-empty-state {
+  display: none !important;
+}
+html.wallpaper-mode .arm-node-layer,
+html.wallpaper-mode .arm-node {
+  pointer-events: none;
+}
+html.wallpaper-mode .arm-node {
+  cursor: default;
+}
+html.wallpaper-mode .arm-node-name {
+  opacity: .68;
+}
+html.wallpaper-mode .orion-arm-stage[data-density="dense"] .arm-node-name {
+  opacity: .48;
+}
+html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
+  opacity: .26;
+  transform: translate(-50%, -2px) scale(.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.wallpaper-mode .arm-node {
+    animation:
+      arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
+      arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite !important;
+    animation-delay:
+      calc(var(--arm-i, 0) * -0.21s),
+      calc(var(--arm-i, 0) * -0.13s) !important;
+    transition:
+      opacity .24s var(--ease),
+      filter .24s var(--ease) !important;
+  }
+  html.wallpaper-mode .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) {
+    animation:
+      arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
+      arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite,
+      arm-or-path-node var(--arm-path-duration) ease-in-out infinite !important;
+    animation-delay:
+      calc(var(--arm-i, 0) * -0.21s),
+      calc(var(--arm-i, 0) * -0.13s),
+      var(--or-delay) !important;
+  }
+}
+@media (max-width: 640px) {
+  html.wallpaper-mode .roster-experience,
+  html.wallpaper-mode .roster-arm-wrap,
+  html.wallpaper-mode .orion-arm-stage {
+    min-height: 100svh;
+    height: 100svh;
+  }
+  html.wallpaper-mode .arm-stage-controls {
+    top: 20px;
+    width: calc(100vw - 28px);
+  }
+  html.wallpaper-mode .arm-title-script {
+    font-size: clamp(36px, 12vw, 62px);
+  }
+}
 </style>
 </head>
 <body>
@@ -2457,7 +2593,16 @@ body.arm-card-open {
 <script>
 (async () => {
 await window.dbReady();
-buildNav('players');
+const isWallpaperMode = document.documentElement.classList.contains('wallpaper-mode')
+  || new URLSearchParams(window.location.search).get('wallpaper') === '1';
+if (isWallpaperMode) {
+  document.documentElement.classList.add('wallpaper-mode');
+  document.body.classList.add('wallpaper-mode');
+  document.title = '猎户群星动态壁纸 · 北京猎户座';
+  document.querySelector('meta[name="viewport"]')?.setAttribute('content', 'width=device-width,initial-scale=1,viewport-fit=cover');
+} else {
+  buildNav('players');
+}
 // 主球员墙只显示 verified（正式）；casual（试训）走顶部独立 section
 const allPlayers = DB.allPlayers();
 const players = allPlayers.filter(p => DB.getPlayerLevel(p) === 'verified');
@@ -2557,7 +2702,7 @@ const armTemplateName = document.getElementById('armTemplateName');
 const armGlobalStatus = document.getElementById('armGlobalStatus');
 const armGlobalPublish = document.getElementById('armGlobalPublish');
 const armParticleStatus = document.getElementById('armParticleStatus');
-const armReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const armReducedMotion = !isWallpaperMode && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ARM_LOW_MOTION_KEY = 'orion.players.lowMotion.v1';
 function loadArmLowMotionPreference() {
   try {
@@ -2572,7 +2717,7 @@ function saveArmLowMotionPreference(enabled) {
     else window.localStorage?.removeItem(ARM_LOW_MOTION_KEY);
   } catch (_) {}
 }
-const armStoredLowMotion = loadArmLowMotionPreference();
+const armStoredLowMotion = isWallpaperMode ? false : loadArmLowMotionPreference();
 const currentUser = DB.currentUser();
 const isAdminUser = !!(currentUser && DB.hasPermission && DB.hasPermission('system:settings'));
 const armState = {
@@ -3278,8 +3423,9 @@ function saveCurrentArmTemplate() {
 
 function initArmAdminPanel() {
   if (!armAdminPanel) return;
-  armStage.classList.toggle('has-arm-admin-panel', !!isAdminUser);
+  armStage.classList.toggle('has-arm-admin-panel', !!isAdminUser && !isWallpaperMode);
   applyArmAdminSettings({ persist: false, rerenderControls: false });
+  if (isWallpaperMode) return;
   if (!isAdminUser) return;
   armAdminPanel.hidden = false;
   updateArmGlobalStatus('live');
@@ -3348,13 +3494,17 @@ function renderArmNodes(filtered) {
     const onlineSt = runtime.online;
     const jersey = p.number ? `#${escapeAttr(p.number)}` : '#--';
     const metric = points ? `★ ${points}` : `${stats.games || 0} GP`;
+    const nodeA11y = isWallpaperMode
+      ? 'tabindex="-1" aria-hidden="true"'
+      : `aria-label="${escapeAttr(p.name)} ${jersey}"`;
+    const imageLoading = isWallpaperMode ? 'eager' : 'lazy';
     return `<button class="arm-node ${runtime.posClass} status-${escapeAttr(onlineSt.status || 'offline')}" type="button" role="listitem"
         data-player-id="${escapeAttr(p.id)}" data-arm-index="${i}"
         style="--arm-i:${i}"
-        aria-label="${escapeAttr(p.name)} ${jersey}">
+        ${nodeA11y}>
         <span class="arm-node-photo-wrap">
           <span class="arm-node-particles" aria-hidden="true"></span>
-          <img class="arm-node-photo" src="${runtime.photoUrl}" alt="" loading="lazy" decoding="async" onerror="this.src='assets/img/logo.jpg'">
+          <img class="arm-node-photo" src="${runtime.photoUrl}" alt="" loading="${imageLoading}" decoding="async" onerror="this.src='assets/img/logo.jpg'">
           <span class="arm-node-dot ${onlineSt.status}" aria-hidden="true"></span>
         </span>
         <span class="arm-node-name">${escapeAttr(p.name)}</span>
@@ -3456,6 +3606,16 @@ function getArmStageBounds(rect) {
   const w = rect.width || window.innerWidth;
   const h = rect.height || 760;
   const mobile = w < 720;
+  if (isWallpaperMode) {
+    const sidePad = mobile ? 34 : clamp(w * .055, 58, 120);
+    const topPad = mobile ? clamp(h * .18, 138, 210) : clamp(h * .19, 156, 228);
+    const bottomPad = mobile ? clamp(h * .12, 78, 124) : clamp(h * .10, 78, 118);
+    const areaW = Math.max(1, w - sidePad * 2);
+    const areaH = Math.max(1, h - topPad - bottomPad);
+    const centerX = sidePad + areaW * .5;
+    const centerY = topPad + areaH * .5;
+    return { w, h, mobile, sidePad, topPad, bottomPad, areaW, areaH, centerX, centerY };
+  }
   const sidePad = mobile ? 42 : 76;
   const topPad = mobile ? 304 : 238;
   const bottomPad = mobile ? clamp(h * .22, 176, 232) : 112;
@@ -4424,7 +4584,7 @@ function renderTryout(){
 }
 
 function render(){
-  renderTryout();
+  if (!isWallpaperMode) renderTryout();
   const filtered = players.filter(p => {
     if (!posMatches(p, activeFilter.pos)) return false;
     return DB.fuzzyMatch(activeFilter.search, p.name, p.number, p.position, ...(p.titles||[]));

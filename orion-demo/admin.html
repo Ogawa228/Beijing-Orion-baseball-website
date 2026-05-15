@@ -1,0 +1,3883 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理后台 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+<!-- Real parsers: pdf.js for GameChanger PDF exports, SheetJS for Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  // pdf.js v4 is ESM-only — import and expose globally so our classic
+  // <script> code below can reach it via window.pdfjsLib.
+  import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs";
+  window.pdfjsLib = pdfjsLib;
+  // Signal to the main script that pdf.js is ready
+  window.dispatchEvent(new Event('pdfjsReady'));
+</script>
+<script src="assets/js/parser.js?v=15"></script>
+<style>
+  .match-action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px}
+  .match-action-card{background:rgba(12,29,53,.62);border:1px solid var(--line);border-radius:8px;padding:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .match-action-card h4{margin:0 0 8px;font-size:16px;color:var(--text);font-family:var(--font-display)}
+  .match-action-card p{margin:0 0 14px;color:var(--text-mute);font-size:12px;line-height:1.6}
+  .review-card{background:linear-gradient(145deg,rgba(25,57,101,.72),rgba(9,22,42,.82));border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center}
+  .review-card img{width:72px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+  .review-card strong{display:block;color:var(--text);font-size:15px}
+  .review-card .review-sub{color:var(--text-mute);font-size:12px;line-height:1.6;margin-top:3px}
+  .review-card .review-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .review-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(46,107,255,.38);background:rgba(46,107,255,.14);color:var(--blue-300);border-radius:999px;padding:3px 8px;font-size:11px}
+  .review-chip.warn{border-color:rgba(228,199,122,.45);background:rgba(228,199,122,.12);color:var(--gold-bright)}
+  .review-chip.danger{border-color:rgba(255,107,107,.45);background:rgba(255,107,107,.10);color:#ff9a9a}
+  .revision-workbench{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:16px;align-items:start}
+  .revision-list,.revision-editor{background:rgba(12,29,53,.58);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .revision-game-card{width:100%;text-align:left;background:rgba(18,43,78,.62);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);cursor:pointer;margin-bottom:10px}
+  .revision-game-card.active{border-color:var(--blue-400);box-shadow:0 0 0 1px rgba(46,107,255,.45),0 0 22px rgba(46,107,255,.18)}
+  .revision-game-card .title{font-size:13px;font-weight:600;line-height:1.45}
+  .revision-game-card .meta{font-size:11px;color:var(--text-mute);line-height:1.5;margin-top:4px}
+  .revision-section{border:1px solid var(--line);border-radius:8px;background:rgba(7,18,34,.34);padding:14px;margin-top:14px}
+  .revision-section h4{margin:0 0 12px;font-size:14px;color:var(--gold-bright);letter-spacing:.04em}
+  .revision-form-grid{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px}
+  .revision-field label{display:block;font-size:11px;color:var(--text-mute);margin-bottom:5px}
+  .revision-field input,.revision-field select,.revision-field textarea{width:100%;box-sizing:border-box;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);padding:9px 10px;font:inherit;font-size:12px}
+  .revision-field textarea{min-height:74px;resize:vertical;line-height:1.55}
+  .revision-player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .revision-player-card{position:relative;overflow:hidden;background:linear-gradient(155deg,rgba(28,62,109,.82),rgba(8,20,38,.92));border:1px solid var(--line);border-radius:8px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 30px rgba(0,0,0,.18)}
+  .revision-player-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--blue-400));opacity:.8}
+  .revision-player-card.warn{border-color:rgba(228,199,122,.42);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 24px rgba(228,199,122,.10)}
+  .revision-player-top{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  .revision-player-avatar{box-sizing:border-box;width:48px;height:48px;aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center;flex:0 0 48px;background:radial-gradient(circle at 35% 25%,rgba(63,127,255,.92),var(--blue-600));border:2px solid rgba(228,199,122,.74);padding:0;color:#fff;font-family:var(--font-display);font-size:18px;line-height:1;box-shadow:0 0 22px rgba(46,107,255,.22),inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden}
+  .revision-player-photo-frame{position:relative;width:100%;height:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;background:var(--navy-900)}
+  .revision-player-photo-frame img{position:absolute;inset:0;width:100% !important;height:100% !important;max-width:none !important;border-radius:50%;object-fit:cover;object-position:center 20%;display:block}
+  .revision-player-card strong{display:block;color:var(--text);font-size:15px;line-height:1.25}
+  .revision-player-meta{font-size:11px;color:var(--text-mute);line-height:1.5;margin-top:3px}
+  .revision-player-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+  .revision-stat-tile{min-width:0;background:rgba(6,17,32,.46);border:1px solid var(--line);border-radius:8px;padding:9px 8px;text-align:center}
+  .revision-stat-tile span{display:block;font-size:10px;color:var(--text-mute);letter-spacing:.08em;margin-bottom:5px}
+  .revision-stat-tile b{display:block;font-family:var(--font-display);font-size:17px;color:var(--gold-bright);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .revision-player-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:11px;margin-top:10px}
+  .revision-line-modal{max-width:min(720px, calc(100vw - 28px))}
+  .revision-line-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .revision-line-group{background:rgba(7,18,34,.46);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .revision-line-group h4{margin:0 0 12px;font-size:13px;color:var(--gold-bright);letter-spacing:.06em}
+  .revision-line-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .revision-line-field label{display:block;font-size:10px;color:var(--text-mute);letter-spacing:.06em;margin-bottom:5px}
+  .revision-line-field input,.revision-line-field select{width:100%;box-sizing:border-box;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);padding:9px 10px;font:inherit;font-size:13px}
+  .revision-line-field input:focus,.revision-line-field select:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 2px rgba(46,107,255,.18)}
+  .revision-review-check{display:flex;gap:8px;align-items:center;color:var(--text-dim);font-size:12px;background:rgba(228,199,122,.08);border:1px solid rgba(228,199,122,.22);border-radius:8px;padding:10px 12px}
+  .revision-review-check input{accent-color:var(--gold-bright)}
+  .revision-empty{padding:26px;text-align:center;color:var(--text-mute);font-size:13px;border:1px dashed var(--line);border-radius:8px;background:rgba(255,255,255,.02)}
+  .revision-audit-row{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px;border-top:1px solid var(--line);padding:10px 0;font-size:12px}
+  .revision-audit-row:first-child{border-top:none}
+  @media(max-width:860px){
+    .review-card{grid-template-columns:58px minmax(0,1fr);gap:10px}
+    .review-card img{width:58px;height:48px}
+    .review-card .actions{grid-column:1/-1;justify-content:flex-start}
+    .revision-workbench{grid-template-columns:1fr}
+    .revision-form-grid{grid-template-columns:1fr}
+    .revision-line-grid{grid-template-columns:1fr}
+    .revision-player-stats{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('admin') --></nav>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow" style="color:var(--gold-bright)">Admin · 管理后台</div>
+      <h2 class="section-title">猎户座后台管理系统</h2>
+      <p class="section-sub">账户管理 · 注册球员管理 · 比赛数据 · 名人堂 · 高亮审核</p>
+    </div>
+
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <a data-section="people" class="active">👥 人员 · People</a>
+        <a data-section="match">⚾ 赛事 · Match</a>
+        <a data-section="content">📰 内容 · Content</a>
+        <a data-section="system">⚙ 系统 · System</a>
+      </aside>
+
+      <main>
+        <div class="admin-subtabs" id="adminSubtabs"></div>
+        <!-- Player Pool -->
+        <div class="admin-panel" data-panel="pool">
+          <h3>注册球员管理</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            正式球员和试训球员统一在这里管理。试训队员的签到和手动积分会记在试训档案上，绑定或升级为正式球员时自动迁移。<br>
+            个人标语、荣誉标签、头像、高光、绑定码、合并球员、积分明细都从球员卡进入，减少管理员在多个页面之间切换。
+          </p>
+          <div class="admin-panel-tools">
+            <button type="button" class="btn" onclick="openAddPlayer()">+ 添加球员</button>
+            <button type="button" class="btn ghost" onclick="document.getElementById('batchModal').classList.add('open')">批量导入</button>
+            <details class="admin-tools-menu">
+              <summary>管理工具</summary>
+              <div class="admin-tools-dropdown">
+                <button type="button" onclick="openMergePlayer()">合并球员</button>
+                <button type="button" onclick="activateAdminTab('codes')">绑定码中心</button>
+                <button type="button" onclick="activateAdminTab('points')">积分管理</button>
+              </div>
+            </details>
+          </div>
+          <div class="people-toolbar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+            <input type="text" id="poolSearch" placeholder="🔍 搜索 姓名 / 别名 / 球衣号 / 位置" oninput="renderPool()">
+            <div class="people-segment small" id="poolLevelFilter">
+              <button type="button" class="active" data-level="" onclick="setPoolLevelFilter('')">全部</button>
+              <button type="button" data-level="verified" onclick="setPoolLevelFilter('verified')">正式</button>
+              <button type="button" data-level="casual" onclick="setPoolLevelFilter('casual')">试训</button>
+            </div>
+          </div>
+          <div class="pool-grid player-admin-grid" id="poolGrid"></div>
+        </div>
+
+        <!-- Bind codes -->
+        <div class="admin-panel" data-panel="codes" style="display:none">
+          <h3>绑定码中心</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            为每个球员生成一个专属绑定码。球员注册账号后输入绑定码，系统自动将账号关联到球员真实姓名，并拉取照片与赛季数据。
+          </p>
+          <div class="people-toolbar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+            <input type="text" id="codeSearch" placeholder="🔍 搜索 绑定码 / 球员名 / 球衣号 / 使用状态" oninput="renderCodes()">
+            <button type="button" class="btn ghost" style="padding:8px 14px;font-size:12px" onclick="activateAdminTab('pool')">返回注册球员</button>
+          </div>
+          <div class="field" style="max-width:400px;margin-bottom:16px;position:relative">
+            <label>为球员生成绑定码</label>
+            <input type="text" id="codePlayerSearch" autocomplete="off"
+                   placeholder="🔍 输入姓名 / 球衣号搜索..."
+                   style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit;width:100%;box-sizing:border-box">
+            <input type="hidden" id="codePlayerId">
+            <div id="codePlayerDropdown"
+                 style="display:none;position:absolute;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;margin-top:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+            <div id="codePlayerSelected" style="margin-top:6px;font-size:12px;color:var(--text-dim);min-height:18px"></div>
+          </div>
+          <button class="btn" onclick="genCode()">生成绑定码</button>
+          <h4 style="margin-top:32px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">已生成的绑定码</h4>
+          <div class="code-list" id="codeList" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Games -->
+        <div class="admin-panel" data-panel="games" style="display:none">
+          <h3>比赛数据管理</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            这里按操作流程拆开：先维护<strong style="color:var(--gold-bright)">赛事设置</strong>，再导入和管理<strong style="color:var(--gold-bright)">比赛数据</strong>；解析结果先确认，已入库数据走修订中心。
+          </p>
+
+          <!-- Sub tabs -->
+          <div class="tabs" style="margin-bottom:20px">
+            <button class="tab active" data-gtab="tournaments">赛事设置</button>
+            <button class="tab" data-gtab="matches">比赛数据</button>
+            <button class="tab" data-gtab="confirm">数据确认</button>
+            <button class="tab" data-gtab="revise">数据修订</button>
+          </div>
+
+          <!-- Tournaments sub-panel -->
+          <div data-gpanel="tournaments">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+              <button class="btn" onclick="openTournamentModal()">+ 创建新赛事</button>
+              <div style="font-size:12px;color:var(--text-mute)">支持杯赛 / 联赛 / 训练赛 / 友谊赛</div>
+            </div>
+            <div id="tournamentList" class="event-list"></div>
+          </div>
+
+          <!-- Matches sub-panel -->
+          <div data-gpanel="matches" style="display:none">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+              <button class="btn" onclick="openGameModal()">+ 单场导入</button>
+              <button class="btn ghost" onclick="openGameBatchModal()">批量导入</button>
+              <select id="matchFilterTournament" onchange="renderGames()" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:8px 12px;color:var(--text);font:inherit;font-size:13px">
+                <option value="">全部赛事</option>
+              </select>
+            </div>
+            <!-- Batch selection action bar (shown when 1+ games selected) -->
+            <div id="gameBatchBar" style="display:none;background:rgba(228,199,122,.08);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+              <span style="color:var(--gold-bright);font-size:13px"><strong id="gameBatchCount">0</strong> 场已选</span>
+              <button class="btn" style="font-size:12px;padding:6px 12px" onclick="toggleGameBatchSelectAll()">全选 / 取消</button>
+              <button class="btn" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,var(--navy-700),var(--navy-600))" onclick="openGameBatchReassign()">移到赛事...</button>
+              <button class="btn danger" style="font-size:12px;padding:6px 12px" onclick="batchDeleteGames()">删除选中</button>
+              <button style="font-size:12px;padding:6px 12px;background:transparent;border:1px solid var(--line);color:var(--text-mute)" onclick="clearGameSelection()">清空选择</button>
+            </div>
+            <div id="gameList" class="event-list"></div>
+          </div>
+
+          <!-- Import sub-panel -->
+          <div data-gpanel="import" style="display:none">
+            <div class="match-action-grid">
+              <div class="match-action-card">
+                <h4>单场 PDF / Excel</h4>
+                <p>上传单个 GameChanger PDF，或结构化 Excel。解析后先进入“数据确认”，确认后才入库。</p>
+                <button class="btn" onclick="openGameModal()">+ 单场导入</button>
+              </div>
+              <div class="match-action-card">
+                <h4>批量导入文件夹</h4>
+                <p>同一子文件夹内的 PDF 和图片自动配对，先批量解析，再统一进入确认队列。</p>
+                <button class="btn" onclick="openGameBatchModal()" style="background:linear-gradient(135deg,var(--gold),var(--gold-bright));color:#0A1628">📁 选择文件夹</button>
+              </div>
+            </div>
+            <div class="revision-empty">导入动作只负责解析，不直接污染线上数据。请在“数据确认”核对姓名、比分、封面和关键字段后入库。</div>
+          </div>
+
+          <!-- Data confirmation sub-panel -->
+          <div data-gpanel="confirm" style="display:none">
+            <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px">
+              <div>
+                <h4 style="margin:0;color:var(--text);font-family:var(--font-display)">待确认数据</h4>
+                <div style="font-size:12px;color:var(--text-mute);margin-top:4px">刚解析完成、尚未写入正式比赛库的数据会停在这里。</div>
+              </div>
+              <button class="btn ghost" onclick="activateGameTab('matches')">继续导入</button>
+            </div>
+            <div id="gameReviewList" class="event-list"></div>
+          </div>
+
+          <!-- Data revision sub-panel -->
+          <div data-gpanel="revise" style="display:none">
+            <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px">
+              <div>
+                <h4 style="margin:0;color:var(--text);font-family:var(--font-display)">已有数据修订</h4>
+                <div style="font-size:12px;color:var(--text-mute);margin-top:4px">左侧选择已入库比赛，右侧修订场次信息、球员数据并留下记录。</div>
+              </div>
+              <span class="review-chip warn" id="revisionContextChip">已入库</span>
+            </div>
+            <div class="revision-workbench">
+              <div class="revision-list">
+                <div class="people-toolbar" style="display:flex;gap:8px;flex-direction:column;margin-bottom:12px">
+                  <input type="text" id="revisionSearch" placeholder="🔍 搜索 日期 / 赛事 / 球队 / 球员" oninput="renderRevisionWorkbench()">
+                  <select id="revisionTournamentFilter" onchange="renderRevisionWorkbench()" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:9px 10px;color:var(--text);font:inherit;font-size:12px">
+                    <option value="">全部赛事</option>
+                  </select>
+                  <div id="revisionPlayerFilterHint" style="display:none;font-size:11px;color:var(--gold-bright)"></div>
+                </div>
+                <div id="revisionGameList"></div>
+              </div>
+              <div class="revision-editor" id="revisionEditor">
+                <div class="revision-empty">选择一场比赛开始修订。也可以从比赛详情页点击“修订本场数据”直达。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events -->
+        <div class="admin-panel" data-panel="events" style="display:none">
+          <h3>活动管理</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            创建训练、团建、年会、杯赛等活动。支持上传封面图、贴文正文、多张配图，类似小红书发帖。<br>
+            视频建议用 B 站 / YouTube 外链。<strong style="color:var(--gold-bright)">支持粘贴小红书帖子内容一键导入</strong>。
+          </p>
+          <button class="btn" onclick="openEventModal()">+ 创建新活动</button>
+
+          <h4 style="margin-top:32px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">已发布活动</h4>
+          <!-- Batch selection action bar (shown when 1+ events selected) -->
+          <div id="eventBatchBar" style="display:none;background:rgba(228,199,122,.08);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-top:12px;align-items:center;gap:12px;flex-wrap:wrap">
+            <span style="color:var(--gold-bright);font-size:13px"><strong id="eventBatchCount">0</strong> 个已选</span>
+            <button class="btn" style="font-size:12px;padding:6px 12px" onclick="toggleEventBatchSelectAll()">全选 / 取消</button>
+            <button class="btn danger" style="font-size:12px;padding:6px 12px" onclick="batchDeleteEvents()">删除选中</button>
+            <button style="font-size:12px;padding:6px 12px;background:transparent;border:1px solid var(--line);color:var(--text-mute)" onclick="clearEventSelection()">清空选择</button>
+          </div>
+          <div class="event-list" id="eventList" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Hall of Fame -->
+        <div class="admin-panel" data-panel="hof" style="display:none">
+          <h3>名人堂管理</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            选择球员加入名人堂，填写入选事迹。名人堂页面会按入选年份展示。
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:12px;align-items:end;max-width:700px">
+            <div class="field">
+              <label>球员</label>
+              <select id="hofPlayer" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+            </div>
+            <div class="field">
+              <label>入选事迹</label>
+              <input type="text" id="hofReason" placeholder="例如：2026 赛季 MVP · 单场 5 安打">
+            </div>
+            <button class="btn" onclick="addHOF()">加入</button>
+          </div>
+          <h4 style="margin-top:32px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">当前名人堂</h4>
+          <div class="pool-grid" id="hofGrid" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Highlights -->
+        <div class="admin-panel" data-panel="highlights" style="display:none">
+          <h3>高亮时刻</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            管理员可直接上传图片或视频外链作为高亮（默认已发布）。球员上传的需要审核后才会显示。
+          </p>
+          <button class="btn" onclick="openHLModal()">+ 上传高亮</button>
+          <div id="hlList" style="display:flex;flex-direction:column;gap:12px;margin-top:20px"></div>
+        </div>
+
+        <!-- Points Management -->
+        <div class="admin-panel points-admin-panel" data-panel="points" style="display:none">
+          <h3>积分管理</h3>
+          <p class="points-lede" style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            积分系统按公式自动累计：出场 / 比赛表现 / 赛季奖项。<strong style="color:var(--gold-bright)">GameChanger 已支持 1B/2B/3B/HR/TB 与个人 E 自动识别</strong>，识别缺失或赛后修正再由管理员手动加减。<br>
+            训练 / 活动签到：勾选出席球员一键记录，每人 +5 分。<a href="index.html#points-rules" style="color:var(--blue-400)">查看完整公式 →</a>
+          </p>
+
+          <!-- Sub tabs -->
+          <div class="tabs points-tabs" style="margin-bottom:20px">
+            <button class="tab active" data-ptab="adjust">手动加减分 · Adjust</button>
+            <button class="tab" data-ptab="attend">训练 / 活动签到 · Attendance</button>
+            <button class="tab" data-ptab="overview">全员积分 · Overview</button>
+          </div>
+
+          <!-- Adjust sub-panel -->
+          <div class="points-workflow" data-ppanel="adjust">
+            <h4 style="margin-top:0;font-size:14px;color:var(--text-dim);letter-spacing:.1em">为球员手动加 / 减分</h4>
+            <p style="font-size:12px;color:var(--text-mute);margin:-6px 0 14px">流程：① 搜球员（必填） → ② 关联到具体比赛（可选）→ ③ 选快捷或填数字 → ④ 提交。出现在球员积分时间线 + 排行榜累计。</p>
+
+            <div class="points-search-grid">
+            <!-- ① 球员搜索 -->
+            <div class="field" style="margin-bottom:14px;position:relative;max-width:520px">
+              <label>① 球员（搜索姓名 / 球衣号）</label>
+              <input type="text" id="adjPlayerSearch" autocomplete="off"
+                     placeholder="🔍 输入姓名、球衣号、位置任一关键词..."
+                     style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:10px;color:var(--text);font:inherit;width:100%;box-sizing:border-box">
+              <input type="hidden" id="adjPlayerId">
+              <div id="adjPlayerDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;margin-top:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+              <div id="adjPlayerSelected" style="margin-top:6px;font-size:12px;color:var(--text-dim);min-height:18px"></div>
+            </div>
+
+            <!-- ② 关联比赛（可选）-->
+            <div class="field" style="margin-bottom:14px;position:relative;max-width:520px">
+              <label>② 关联比赛（可选 · 模糊搜对手 / 日期 / 赛事）</label>
+              <input type="text" id="adjGameSearch" autocomplete="off"
+                     placeholder="🔍 比如「神策」「2026-03」「猛虎杯」..."
+                     style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:10px;color:var(--text);font:inherit;width:100%;box-sizing:border-box">
+              <input type="hidden" id="adjGameId">
+              <div id="adjGameDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;margin-top:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+              <div id="adjGameSelected" style="margin-top:6px;font-size:12px;color:var(--text-dim);min-height:18px">未关联具体比赛 · 该调整不会出现在某场 box-score 链接</div>
+            </div>
+            </div>
+
+            <!-- ③ 快捷按钮 -->
+            <div style="margin-bottom:8px;font-size:12px;color:var(--text-dim)">③ 快捷按钮（点了自动填下面的「数字」+「备注」）</div>
+            <div id="adjQuickBar" class="points-quickbar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:12px">
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(1,'一垒安打 1B')">1B +1</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(2,'二垒安打 2B')">2B +2</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(3,'三垒安打 3B')">3B +3</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px;border-color:rgba(228,199,122,.5);color:var(--gold-bright)" onclick="quickAdj(10,'全垒打 HR')">HR +10</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(2,'打点 RBI')">RBI +2</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(3,'三振 SO')">SO +3</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px;color:#ff8a8a" onclick="quickAdj(-3,'失误 E')">E -3</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px;color:#ff8a8a" onclick="quickAdj(-3,'保送 BB（投手）')">BB(投) -3</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(10,'单场 MVP')">MVP +10</button>
+              <button type="button" class="btn ghost" style="padding:6px 12px;font-size:12px" onclick="quickAdj(20,'队长 / 教练奖励')">奖励 +20</button>
+            </div>
+
+            <!-- ④ 数字 + 备注 + 提交 -->
+            <div class="points-submit-row" style="display:grid;grid-template-columns:1fr 2fr auto;gap:12px;margin-bottom:14px;align-items:end;max-width:520px">
+              <div class="field" style="margin:0">
+                <label>④ 积分变化</label>
+                <input type="number" id="adjDelta" placeholder="±N" style="font-family:var(--font-display);font-size:18px">
+              </div>
+              <div class="field" style="margin:0">
+                <label>备注（必填）</label>
+                <input type="text" id="adjReason" placeholder="自动填 / 自由编辑">
+              </div>
+              <button type="button" class="btn" onclick="submitAdjustment()" style="margin-bottom:0">提交</button>
+            </div>
+
+            <h4 style="margin-top:32px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">已记录的手动调整</h4>
+            <div id="adjList" style="margin-top:12px"></div>
+          </div>
+
+          <!-- Attendance sub-panel -->
+          <div class="points-workflow" data-ppanel="attend" style="display:none">
+            <h4 style="margin-top:0;font-size:14px;color:var(--text-dim);letter-spacing:.1em">记录训练 / 活动出席（每人 +5 分）</h4>
+            <div class="points-att-controls" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;align-items:end">
+              <div class="field" style="margin:0">
+                <label>类型</label>
+                <select id="attKind" onchange="onAttKindChange()" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:10px;color:var(--text);font:inherit">
+                  <option value="training">🏋 训练（+5）</option>
+                  <option value="event">🎉 活动（+5）</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>日期</label>
+                <input type="date" id="attDate" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:10px;color:var(--text);font:inherit">
+              </div>
+              <div class="field" id="attEventField" style="margin:0;grid-column:span 2;display:none">
+                <label>关联活动（可选）</label>
+                <select id="attEventId" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:10px;color:var(--text);font:inherit">
+                  <option value="">— 不关联具体活动 —</option>
+                </select>
+              </div>
+            </div>
+
+            <h4 style="margin-top:18px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">勾选出席球员</h4>
+            <div class="points-att-toolbar" style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <button class="btn ghost" style="padding:6px 14px;font-size:12px" onclick="toggleAttSelectAll()">全选 / 取消</button>
+              <input type="search" id="attSearch" placeholder="🔍 搜索球员..." style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:8px 12px;color:var(--text);font:inherit;font-size:13px;flex:1;min-width:200px">
+              <span style="color:var(--gold-bright);font-size:13px;line-height:32px"><span id="attCount">0</span> 人已选 → 共加 <span id="attSum">0</span> 分</span>
+            </div>
+            <div id="attRoster" class="points-att-roster" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:340px;overflow-y:auto;padding:12px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:8px"></div>
+
+            <div style="margin-top:18px">
+              <button class="btn" onclick="submitAttendance()">📝 记录签到</button>
+              <span style="color:var(--text-dim);font-size:12px;margin-left:12px">提交后所选球员各 +5 分进入"出场积分"</span>
+            </div>
+
+            <h4 style="margin-top:32px;font-size:14px;color:var(--text-dim);letter-spacing:.1em">已记录的签到</h4>
+            <div id="attList" style="margin-top:12px"></div>
+          </div>
+
+          <!-- Overview sub-panel -->
+          <div class="points-workflow" data-ppanel="overview" style="display:none">
+            <h4 style="margin-top:0;font-size:14px;color:var(--text-dim);letter-spacing:.1em">全员积分总览（按总分降序）</h4>
+            <div id="overviewList" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- Users -->
+        <div class="admin-panel" data-panel="users" style="display:none">
+          <h3>账户管理</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:16px">
+            查看所有注册用户、绑定情况、重置密码，也可以直接把账号绑定到正式球员档案。<br>
+            对已注册用户可发送站内绑定邀请，用户登录后能一键完成绑定。
+          </p>
+          <div id="userStatsBar" style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap"></div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="userSearch" placeholder="🔍 搜索 昵称 / 真实姓名 / 邮箱 / 球衣号"
+                   style="flex:1;min-width:240px;padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+            <select id="userRoleFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+              <option value="">全部角色</option>
+              <option value="admin">仅 admin</option>
+              <option value="player">仅 player</option>
+            </select>
+            <select id="userBindFilter" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+              <option value="">绑定状态</option>
+              <option value="bound">已绑定球员</option>
+              <option value="unbound">未绑定</option>
+            </select>
+            <select id="userSort" style="padding:8px 12px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;color:var(--text);font:inherit;font-size:13px">
+              <option value="recent">最近活跃 ↓</option>
+              <option value="created">最早注册 ↑</option>
+              <option value="name">昵称 A→Z</option>
+            </select>
+            <button class="btn ghost" id="userReloadBtn" style="padding:8px 14px;font-size:12px">🔄 刷新</button>
+          </div>
+          <div id="usersList" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <h4 style="margin:0;font-size:14px;color:var(--text-dim);letter-spacing:.1em">操作记录 · Audit Log</h4>
+            <button class="btn ghost" id="auditReloadBtn" style="padding:7px 12px;font-size:12px">刷新记录</button>
+          </div>
+          <div id="auditLogList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px"></div>
+        </div>
+
+        <!-- Settings -->
+        <div class="admin-panel" data-panel="settings" style="display:none">
+          <h3>系统设置</h3>
+          <p style="color:var(--text-mute);font-size:13px;margin-bottom:20px">
+            Demo 版数据存储在浏览器 localStorage 中。点击下方按钮可重置为初始状态。
+          </p>
+          <button class="btn ghost" onclick="if(confirm('确定要重置所有数据吗？所有注册用户、绑定码、比赛都会丢失！')){DB.reset();toast('已重置','success');setTimeout(()=>location.reload(),600)}">重置所有数据</button>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- Add player modal -->
+<div class="modal-mask" id="addPlayerModal">
+  <div class="modal" style="max-width:min(520px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('addPlayerModal').classList.remove('open')">×</button>
+    <h3>添加球员</h3>
+    <p class="modal-sub">填写姓名 + 上传照片即可加入花名册</p>
+    <form class="form" onsubmit="submitAddPlayer(event)" style="margin-top:0">
+      <div class="field"><label>真实姓名</label><input type="text" id="newName" required placeholder="例如：曹山"><div class="hint">建议与赛季报名表姓名一致，便于自动匹配比赛数据</div></div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
+        <div class="field"><label>球衣号</label><input type="text" id="newNumber" placeholder="07"></div>
+        <div class="field"><label>位置</label><input type="text" id="newPosition" placeholder="例如：三垒手 3B"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="field"><label>打击手</label>
+          <select id="newBats" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="">—</option>
+            <option value="R">右 R</option>
+            <option value="L">左 L</option>
+            <option value="S">双 S</option>
+          </select>
+        </div>
+        <div class="field"><label>投球手</label>
+          <select id="newThrows" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="">—</option>
+            <option value="R">右 R</option>
+            <option value="L">左 L</option>
+          </select>
+        </div>
+        <div class="field"><label>入队年份</label><input type="number" id="newJoinYear" placeholder="2024" min="2010" max="2099"></div>
+      </div>
+      <div class="field">
+        <label>个人标语 <span style="color:var(--text-mute);font-weight:400">（可选，<span id="sloganCharCount">0/14</span>）</span></label>
+        <input type="text" id="newSlogan" maxlength="14" placeholder="例如：以星辰之名" oninput="document.getElementById('sloganCharCount').textContent=this.value.length+'/14'">
+        <div class="hint">最多 14 个字，会作为金色 chip 显示在球员卡片名字下</div>
+      </div>
+      <div class="field">
+        <label>荣誉 / Titles <span style="color:var(--text-mute);font-weight:400">（可选，逗号分隔）</span></label>
+        <input type="text" id="newTitles" placeholder="例如：2026 MVP, 金手套 ×2, 名人堂">
+        <div class="hint">每个荣誉用英文/中文逗号分隔，前 3 个会显示在卡片上</div>
+      </div>
+      <div class="field">
+        <label>📸 球员照片</label>
+        <label class="file-picker">
+          <span class="icon">🖼</span>
+          <span class="label">点击上传球员照片</span>
+          <span class="hint">建议正方形或竖版人像 · ≤ 50 MB · 自动裁切（>8 MB 自动压缩）</span>
+          <input type="file" id="newPhotoFile" accept="image/*" onchange="previewCover(this,'newPhotoPreview')">
+        </label>
+        <div id="newPhotoPreview" class="file-preview"></div>
+      </div>
+      <div class="field err" id="newPlayerErr"></div>
+      <button type="submit" class="btn">添加</button>
+    </form>
+  </div>
+</div>
+
+<!-- Batch import modal -->
+<div class="modal-mask" id="batchModal">
+  <div class="modal" style="max-width:min(640px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('batchModal').classList.remove('open')">×</button>
+    <h3>批量导入球员</h3>
+    <p class="modal-sub">两步：先粘贴名单，再批量上传照片，按姓名自动匹配</p>
+
+    <div class="field">
+      <label>① 粘贴球员名单</label>
+      <textarea id="batchText" rows="6" placeholder="每行一个球员，格式：姓名,球衣号,位置&#10;例如：&#10;曹山,01,投手 P&#10;张三,15,二垒 2B&#10;李四,22,外野 OF" style="width:100%;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit;font-size:13px;resize:vertical;font-family:'SF Mono',ui-monospace,monospace"></textarea>
+      <div class="hint">支持「姓名,号码,位置」三列，号码和位置可省略；使用中文或英文逗号皆可</div>
+    </div>
+
+    <div class="field">
+      <label>② 批量上传照片（可选）</label>
+      <label class="file-picker">
+        <span class="icon">🖼🖼</span>
+        <span class="label">选择多张照片</span>
+        <span class="hint">文件名 = 球员姓名（如「曹山.jpg」）会被自动匹配</span>
+        <input type="file" id="batchPhotos" accept="image/*" multiple onchange="onBatchPhotos(this)">
+      </label>
+      <div id="batchPhotoStatus" style="font-size:12px;color:var(--gold-bright);margin-top:6px"></div>
+    </div>
+
+    <div class="field err" id="batchErr"></div>
+    <button class="btn" onclick="submitBatch()">导入</button>
+  </div>
+</div>
+
+<!-- Create game modal -->
+<div class="modal-mask" id="gameModal">
+  <div class="modal" style="max-width:min(580px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('gameModal').classList.remove('open')">×</button>
+    <h3>新增比赛场次</h3>
+    <p class="modal-sub">选所属赛事 + 上传封面 + 上传 PDF / Excel。PDF 可直接解析；Excel 可按结构化工作簿一次导入多场比赛。</p>
+    <form class="form" onsubmit="submitGame(event)" style="margin-top:0">
+      <div class="field">
+        <label>🏆 所属赛事</label>
+        <select id="gTournament" required style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+        <div class="hint">没有可选的赛事？先到"赛事"子 tab 创建一个</div>
+      </div>
+      <div class="field">
+        <label>📸 比赛封面图</label>
+        <label class="file-picker">
+          <span class="icon">🖼</span>
+          <span class="label">点击或拖拽图片到此处</span>
+          <span class="hint">建议 1280×720 横版 · 单张 ≤ 50 MB · JPG/PNG（>8 MB 自动压缩）</span>
+          <input type="file" id="gCoverFile" accept="image/*" onchange="previewCover(this,'gCoverPreview')">
+        </label>
+        <div id="gCoverPreview" class="file-preview"></div>
+      </div>
+      <div class="field">
+        <label>📄 比赛数据文件（PDF / Excel）</label>
+        <label class="file-picker">
+          <span class="icon">📊</span>
+          <span class="label">点击或拖拽 PDF / Excel 到此处</span>
+          <span class="hint">PDF 文件名格式：<code>&lt;客队&gt;_vs_&lt;主队&gt;_&lt;Mon&gt;_&lt;DD&gt;_&lt;YYYY&gt;.pdf</code><br>Excel 支持 GameChanger 结构化核验版工作簿，按比分 / 单场总表 / 投手 / 守备 / 跑垒等 sheet 读取。</span>
+          <input type="file" id="gFile" accept=".pdf,.xls,.xlsx" onchange="onGameFilePick(this)">
+        </label>
+        <div id="gFileName" style="font-size:12px;color:var(--gold-bright);margin-top:6px"></div>
+        <div id="gFilenameParsed" style="font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.6"></div>
+      </div>
+      <div class="field err" id="gErr"></div>
+      <button type="submit" class="btn">上传并解析</button>
+    </form>
+  </div>
+</div>
+
+<!-- Batch import games from folder -->
+<div class="modal-mask" id="gameBatchModal">
+  <div class="modal" style="max-width:min(720px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('gameBatchModal').classList.remove('open')">×</button>
+    <h3>批量导入比赛</h3>
+    <p class="modal-sub">拖入或选择一个文件夹，里面放 GameChanger PDF + 同名封面图（可选）。<br>
+      文件名规则：<code>&lt;客队&gt;_vs_&lt;主队&gt;_&lt;Mon&gt;_&lt;DD&gt;_&lt;YYYY&gt;.pdf</code> · 封面图取相同 base 名（<code>name.pdf</code> ↔ <code>name.jpg</code>）</p>
+
+    <form class="form" onsubmit="submitGameBatch(event)" style="margin-top:0">
+      <div class="field">
+        <label>🏆 所属赛事（这一批所有比赛共用）</label>
+        <select id="gbTournament" required style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+      </div>
+      <div class="field">
+        <label>📁 选择文件夹（含 PDF + 同名封面图）</label>
+        <label class="file-picker">
+          <span class="icon">📂</span>
+          <span class="label">点击选择文件夹（或把文件夹拖到这里）</span>
+          <span class="hint">仅识别 PDF；封面图按同名匹配（无配对的 PDF 会用赛事默认封面）</span>
+          <input type="file" id="gbFolder" webkitdirectory directory multiple onchange="onGameBatchFolderPick(this)">
+        </label>
+        <div id="gbPreview" style="margin-top:12px"></div>
+      </div>
+      <div class="field err" id="gbErr"></div>
+      <div id="gbProgress" style="display:none;font-size:13px;color:var(--gold-bright);margin-bottom:12px"></div>
+      <button type="submit" class="btn" id="gbSubmit" disabled>批量导入</button>
+    </form>
+  </div>
+</div>
+
+<!-- Create event modal -->
+<div class="modal-mask" id="eventModal">
+  <div class="modal" style="max-width:min(640px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('eventModal').classList.remove('open')">×</button>
+    <h3>创建新活动</h3>
+    <p class="modal-sub">活动会显示在首页"球队的日常与仪式"区。支持封面图、贴文正文和多张配图。</p>
+
+    <!-- Xiaohongshu paste import -->
+    <div class="xhs-import">
+      <div class="xhs-import-head">📕 一键导入小红书帖子内容</div>
+      <p style="font-size:12px;color:var(--text-mute);margin-bottom:8px;line-height:1.6">
+        在小红书 App 复制帖子标题和正文，粘贴到下方文本框，点击"识别"自动填充标题和正文。<br>
+        ⚠ Demo 版无法直接抓取图片，请通过下方"上传配图"手动添加。正式版会接入云函数自动抓图。
+      </p>
+      <textarea id="xhsRaw" placeholder="把小红书帖子的标题 + 正文复制粘贴到这里..."></textarea>
+      <div class="btn-row">
+        <button type="button" onclick="parseXhs()">识别并填充</button>
+        <button type="button" onclick="document.getElementById('xhsRaw').value=''">清空</button>
+      </div>
+    </div>
+
+    <form class="form" onsubmit="submitEvent(event)" style="margin-top:0">
+      <div class="field">
+        <label>活动标题</label>
+        <input type="text" id="evTitle" required maxlength="60" placeholder="例如：2026 第六届 OR 杯慢投垒球邀请赛">
+        <div class="hint">建议 ≤ 30 字，会显示在首页活动卡片</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>活动类型</label>
+          <select id="evTag" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="Tournament · 杯赛">Tournament · 杯赛</option>
+            <option value="Training · 训练">Training · 训练</option>
+            <option value="Team Building · 团建">Team Building · 团建</option>
+            <option value="Annual · 年会">Annual · 年会</option>
+            <option value="Recruitment · 招新">Recruitment · 招新</option>
+            <option value="Community · 社区">Community · 社区</option>
+            <option value="Special · 特别">Special · 特别</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>日期</label>
+          <input type="date" id="evDate" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>地点</label>
+        <input type="text" id="evLoc" required placeholder="例如：北京 · 奥体中心">
+      </div>
+      <div class="field">
+        <label>正文</label>
+        <textarea id="evBody" rows="5" required placeholder="活动详情、报名方式、注意事项..." style="background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;padding:12px 16px;color:var(--text);font:inherit;resize:vertical"></textarea>
+        <div class="hint">支持多行文字 · 自动换行</div>
+      </div>
+      <div class="field">
+        <label>📸 封面图（必填）</label>
+        <label class="file-picker">
+          <span class="icon">🖼</span>
+          <span class="label">点击上传封面图</span>
+          <span class="hint">建议 1280×720 · JPG/PNG · ≤ 50 MB（>8 MB 自动压缩）</span>
+          <input type="file" id="evCoverFile" accept="image/*" onchange="previewCover(this,'evCoverPreview')">
+        </label>
+        <div id="evCoverPreview" class="file-preview"></div>
+      </div>
+      <div class="field">
+        <label>📂 配图（可选 · 多选）</label>
+        <label class="file-picker">
+          <span class="icon">🖼🖼</span>
+          <span class="label">最多 9 张配图</span>
+          <span class="hint">JPG/PNG · 单张 ≤ 50 MB（>8 MB 自动压缩）</span>
+          <input type="file" id="evImagesFile" accept="image/*" multiple onchange="previewMulti(this,'evImagesPreview')">
+        </label>
+        <div id="evImagesPreview" class="file-preview"></div>
+      </div>
+      <div class="field">
+        <label>🔗 小红书原贴链接（可选）</label>
+        <input type="url" id="evSource" placeholder="http://xhslink.com/o/...">
+        <div class="hint">填写后首页活动卡片会显示"📕 小红书原帖"跳转</div>
+      </div>
+      <div class="field err" id="evErr"></div>
+      <button type="submit" class="btn">发布活动</button>
+    </form>
+  </div>
+</div>
+
+<!-- Create tournament modal -->
+<div class="modal-mask" id="tournamentModal">
+  <div class="modal" style="max-width:min(600px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('tournamentModal').classList.remove('open')">×</button>
+    <h3 id="tournamentModalTitle">创建新赛事</h3>
+    <p class="modal-sub">杯赛 / 联赛 / 训练赛是"容器"，具体的比赛场次会挂到赛事下</p>
+    <form class="form" onsubmit="submitTournament(event)" style="margin-top:0">
+      <input type="hidden" id="tEditId" value="">
+      <div class="field">
+        <label>赛事类型</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label class="pos-chip" style="cursor:pointer;padding:10px 18px;font-size:13px"><input type="radio" name="tType" value="cup" checked style="margin-right:6px">🏆 杯赛 Cup</label>
+          <label class="pos-chip" style="cursor:pointer;padding:10px 18px;font-size:13px"><input type="radio" name="tType" value="league" style="margin-right:6px">🏅 联赛 League</label>
+          <label class="pos-chip" style="cursor:pointer;padding:10px 18px;font-size:13px"><input type="radio" name="tType" value="training" style="margin-right:6px">🏋 训练赛</label>
+          <label class="pos-chip" style="cursor:pointer;padding:10px 18px;font-size:13px"><input type="radio" name="tType" value="friendly" style="margin-right:6px">🤝 友谊赛</label>
+        </div>
+        <div class="hint">不同类型会用不同图标标识，不影响数据结构</div>
+      </div>
+      <div class="field">
+        <label>赛事全称</label>
+        <input type="text" id="tName" required maxlength="60" placeholder="例如：2026 第六届 OR 杯慢投垒球邀请赛">
+      </div>
+      <div class="field">
+        <label>简称（会在筛选器 / 徽标中显示）</label>
+        <input type="text" id="tShort" maxlength="20" placeholder="例如：第六届 OR 杯">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>赛季年份</label><input type="text" id="tSeason" required placeholder="2026"></div>
+        <div class="field"><label>项目</label>
+          <select id="tSport" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="softball">慢投垒球</option>
+            <option value="baseball">棒球</option>
+            <option value="mixed">棒垒合训</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>开始日期</label><input type="date" id="tStart" required></div>
+        <div class="field"><label>结束日期</label><input type="date" id="tEnd" required></div>
+      </div>
+      <div class="field">
+        <label>球场位置</label>
+        <input type="text" id="tLocation" maxlength="120" placeholder="例如：北京奥体中心棒垒球场 / 北京市通州区私立树人学校棒球场">
+      </div>
+      <div class="field">
+        <label>📸 赛事封面图</label>
+        <label class="file-picker">
+          <span class="icon">🏆</span>
+          <span class="label">点击上传赛事封面</span>
+          <span class="hint">系统自动识别比例 · ≤ 50 MB（>8 MB 自动压缩）</span>
+          <input type="file" accept="image/*" onchange="previewCover(this,'tCoverPreview')">
+        </label>
+        <div id="tCoverPreview" class="file-preview"></div>
+      </div>
+      <div class="field">
+        <label>简介</label>
+        <textarea id="tDesc" rows="3" placeholder="赛制、规则、主办方等" style="background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit;resize:vertical"></textarea>
+      </div>
+      <div class="field err" id="tErr"></div>
+      <button type="submit" class="btn">保存赛事</button>
+    </form>
+  </div>
+</div>
+
+<!-- Game cover edit modal -->
+<div class="modal-mask" id="gameCoverModal">
+  <div class="modal" style="max-width:min(560px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('gameCoverModal').classList.remove('open')">×</button>
+    <h3>更换比赛封面</h3>
+    <p class="modal-sub" id="gameCoverTitle"></p>
+    <div class="field" style="margin-top:0">
+      <label class="file-picker">
+        <span class="icon">🖼</span>
+        <span class="label">点击上传新封面图</span>
+        <span class="hint">系统自动识别比例 · 横图 / 方图 / 竖图均可 · ≤ 50 MB（>8 MB 自动压缩）</span>
+        <input type="file" accept="image/*" onchange="previewCover(this,'gameCoverPreview')">
+      </label>
+      <div id="gameCoverPreview" class="file-preview" style="margin-top:12px"></div>
+    </div>
+    <button class="btn" onclick="submitGameCover()">保存封面</button>
+  </div>
+</div>
+
+<!-- Single player stat revision modal -->
+<div class="modal-mask" id="revisionLineModal">
+  <div class="modal revision-line-modal">
+    <button class="modal-close" onclick="closeRevisionLineEditor()">×</button>
+    <h3 id="revisionLineTitle">修订球员数据</h3>
+    <p class="modal-sub" id="revisionLineSub">每次只修订一个球员，避免横向表格丢失上下文。</p>
+    <div id="revisionLineBody"></div>
+    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:18px">
+      <button type="button" class="btn danger" id="revisionLineDeleteBtn" onclick="deleteRevisionLineEditor()">删除此行</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn ghost" onclick="closeRevisionLineEditor()">取消</button>
+        <button type="button" class="btn" onclick="commitRevisionLineEditor()">保存此球员</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Merge player modal -->
+<div class="modal-mask" id="mergePlayerModal">
+  <div class="modal" style="max-width:min(620px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('mergePlayerModal').classList.remove('open')">×</button>
+    <h3>合并球员数据</h3>
+    <p class="modal-sub">把“源球员”并入“目标球员”。源姓名会作为目标别名继续匹配原始比赛数据，源档案随后删除。</p>
+    <form class="form" onsubmit="submitMergePlayer(event)" style="margin-top:0">
+      <div class="field">
+        <label>源球员（要并入的人）</label>
+        <select id="mergeSourceId" required onchange="updateMergePreview()" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+        <div class="hint">例如选 Andy：他的签到、积分调整、账号绑定等会迁走。</div>
+      </div>
+      <div class="field">
+        <label>目标球员（保留的人）</label>
+        <select id="mergeTargetId" required onchange="updateMergePreview()" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+        <div class="hint">例如选 林立欣：之后 Andy 会作为林立欣的别名参与统计。</div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.6">
+        <input type="checkbox" id="mergeKeepAlias" checked onchange="updateMergePreview()" style="margin-top:3px">
+        <span>把源球员姓名和源球员已有别名加入目标别名。建议保持勾选，否则旧 GameChanger 记录里的名字可能无法归并。</span>
+      </label>
+      <div id="mergePreview" style="font-size:12px;line-height:1.7;color:var(--text-dim);background:rgba(46,107,255,.06);border:1px solid rgba(46,107,255,.22);border-radius:8px;padding:12px;margin:4px 0 12px"></div>
+      <div class="field err" id="mergePlayerErr"></div>
+      <button type="submit" class="btn" style="background:linear-gradient(135deg,var(--gold),var(--gold-bright));color:#0A1628">确认合并</button>
+    </form>
+  </div>
+</div>
+
+<!-- Edit player modal — full editor for existing players including photo replace/delete -->
+<div class="modal-mask" id="editPlayerModal">
+  <div class="modal" style="max-width:min(540px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('editPlayerModal').classList.remove('open')">×</button>
+    <h3>编辑球员</h3>
+    <p class="modal-sub" id="editPlayerSubtitle">修改球员信息、照片或荣誉</p>
+    <form class="form" onsubmit="submitEditPlayer(event)" style="margin-top:0">
+      <input type="hidden" id="editPlayerId">
+      <div class="field"><label>真实姓名</label><input type="text" id="editName" required placeholder="例如：曹山"></div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
+        <div class="field"><label>球衣号</label><input type="text" id="editNumber"></div>
+        <div class="field"><label>位置</label><input type="text" id="editPosition"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="field"><label>打击手</label>
+          <select id="editBats" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="">—</option><option value="R">右 R</option><option value="L">左 L</option><option value="S">双 S</option>
+          </select>
+        </div>
+        <div class="field"><label>投球手</label>
+          <select id="editThrows" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+            <option value="">—</option><option value="R">右 R</option><option value="L">左 L</option>
+          </select>
+        </div>
+        <div class="field"><label>入队年份</label><input type="number" id="editJoinYear" min="2010" max="2099"></div>
+      </div>
+      <div class="field">
+        <label>个人标语 <span style="color:var(--text-mute);font-weight:400">(<span id="editSloganCount">0/14</span>)</span></label>
+        <input type="text" id="editSlogan" maxlength="14" placeholder="例如：以星辰之名" oninput="document.getElementById('editSloganCount').textContent=this.value.length+'/14'">
+      </div>
+      <div class="field">
+        <label>荣誉 / Titles <span style="color:var(--text-mute);font-weight:400">(逗号分隔)</span></label>
+        <input type="text" id="editTitles" placeholder="例如：2026 MVP, 金手套 ×2, 名人堂">
+      </div>
+      <div class="field">
+        <label>📸 球员照片</label>
+        <div id="editCurrentPhoto" style="margin-bottom:10px"></div>
+        <label class="file-picker">
+          <span class="icon">🖼</span>
+          <span class="label">点击上传新照片 (可选)</span>
+          <span class="hint">不选文件 = 保持当前照片 · 点"删除照片"清空</span>
+          <input type="file" accept="image/*" onchange="previewCover(this,'editPhotoPreview')">
+        </label>
+        <div id="editPhotoPreview" class="file-preview"></div>
+        <button type="button" class="btn-nav ghost" style="margin-top:8px;padding:6px 14px;font-size:11px;border-color:rgba(255,100,100,.4);color:#ff8a8a" onclick="clearPlayerPhoto()">删除现有照片</button>
+      </div>
+      <div class="field err" id="editPlayerErr"></div>
+      <button type="submit" class="btn">保存修改</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin highlight upload modal -->
+<div class="modal-mask" id="hlModal">
+  <div class="modal" style="max-width:min(540px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('hlModal').classList.remove('open')">×</button>
+    <h3>上传高亮时刻</h3>
+    <p class="modal-sub">支持图片直接上传，或粘贴 B 站 / YouTube 视频链接</p>
+    <form class="form" onsubmit="submitHL(event)" style="margin-top:0">
+      <div class="field">
+        <label>关联比赛</label>
+        <select id="hlGame" required style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit"></select>
+      </div>
+      <div class="field">
+        <label>关联球员（可选）</label>
+        <select id="hlPlayer" style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit">
+          <option value="">— 不指定 / 全场回放 —</option>
+        </select>
+        <div class="hint">指定球员后，该高亮会出现在他/她的个人面板</div>
+      </div>
+      <div class="field">
+        <label>标题</label>
+        <input type="text" id="hlTitle" required maxlength="40" placeholder="例如：第 4 局三垒打">
+      </div>
+      <div class="field">
+        <label>类型</label>
+        <div style="display:flex;gap:12px;font-size:13px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="hlType" value="image" checked onchange="hlTypeChange()"> 图片
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="hlType" value="video" onchange="hlTypeChange()"> 视频外链
+          </label>
+        </div>
+      </div>
+      <div class="field" id="hlImgBlock">
+        <label>📸 上传图片</label>
+        <label class="file-picker">
+          <span class="icon">🖼</span>
+          <span class="label">点击上传图片</span>
+          <span class="hint">建议 1280×720 · ≤ 50 MB（>8 MB 自动压缩）</span>
+          <input type="file" id="hlImgFile" accept="image/*" onchange="previewCover(this,'hlImgPreview')">
+        </label>
+        <div id="hlImgPreview" class="file-preview"></div>
+      </div>
+      <div class="field" id="hlVideoBlock" style="display:none">
+        <label>视频链接</label>
+        <input type="url" id="hlVideoUrl" placeholder="https://www.bilibili.com/video/BV...">
+        <div class="hint">支持 B 站 BV 链接、YouTube 链接</div>
+      </div>
+      <div class="field err" id="hlErr"></div>
+      <button type="submit" class="btn">发布</button>
+    </form>
+  </div>
+</div>
+
+<!-- Account bind / invitation modal -->
+<div class="modal-mask" id="userBindModal">
+  <div class="modal" style="max-width:min(560px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('userBindModal').classList.remove('open')">×</button>
+    <h3>账号绑定球员</h3>
+    <p class="modal-sub" id="userBindSub">选择目标球员后，可以直接绑定账号，或发送站内绑定邀请。</p>
+    <input type="hidden" id="bindUserId">
+    <div class="field" style="position:relative">
+      <label>目标球员</label>
+      <input type="text" id="bindPlayerSearch" autocomplete="off"
+             placeholder="🔍 搜索姓名 / 球衣号 / 位置"
+             style="background:var(--navy-700);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--text);font:inherit;width:100%;box-sizing:border-box">
+      <input type="hidden" id="bindPlayerId">
+      <div id="bindPlayerDropdown"
+           style="display:none;position:absolute;top:100%;left:0;right:0;max-height:280px;overflow-y:auto;background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;margin-top:4px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div id="bindPlayerSelected" style="margin-top:6px;font-size:12px;color:var(--text-dim);min-height:18px"></div>
+    </div>
+    <div class="field">
+      <label>站内信备注（可选）</label>
+      <input type="text" id="bindInviteMessage" maxlength="120" placeholder="例如：请绑定你的正式球员档案，之前的试训签到会自动迁移">
+    </div>
+    <div class="field err" id="userBindErr"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn" onclick="submitUserBind()">直接绑定账号</button>
+      <button type="button" class="btn ghost" onclick="submitBindInvitation()">发送站内信邀请</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N · A D M I N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('admin');
+// Enforce admin only
+const u = await requireAuth('admin');
+if (!u) throw new Error('not authorized');
+
+// ===== 2 级导航：sidebar 顶级 section + 主区顶部 subtab chip =====
+const SECTIONS = {
+  people:  [
+    { tab: 'users',  label: '账户管理' },
+    { tab: 'pool',   label: '注册球员管理' },
+  ],
+  match:   [
+    { tab: 'games',  label: '比赛管理' },
+  ],
+  content: [
+    { tab: 'events',     label: '活动管理' },
+    { tab: 'hof',        label: '名人堂' },
+    { tab: 'highlights', label: '高亮审核' },
+  ],
+  system:  [
+    { tab: 'settings',   label: '系统设置' },
+  ],
+};
+const sidebar = document.querySelectorAll('.admin-sidebar a');
+const panels = document.querySelectorAll('[data-panel]');
+const subtabHost = document.getElementById('adminSubtabs');
+
+function activateAdminTab(tab) {
+  panels.forEach(p => p.style.display = (p.dataset.panel === tab ? '' : 'none'));
+  document.querySelectorAll('#adminSubtabs .subtab').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
+  // Lazy load 用户列表（防御：reloadUsers 可能还没挂到 window，init 时会跳过，
+  // 末尾的兜底 setTimeout 再补一次）
+  if (tab === 'users' && !window._usersLoaded && typeof window.reloadUsers === 'function') {
+    window.reloadUsers();
+    window._usersLoaded = true;
+  }
+  if (tab === 'users' && typeof window.reloadAuditLogs === 'function') window.reloadAuditLogs();
+  if (tab === 'codes' && typeof renderCodes === 'function') renderCodes();
+}
+window.activateAdminTab = activateAdminTab;
+
+function activateAdminSection(secKey, preferredTab = '') {
+  sidebar.forEach(a => a.classList.toggle('active', a.dataset.section === secKey));
+  const subs = SECTIONS[secKey] || [];
+  // 单个子项时不显示 chip 条（省视觉噪音）
+  if (subs.length <= 1) {
+    subtabHost.style.display = 'none';
+  } else {
+    subtabHost.style.display = '';
+    subtabHost.innerHTML = subs.map((s, i) =>
+      `<button class="subtab${i===0?' active':''}" data-tab="${s.tab}">${s.label}</button>`
+    ).join('');
+  }
+  const targetTab = preferredTab && subs.some(s => s.tab === preferredTab) ? preferredTab : subs[0]?.tab;
+  if (targetTab) activateAdminTab(targetTab);
+}
+window.activateAdminSection = activateAdminSection;
+
+sidebar.forEach(a => a.addEventListener('click', () => activateAdminSection(a.dataset.section)));
+subtabHost.addEventListener('click', (e) => {
+  const btn = e.target.closest('.subtab');
+  if (btn) activateAdminTab(btn.dataset.tab);
+});
+
+const initialAdminParams = new URLSearchParams(location.search);
+const initialSection = SECTIONS[initialAdminParams.get('section')] ? initialAdminParams.get('section') : 'people';
+// 初始：默认人员；带 section=match 时直达赛事管理
+activateAdminSection(initialSection);
+
+// ===== Users Admin =====
+window._usersCache = [];
+
+window.reloadUsers = async function reloadUsers() {
+  const host = document.getElementById('usersList');
+  if (!host) return;
+  host.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-mute);font-size:13px">加载中…</div>';
+  try {
+    const r = await fetch('/api/admin/users', { credentials: 'include' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || '加载失败');
+    window._usersCache = data.users || [];
+    window.renderUsers();
+  } catch (e) {
+    host.innerHTML = `<div style="padding:24px;text-align:center;color:#ff8a8a;font-size:13px">${escapeHtml(e.message || String(e))}</div>`;
+  }
+};
+
+window.renderUsers = function renderUsers() {
+  const host = document.getElementById('usersList');
+  if (!host) return;
+  const cache = window._usersCache || [];
+
+  const q = (document.getElementById('userSearch')?.value || '').trim().toLowerCase();
+  const roleF = document.getElementById('userRoleFilter')?.value || '';
+  const bindF = document.getElementById('userBindFilter')?.value || '';
+  const sortBy = document.getElementById('userSort')?.value || 'recent';
+
+  // 顶部统计条
+  const totals = { all: cache.length, admin: 0, player: 0, bound: 0, unbound: 0 };
+  for (const u of cache) {
+    if (u.role === 'admin') totals.admin++; else totals.player++;
+    if (u.boundPlayerId) totals.bound++; else totals.unbound++;
+  }
+  const statsBar = document.getElementById('userStatsBar');
+  if (statsBar) {
+    statsBar.innerHTML = [
+      ['全部', totals.all, 'var(--gold-bright)'],
+      ['Admin', totals.admin, '#ffd86a'],
+      ['Player', totals.player, 'var(--blue-300)'],
+      ['已绑定', totals.bound, '#6ee7b7'],
+      ['未绑定', totals.unbound, '#ff8a8a'],
+    ].map(([label, n, color]) => `
+      <div style="padding:8px 14px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;min-width:80px">
+        <div style="font-size:11px;color:var(--text-mute);letter-spacing:.1em">${label}</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:${color};margin-top:2px">${n}</div>
+      </div>`).join('');
+  }
+
+  // 过滤
+  let filtered = cache.filter(u => {
+    if (roleF && u.role !== roleF) return false;
+    if (bindF === 'bound' && !u.boundPlayerId) return false;
+    if (bindF === 'unbound' && u.boundPlayerId) return false;
+    if (q) {
+      const hay = [
+        u.displayName, u.email, u.boundPlayerName, u.boundPlayerNumber, u.id
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // 排序
+  if (sortBy === 'recent') {
+    filtered.sort((a,b) => (b.lastActiveAt||'').localeCompare(a.lastActiveAt||''));
+  } else if (sortBy === 'created') {
+    filtered.sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  } else if (sortBy === 'name') {
+    filtered.sort((a,b) => (a.displayName||'').localeCompare(b.displayName||''));
+  }
+
+  if (!filtered.length) {
+    host.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-mute);font-size:13px">没有匹配的用户 · 共 ${cache.length} 个账户</div>`;
+    return;
+  }
+  host.innerHTML = filtered.map(u => {
+    const isAdmin = u.role === 'admin';
+    const bound = u.boundPlayerName
+      ? `<span style="color:var(--gold-bright)">📁 ${escapeHtml(u.boundPlayerName)}${u.boundPlayerNumber?' · #'+escapeHtml(u.boundPlayerNumber):''}</span>`
+      : `<span style="color:#ff8a8a">⊘ 未绑定球员</span>`;
+    const last = u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('zh-CN', {hour12:false}).slice(5,16) : '—';
+    const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '—';
+    return `<div class="people-row">
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:600;font-size:14px">
+          ${escapeHtml(u.displayName||'(no name)')}
+          ${isAdmin?'<span style="color:var(--gold-bright);font-size:10px;border:1px solid var(--gold);border-radius:999px;padding:1px 7px;margin-left:6px;letter-spacing:.1em">ADMIN</span>':''}
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px">${escapeHtml(u.email||'—')}</div>
+        <div style="font-size:11px;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap">
+          ${bound}
+          <span style="color:var(--text-mute)">最近活跃 ${last}</span>
+          <span style="color:var(--text-mute)">注册于 ${created}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn ghost" data-action="bind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" data-current-player="${escapeHtml(u.boundPlayerId||'')}" style="padding:6px 12px;font-size:12px">${u.boundPlayerId?'更换绑定':'绑定球员'}</button>
+        <button class="btn ghost" data-action="invite" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">站内信</button>
+        ${u.boundPlayerId ? `<button class="btn ghost" data-action="unbind" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px;border-color:rgba(255,138,138,.35);color:#ff8a8a">解绑</button>` : ''}
+        <button class="btn ghost" data-action="reset" data-uid="${escapeHtml(u.id)}" data-uname="${escapeHtml(u.displayName||u.email||u.id)}" style="padding:6px 12px;font-size:12px">🔑 重置密码</button>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+// Wire 搜索 + 筛选 + 刷新按钮（在 DOM 已 ready 后）
+['userSearch','userRoleFilter','userBindFilter','userSort'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', window.renderUsers);
+  if (el) el.addEventListener('change', window.renderUsers);
+});
+document.getElementById('userReloadBtn')?.addEventListener('click', () => window.reloadUsers());
+document.getElementById('auditReloadBtn')?.addEventListener('click', () => window.reloadAuditLogs());
+// 事件代理：用户列表动作
+document.getElementById('usersList')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'reset') window.openResetPwd(btn.dataset.uid, btn.dataset.uname);
+  if (action === 'bind') window.openUserBindModal(btn.dataset.uid, btn.dataset.uname, false, btn.dataset.currentPlayer || '');
+  if (action === 'invite') window.openUserBindModal(btn.dataset.uid, btn.dataset.uname, true, '');
+  if (action === 'unbind') window.unbindUserPlayer(btn.dataset.uid, btn.dataset.uname);
+});
+
+window.openResetPwd = function(userId, name) {
+  const pwd = prompt(`重置「${name}」的密码 — 输入新密码（≥ 6 位）`);
+  if (!pwd) return;
+  if (pwd.length < 6) { toast('密码至少 6 位', 'error'); return; }
+  fetch(`/api/admin/users/${encodeURIComponent(userId)}/reset-password`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({ newPassword: pwd }),
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      toast(`已为「${name}」重置密码 — 请把新密码：${pwd} 告诉用户`, 'success');
+    } else {
+      toast(data.message || '重置失败', 'error');
+    }
+  }).catch(e => toast(String(e), 'error'));
+};
+
+function _setupBindPlayerSearch(){
+  _attachSearchPicker(
+    ['bindPlayerSearch','bindPlayerId','bindPlayerDropdown','bindPlayerSelected'],
+    (q) => DB.allPlayers()
+      .filter(p => DB.getPlayerLevel(p) === 'verified')
+      .filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position, (p.aliases||[]).join(' ')))
+      .map(p => ({
+        id: p.id,
+        label: p.name + (p.number ? ' · #'+p.number : ''),
+        sublabel: p.position || '',
+        photo: DB.playerPhotoUrl(p),
+        detail: (p.slogan ? `“${p.slogan}” · ` : '') + `积分 ${DB.getPlayerPoints(p.id).total}`,
+      }))
+  );
+}
+
+window.openUserBindModal = function(userId, name, inviteMode = false, currentPlayerId = '') {
+  _setupBindPlayerSearch();
+  document.getElementById('bindUserId').value = userId;
+  document.getElementById('bindPlayerId').value = currentPlayerId || '';
+  document.getElementById('bindPlayerSearch').value = '';
+  document.getElementById('bindInviteMessage').value = '';
+  document.getElementById('userBindErr').textContent = '';
+  document.getElementById('userBindSub').textContent = `${inviteMode ? '发送站内绑定邀请给' : '直接绑定账号'}「${name}」。只允许绑定到正式球员；若该账号当前关联试训档案，签到和手动积分会自动迁移。`;
+  if (currentPlayerId) {
+    const p = DB.getPlayerById(currentPlayerId);
+    if (p) {
+      document.getElementById('bindPlayerSearch').value = p.name + (p.number ? ' · #'+p.number : '');
+      document.getElementById('bindPlayerSelected').innerHTML = `✓ 当前绑定 <strong style="color:var(--gold-bright)">${escapeHtml(p.name)}</strong>`;
+    }
+  } else {
+    document.getElementById('bindPlayerSelected').innerHTML = '';
+  }
+  document.getElementById('userBindModal').classList.add('open');
+};
+
+window.submitUserBind = async function() {
+  const err = document.getElementById('userBindErr');
+  err.textContent = '';
+  const userId = document.getElementById('bindUserId').value;
+  const playerId = document.getElementById('bindPlayerId').value;
+  if (!userId || !playerId) { err.textContent = '请选择账号和目标球员'; return; }
+  try {
+    const r = await DB.adminBindUserToPlayer(userId, playerId);
+    document.getElementById('userBindModal').classList.remove('open');
+    toast(`已绑定到「${r.player?.name || '目标球员'}」`, 'success');
+    await window.reloadUsers();
+    await window.reloadAuditLogs();
+    renderPool();
+  } catch (e) {
+    err.textContent = e.message || String(e);
+  }
+};
+
+window.submitBindInvitation = async function() {
+  const err = document.getElementById('userBindErr');
+  err.textContent = '';
+  const userId = document.getElementById('bindUserId').value;
+  const playerId = document.getElementById('bindPlayerId').value;
+  const message = document.getElementById('bindInviteMessage').value;
+  if (!userId || !playerId) { err.textContent = '请选择账号和目标球员'; return; }
+  try {
+    const r = await DB.sendBindInvitation(userId, playerId, message);
+    document.getElementById('userBindModal').classList.remove('open');
+    toast(`站内信已发送，绑定码 ${r.code}`, 'success');
+    await DB.reload();
+    renderCodes();
+    await window.reloadAuditLogs();
+  } catch (e) {
+    err.textContent = e.message || String(e);
+  }
+};
+
+window.unbindUserPlayer = async function(userId, name) {
+  if (!confirm(`确定解除「${name}」的球员绑定？\n不会删除球员档案或积分记录。`)) return;
+  try {
+    await DB.adminUnbindUser(userId);
+    toast('已解除绑定', 'success');
+    await window.reloadUsers();
+    await window.reloadAuditLogs();
+  } catch (e) {
+    toast(e.message || String(e), 'error');
+  }
+};
+
+window.reloadAuditLogs = async function reloadAuditLogs() {
+  const host = document.getElementById('auditLogList');
+  if (!host) return;
+  host.innerHTML = '<div style="padding:14px;text-align:center;color:var(--text-mute);font-size:12px">加载操作记录…</div>';
+  try {
+    const r = await DB.getAuditLogs(80);
+    const logs = r.logs || [];
+    if (!logs.length) {
+      host.innerHTML = '<div style="padding:14px;text-align:center;color:var(--text-mute);font-size:12px">暂无操作记录</div>';
+      return;
+    }
+    host.innerHTML = logs.map(log => {
+      const time = log.createdAt ? new Date(log.createdAt).toLocaleString('zh-CN', {hour12:false}).slice(5,16) : '—';
+      return `<div class="audit-row">
+        <span style="color:var(--gold-bright);font-family:var(--font-display)">${time}</span>
+        <span>${escapeHtml(log.summary || log.action)}</span>
+        <span style="color:var(--text-mute)">by ${escapeHtml(log.actorName || log.actorUserId || 'system')}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    host.innerHTML = `<div style="padding:14px;text-align:center;color:#ff8a8a;font-size:12px">${escapeHtml(e.message || String(e))}</div>`;
+  }
+};
+
+// ===== Player Pool =====
+let poolLevelFilter = '';
+window.setPoolLevelFilter = function(level) {
+  poolLevelFilter = level || '';
+  document.querySelectorAll('#poolLevelFilter button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.level === poolLevelFilter);
+  });
+  renderPool();
+};
+
+function openPlayerCodes(playerId) {
+  const p = DB.getPlayerById(playerId);
+  activateAdminTab('codes');
+  const search = document.getElementById('codeSearch');
+  if (search && p) search.value = p.name;
+  const codeSearch = document.getElementById('codePlayerSearch');
+  const codeId = document.getElementById('codePlayerId');
+  const codeSelected = document.getElementById('codePlayerSelected');
+  if (codeSearch && p) codeSearch.value = p.name + (p.number ? ' · #'+p.number : '');
+  if (codeId) codeId.value = playerId;
+  if (codeSelected && p) codeSelected.innerHTML = `✓ 已选择 <strong style="color:var(--gold-bright)">${escapeHtml(p.name)}</strong>`;
+  renderCodes();
+}
+window.openPlayerCodes = openPlayerCodes;
+
+function openPlayerHighlights(playerId) {
+  const p = DB.getPlayerById(playerId);
+  activateAdminSection('content');
+  activateAdminTab('highlights');
+  openHLModal();
+  const sel = document.getElementById('hlPlayer');
+  if (sel && p) sel.value = p.name;
+}
+window.openPlayerHighlights = openPlayerHighlights;
+
+function renderPool(){
+  const grid=document.getElementById('poolGrid');
+  const q = (document.getElementById('poolSearch')?.value || '').trim();
+  const players=DB.allPlayers().filter(p => {
+    const level = DB.getPlayerLevel(p);
+    if (poolLevelFilter && level !== poolLevelFilter) return false;
+    return DB.fuzzyMatch(q, p.name, p.number, p.position, p.slogan, (p.aliases||[]).join(' '), (p.titles||[]).join(' '));
+  });
+  // 排序：verified 在前，casual 按训练次数倒序在后
+  const sorted = players.slice().sort((a,b) => {
+    const la = DB.getPlayerLevel(a), lb = DB.getPlayerLevel(b);
+    if (la !== lb) return la === 'verified' ? -1 : 1;
+    if (la === 'casual') return DB.getTrainingCount(b.id) - DB.getTrainingCount(a.id);
+    return 0;
+  });
+  if (!sorted.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">没有找到符合条件的球员</div>';
+    return;
+  }
+  grid.innerHTML=sorted.map(p=>{
+    const level = DB.getPlayerLevel(p);
+    const isCasual = level === 'casual';
+    const trainings = isCasual ? DB.getTrainingCount(p.id) : 0;
+    const points = DB.getPlayerPoints(p.id).total;
+    const highCount = DB.highlightsForPlayer(p.name).length;
+    const codes = DB.allBindCodes().filter(c => c.playerId === p.id);
+    const unusedCodes = codes.filter(c => !c.used).length;
+    const titleLine = (p.titles || []).slice(0, 2).map(escapeHtml).join(' · ');
+    const levelBadge = isCasual
+      ? `<div class="pool-status-pill tryout">试训 ${trainings}/8</div>`
+      : `<div class="pool-status-pill official">★ 正式</div>`;
+    const primaryActions = isCasual
+      ? `<button type="button" class="pool-action primary" onclick="quickUpgradePlayer('${p.id}')" title="跳过 8 次门槛，直接升为正式队员">升级</button>
+         <button type="button" class="pool-action" onclick="openEditPlayer('${p.id}')">编辑</button>`
+      : `<button type="button" class="pool-action primary" onclick="openEditPlayer('${p.id}')">编辑</button>
+         <button type="button" class="pool-action" onclick="openPlayerCodes('${p.id}')">绑定</button>`;
+    const moreBindAction = isCasual
+      ? `<button type="button" onclick="openPlayerCodes('${p.id}')">绑定码</button>`
+      : '';
+    const aliasLine = Array.isArray(p.aliases) && p.aliases.length
+      ? `<div class="pool-alias-line" title="别名：${escapeHtml(p.aliases.join(' / '))}">别名 ${escapeHtml(p.aliases.slice(0,3).join(' / '))}${p.aliases.length>3?' …':''}</div>`
+      : '';
+    return `
+    <div class="pool-card player-admin-card ${isCasual?'is-casual':''}">
+      ${levelBadge}
+      <div class="pool-card-photo-wrap">
+        <img class="photo" src="${DB.playerPhotoUrl(p)}" alt="${escapeHtml(p.name)}" onerror="this.src='assets/img/logo.jpg'">
+      </div>
+      <div class="name">${p.name}</div>
+      <div class="pool-card-meta">
+        <span>#${p.number||'-'}</span>
+        <span>${p.position||(isCasual?'注册试训队员':'—')}</span>
+      </div>
+      ${p.slogan ? `<div class="pool-slogan">“${escapeHtml(p.slogan)}”</div>` : ''}
+      ${titleLine ? `<div class="pool-title-line">${titleLine}</div>` : ''}
+      ${aliasLine}
+      <div class="pool-mini-stats">
+        <span>${points} 分</span>
+        <span>${highCount} 高光</span>
+        <span>${unusedCodes}/${codes.length} 码</span>
+      </div>
+      <div class="pool-card-actions">
+        ${primaryActions}
+        <details class="pool-more">
+          <summary>更多</summary>
+          <div class="pool-more-menu">
+            ${moreBindAction}
+            <button type="button" onclick="openPlayerHighlights('${p.id}')">管理高光</button>
+            <button type="button" onclick="window.location.href='player-points.html?id=${encodeURIComponent(p.id)}'">积分明细</button>
+            <button type="button" onclick="openMergePlayer('${p.id}')">合并档案</button>
+            <button type="button" onclick="window.location.href='dashboard.html?player=${encodeURIComponent(p.name)}'">查看主页</button>
+            <button type="button" class="danger" onclick="deletePoolPlayer('${p.id}')">删除球员</button>
+          </div>
+        </details>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.renderPool = renderPool;
+
+function quickUpgradePlayer(playerId){
+  const p = DB.getPlayerById(playerId);
+  if (!p) return;
+  if (!confirm(`确定将「${p.name}」升级为正式队员？\n（这会跳过满 8 次训练的自动门槛）`)) return;
+  DB.upgradePlayerToVerified(playerId, { reason: 'admin' });
+  toast(`★ 已将「${p.name}」升级为正式队员`, 'success');
+  renderAll();
+}
+
+window.deletePoolPlayer = function(playerId){
+  const p = DB.getPlayerById(playerId);
+  if (!p) return;
+  if (!confirm(`删除球员「${p.name}」？\n这会移除该球员档案，请确认不是要做“合并”。`)) return;
+  DB.deletePlayer(playerId);
+  renderAll();
+  toast('已删除','success');
+};
+
+function _mergePlayerOption(p) {
+  const level = DB.getPlayerLevel(p) === 'casual' ? '试训' : '正式';
+  const no = p.number ? ` #${p.number}` : '';
+  const aliases = Array.isArray(p.aliases) && p.aliases.length ? ` · 别名 ${p.aliases.join('/')}` : '';
+  return `${p.name}${no} · ${level}${aliases}`;
+}
+
+function _mergeAliasPreview(source, target, keepAlias) {
+  const existing = new Set((target.aliases || []).map(a => DB.canonicalNameKey(a)));
+  existing.add(DB.canonicalNameKey(target.name));
+  const raw = keepAlias ? [source.name, ...(source.aliases || [])] : [...(source.aliases || [])];
+  const out = [];
+  for (const name of raw) {
+    const clean = String(name || '').trim();
+    const key = DB.canonicalNameKey(clean);
+    if (!clean || !key || existing.has(key)) continue;
+    existing.add(key);
+    out.push(clean);
+  }
+  return out;
+}
+
+function _fillMergeSelects(sourceId = '', targetId = '') {
+  const players = DB.allPlayers().slice().sort((a,b) => {
+    const la = DB.getPlayerLevel(a), lb = DB.getPlayerLevel(b);
+    if (la !== lb) return la === 'verified' ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+  const sourceSel = document.getElementById('mergeSourceId');
+  const targetSel = document.getElementById('mergeTargetId');
+  sourceSel.innerHTML = '<option value="">— 选择源球员 —</option>' + players.map(p =>
+    `<option value="${p.id}">${escapeHtml(_mergePlayerOption(p))}</option>`
+  ).join('');
+  sourceSel.value = sourceId || '';
+  const targetOptions = players.filter(p => p.id !== sourceSel.value);
+  targetSel.innerHTML = '<option value="">— 选择目标球员 —</option>' + targetOptions.map(p =>
+    `<option value="${p.id}">${escapeHtml(_mergePlayerOption(p))}</option>`
+  ).join('');
+  targetSel.value = targetId && targetId !== sourceSel.value ? targetId : '';
+}
+
+function openMergePlayer(sourceId = '') {
+  activateAdminTab('pool');
+  _fillMergeSelects(sourceId);
+  document.getElementById('mergeKeepAlias').checked = true;
+  document.getElementById('mergePlayerErr').textContent = '';
+  updateMergePreview();
+  document.getElementById('mergePlayerModal').classList.add('open');
+}
+window.openMergePlayer = openMergePlayer;
+
+function updateMergePreview() {
+  const sourceSel = document.getElementById('mergeSourceId');
+  const targetSel = document.getElementById('mergeTargetId');
+  const preview = document.getElementById('mergePreview');
+  const currentSource = sourceSel.value;
+  const currentTarget = targetSel.value;
+  const players = DB.allPlayers();
+  if (currentSource) {
+    const validTarget = [...targetSel.options].some(o => o.value === currentTarget && o.value);
+    if (!validTarget) {
+      const candidates = players.filter(p => p.id !== currentSource);
+      const preferred = candidates.find(p => DB.getPlayerLevel(p) === 'verified') || candidates[0];
+      _fillMergeSelects(currentSource, preferred?.id || '');
+    } else {
+      const targetOptions = players.filter(p => p.id !== currentSource);
+      const oldTarget = targetSel.value;
+      targetSel.innerHTML = '<option value="">— 选择目标球员 —</option>' + targetOptions.map(p =>
+        `<option value="${p.id}">${escapeHtml(_mergePlayerOption(p))}</option>`
+      ).join('');
+      targetSel.value = oldTarget;
+    }
+  }
+
+  const source = DB.getPlayerById(sourceSel.value);
+  const target = DB.getPlayerById(targetSel.value);
+  if (!source || !target || source.id === target.id) {
+    preview.innerHTML = '选择源球员和目标球员后，这里会显示合并影响。';
+    return;
+  }
+  const keepAlias = document.getElementById('mergeKeepAlias').checked;
+  const aliasAdds = _mergeAliasPreview(source, target, keepAlias);
+  const sourcePts = DB.getPlayerPoints(source.id).total;
+  const targetPts = DB.getPlayerPoints(target.id).total;
+  const attCount = DB.attendancesForPlayer(source.id).length;
+  const adjCount = DB.adjustmentsForPlayer(source.id).length;
+  const hlCount = DB.highlightsForPlayer(source.name).length;
+  preview.innerHTML = `
+    <div style="color:var(--text);font-weight:600;margin-bottom:4px">将「${escapeHtml(source.name)}」并入「${escapeHtml(target.name)}」</div>
+    <div>会迁移：签到 ${attCount} 条 · 手动积分 ${adjCount} 条 · 高亮 ${hlCount} 条 · 源当前积分 ${sourcePts} 分会归入目标（目标当前 ${targetPts} 分）。</div>
+    <div>会新增别名：${aliasAdds.length ? aliasAdds.map(escapeHtml).join(' / ') : '<span style="color:var(--text-mute)">无新增</span>'}</div>
+    <div style="margin-top:4px;color:var(--text-mute)">比赛原始记录中的姓名不会被改写；统计会通过别名继续识别。</div>
+  `;
+}
+window.updateMergePreview = updateMergePreview;
+
+async function submitMergePlayer(e) {
+  e.preventDefault();
+  const err = document.getElementById('mergePlayerErr');
+  err.textContent = '';
+  const sourceId = document.getElementById('mergeSourceId').value;
+  const targetId = document.getElementById('mergeTargetId').value;
+  const source = DB.getPlayerById(sourceId);
+  const target = DB.getPlayerById(targetId);
+  if (!source || !target) { err.textContent = '请选择源球员和目标球员'; return; }
+  if (source.id === target.id) { err.textContent = '源球员和目标球员不能相同'; return; }
+  const ok = confirm(`确认合并？\n\n源球员「${source.name}」会并入「${target.name}」，源档案随后删除。此操作会迁移账号绑定、签到、手动积分、绑定码和高亮记录。`);
+  if (!ok) return;
+  try {
+    const result = await DB.mergePlayers(source.id, target.id, {
+      keepSourceAsAlias: document.getElementById('mergeKeepAlias').checked,
+    });
+    document.getElementById('mergePlayerModal').classList.remove('open');
+    const c = result.counts || {};
+    toast(`已合并：${source.name} → ${target.name}（签到 ${c.attendances||0}，调整 ${c.pointsAdjustments||0}）`, 'success');
+    renderAll();
+  } catch (ex) {
+    err.textContent = ex.message || String(ex);
+  }
+}
+window.submitMergePlayer = submitMergePlayer;
+
+function openEditPlayer(pid){
+  const p = DB.getPlayerById(pid);
+  if (!p) return;
+  document.getElementById('editPlayerId').value = p.id;
+  document.getElementById('editPlayerSubtitle').textContent = `编辑「${p.name}」的信息、照片和荣誉`;
+  document.getElementById('editName').value = p.name || '';
+  document.getElementById('editNumber').value = p.number || '';
+  document.getElementById('editPosition').value = p.position || '';
+  document.getElementById('editBats').value = p.bats || '';
+  document.getElementById('editThrows').value = p.throws || '';
+  document.getElementById('editJoinYear').value = p.joinYear || '';
+  document.getElementById('editSlogan').value = p.slogan || '';
+  document.getElementById('editSloganCount').textContent = (p.slogan||'').length + '/14';
+  document.getElementById('editTitles').value = (p.titles||[]).join(', ');
+  // Current photo preview
+  const current = document.getElementById('editCurrentPhoto');
+  if (p.photo) {
+    current.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy-900);border-radius:var(--r-sm);border:1px solid var(--line)">
+      <img src="${DB.playerPhotoUrl(p)}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;border:1px solid var(--line-strong)">
+      <div style="flex:1;font-size:12px;color:var(--text-dim)">当前照片已设置</div>
+    </div>`;
+  } else {
+    current.innerHTML = `<div style="padding:10px 14px;background:var(--navy-900);border-radius:var(--r-sm);border:1px dashed var(--line-strong);font-size:12px;color:var(--text-mute)">⚠ 此球员尚无照片</div>`;
+  }
+  // Reset new photo preview
+  const preview = document.getElementById('editPhotoPreview');
+  preview.innerHTML = ''; preview.dataset.url = '';
+  document.getElementById('editPlayerErr').textContent = '';
+  // Reset file input
+  document.querySelector('#editPlayerModal input[type=file]').value = '';
+  document.getElementById('editPlayerModal').classList.add('open');
+}
+window.openEditPlayer = openEditPlayer;
+
+function clearPlayerPhoto(){
+  const preview = document.getElementById('editPhotoPreview');
+  preview.innerHTML = '<div style="font-size:11px;color:#ff8a8a;padding:6px 10px;border:1px solid rgba(255,100,100,.35);border-radius:var(--r-sm);display:inline-block">✗ 照片将被删除</div>';
+  preview.dataset.url = '__DELETE__';
+  document.querySelector('#editPlayerModal input[type=file]').value = '';
+}
+window.clearPlayerPhoto = clearPlayerPhoto;
+
+function submitEditPlayer(e){
+  e.preventDefault();
+  const err = document.getElementById('editPlayerErr'); err.textContent = '';
+  const id = document.getElementById('editPlayerId').value;
+  const p = DB.getPlayerById(id);
+  if (!p) { err.textContent = '球员不存在'; return; }
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { err.textContent = '姓名不能为空'; return; }
+  const conflict = DB.getPlayerByName(name);
+  if (conflict && conflict.id !== id) { err.textContent = '已有同名球员'; return; }
+
+  const updates = {
+    name,
+    number: document.getElementById('editNumber').value.trim(),
+    position: document.getElementById('editPosition').value.trim(),
+    bats: document.getElementById('editBats').value,
+    throws: document.getElementById('editThrows').value,
+    joinYear: parseInt(document.getElementById('editJoinYear').value) || '',
+    slogan: document.getElementById('editSlogan').value,
+    titles: document.getElementById('editTitles').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,5),
+  };
+
+  // Photo handling: new upload / delete / keep current
+  const preview = document.getElementById('editPhotoPreview');
+  const url = preview.dataset.url;
+  if (url === '__DELETE__') {
+    updates.photo = '';
+  } else if (url) {
+    updates.photo = url; // new data URL
+  }
+  // else: no change to photo
+
+  DB.updatePlayer(id, updates);
+  document.getElementById('editPlayerModal').classList.remove('open');
+  toast('球员信息已更新','success');
+  renderAll();
+}
+window.submitEditPlayer = submitEditPlayer;
+function openAddPlayer(){document.getElementById('addPlayerModal').classList.add('open')}
+window.openAddPlayer=openAddPlayer;
+function submitAddPlayer(e){
+  e.preventDefault();
+  const err=document.getElementById('newPlayerErr');err.textContent='';
+  const name=document.getElementById('newName').value.trim();
+  if(!name){err.textContent='请填写姓名';return}
+  if(DB.getPlayerByName(name)){err.textContent='该姓名已存在于花名册';return}
+  const photoData=document.getElementById('newPhotoPreview').dataset.url||'';
+  const titlesRaw=document.getElementById('newTitles').value||'';
+  const titles=titlesRaw.split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+  const joinYear=parseInt(document.getElementById('newJoinYear').value)||'';
+  DB.addPlayer({
+    name,
+    number:document.getElementById('newNumber').value,
+    position:document.getElementById('newPosition').value,
+    photo:photoData,
+    photoIsData:!!photoData,
+    slogan:document.getElementById('newSlogan').value,
+    bats:document.getElementById('newBats').value,
+    throws:document.getElementById('newThrows').value,
+    joinYear,
+    titles,
+  });
+  document.getElementById('addPlayerModal').classList.remove('open');
+  document.querySelector('#addPlayerModal form').reset();
+  document.getElementById('newPhotoPreview').innerHTML='';
+  document.getElementById('newPhotoPreview').dataset.url='';
+  document.getElementById('sloganCharCount').textContent='0/14';
+  toast('已添加 '+name,'success');
+  renderAll();
+}
+window.submitAddPlayer=submitAddPlayer;
+
+// ===== Batch import =====
+let batchPhotoMap = {}; // name → dataUrl
+async function onBatchPhotos(input){
+  const files=[...input.files];
+  batchPhotoMap={};
+  for(const f of files){
+    if(f.size>50*1024*1024){toast(f.name+' 超过 50 MB 已跳过','error');continue}
+    const baseName=f.name.replace(/\.[^.]+$/,''); // strip extension
+    const url=await compressImage(f, 800, 800, 0.78);
+    batchPhotoMap[baseName]=url;
+  }
+  const n=Object.keys(batchPhotoMap).length;
+  document.getElementById('batchPhotoStatus').textContent='✓ 已读取 '+n+' 张照片，可识别姓名：'+Object.keys(batchPhotoMap).slice(0,6).join('、')+(n>6?' …':'');
+}
+window.onBatchPhotos=onBatchPhotos;
+
+function submitBatch(){
+  const err=document.getElementById('batchErr');err.textContent='';
+  const raw=document.getElementById('batchText').value.trim();
+  if(!raw){err.textContent='请粘贴球员名单';return}
+  const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  let added=0, skipped=0, matched=0;
+  for(const line of lines){
+    const parts=line.split(/[,，\t]/).map(s=>s.trim());
+    const name=parts[0];
+    if(!name)continue;
+    if(DB.getPlayerByName(name)){skipped++;continue}
+    const photoData=batchPhotoMap[name]||'';
+    if(photoData)matched++;
+    DB.addPlayer({
+      name,
+      number:parts[1]||'',
+      position:parts[2]||'',
+      photo:photoData,
+      photoIsData:!!photoData,
+    });
+    added++;
+  }
+  document.getElementById('batchModal').classList.remove('open');
+  document.getElementById('batchText').value='';
+  document.getElementById('batchPhotos').value='';
+  document.getElementById('batchPhotoStatus').textContent='';
+  batchPhotoMap={};
+  toast(`导入完成：新增 ${added} 人 · 照片匹配 ${matched} 张${skipped?' · 跳过 '+skipped+' 个重名':''}`,'success');
+  renderAll();
+}
+window.submitBatch=submitBatch;
+
+// ===== Bind Codes =====
+function renderCodes(){
+  _setupCodePlayerSearch();    // 幂等：内部检查 _wired，重复调用不会重复绑事件
+  const list=document.getElementById('codeList');
+  const q=(document.getElementById('codeSearch')?.value||'').trim();
+  const codes=DB.allBindCodes().slice().reverse().filter(c=>{
+    const p=DB.getPlayerById(c.playerId);
+    const status=c.used?'已使用 used':'未使用 unused 可用';
+    return DB.fuzzyMatch(q, c.code, status, p?.name, p?.number, p?.position);
+  });
+  if(!codes.length){list.innerHTML='<div class="empty">暂无绑定码</div>';return}
+  list.innerHTML=codes.map(c=>{
+    const p=DB.getPlayerById(c.playerId);
+    return `<div class="code-item">
+      <code>${c.code}</code>
+      <span class="meta">${p?p.name:'—'}${p?.number?' · #'+escapeHtml(p.number):''} · 创建于 ${c.createdAt || '—'}${c.usedBy?' · 用户 '+escapeHtml(c.usedBy):''}</span>
+      <span class="status ${c.used?'used':'unused'}">${c.used?'已使用':'未使用'}</span>
+      <button class="btn-nav ghost" style="padding:4px 12px;font-size:11px" onclick="navigator.clipboard.writeText('${c.code}');toast('已复制','success')">复制</button>
+      <button class="btn-nav ghost" style="padding:4px 12px;font-size:11px;border-color:rgba(255,100,100,.4);color:#ff8a8a" onclick="if(confirm('删除此绑定码?')){DB.deleteBindCode('${c.code}');renderAll()}">删除</button>
+    </div>`;
+  }).join('');
+}
+window.renderCodes = renderCodes;
+// 绑定码搜索式选择球员（用统一 _attachSearchPicker + fuzzyMatch）
+function _setupCodePlayerSearch(){
+  _attachSearchPicker(
+    ['codePlayerSearch','codePlayerId','codePlayerDropdown','codePlayerSelected'],
+    (q) => DB.allPlayers()
+      .filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position))
+      .map(p => {
+        const level=DB.getPlayerLevel(p);
+        const tagBadge=level==='casual'
+          ? ' <span style="font-size:10px;color:var(--blue-300);background:rgba(46,107,255,.12);border:1px solid rgba(46,107,255,.3);padding:1px 6px;border-radius:999px;margin-left:4px">⏳ 试训</span>'
+          : '';
+        return {
+          id: p.id,
+          label: p.name + (p.number ? ' · #'+p.number : ''),
+          sublabel: p.position || '',
+          photo: DB.playerPhotoUrl(p),
+          badge: tagBadge,
+        };
+      })
+  );
+}
+function genCode(){
+  const pid=document.getElementById('codePlayerId').value;
+  if(!pid){toast('请先在搜索框选择球员','error');return}
+  const p=DB.getPlayerById(pid);
+  const c=DB.createBindCode(pid);
+  toast('已为 '+(p?p.name:'')+' 生成：'+c.code,'success');
+  // 清空搜索框
+  document.getElementById('codePlayerSearch').value='';
+  document.getElementById('codePlayerId').value='';
+  document.getElementById('codePlayerSelected').innerHTML='';
+  renderAll();
+}
+window.genCode=genCode;
+
+// ===== Games sub-tabs =====
+function activateGameTab(tab){
+  const target = tab || 'tournaments';
+  document.querySelectorAll('[data-gtab]').forEach(x=>x.classList.toggle('active', x.dataset.gtab===target));
+  document.querySelectorAll('[data-gpanel]').forEach(p=>p.style.display=p.dataset.gpanel===target?'':'none');
+  if (target === 'confirm') renderReviewDrafts();
+  if (target === 'revise') renderRevisionWorkbench();
+}
+window.activateGameTab = activateGameTab;
+document.querySelectorAll('[data-gtab]').forEach(t=>t.addEventListener('click',()=>activateGameTab(t.dataset.gtab)));
+
+// ===== Tournaments =====
+function tournamentIcon(type){
+  return {cup:'🏆',league:'🏅',training:'🏋',friendly:'🤝'}[type]||'📅';
+}
+function tournamentTypeName(type){
+  return {cup:'杯赛',league:'联赛',training:'训练赛',friendly:'友谊赛'}[type]||type;
+}
+function formatAdminDateOnly(value){
+  if (!value) return '—';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10) || '—';
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+function formatAdminDateRange(start, end){
+  const s = formatAdminDateOnly(start);
+  const e = formatAdminDateOnly(end);
+  if (s === '—' && e === '—') return '—';
+  return `${s} ~ ${e}`;
+}
+function tournamentLocation(t){
+  const explicit = (t.location || '').trim();
+  if (explicit) return explicit;
+  const haystack = `${t.name || ''} ${t.shortName || ''} ${t.description || ''}`;
+  if (/猛虎/.test(haystack)) return '北京市通州区私立树人学校棒球场';
+  if (/奥体|周末常规训练/.test(haystack)) return '北京奥体中心棒垒球场';
+  return '地点待补充';
+}
+function renderTournaments(){
+  const list=document.getElementById('tournamentList');
+  const ts=DB.allTournaments();
+  if(!ts.length){list.innerHTML='<div class="empty">暂无赛事，点击上方创建</div>';}
+  else {
+    list.innerHTML=ts.map(t=>{
+      const cover=t.cover||'assets/img/logo.jpg';
+      const gameCount=DB.getGamesForTournament(t.id).length;
+      return `<div class="event-item">
+        <img src="${cover}" alt="" onerror="this.src='assets/img/logo.jpg'">
+        <div class="meta">
+          <strong>${tournamentIcon(t.type)} ${t.name}</strong>
+          <div class="sub">${tournamentTypeName(t.type)} · ${t.season} 赛季 · ${formatAdminDateRange(t.startDate, t.endDate)} · 📍${tournamentLocation(t)} · <span style="color:var(--gold-bright)">${gameCount} 场比赛</span></div>
+        </div>
+        <div class="actions">
+          <button onclick="openTournamentModal('${t.id}')">编辑</button>
+          <button class="danger" onclick="if(confirm('删除赛事 ${t.name.replace(/[\\n\\r\\u0027\\u0022]/g,'')}?（关联的比赛不会被删除）')){DB.deleteTournament('${t.id}');renderAll()}">删</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // Also refresh match filter dropdown
+  const matchFilter=document.getElementById('matchFilterTournament');
+  if(matchFilter){
+    const prev=matchFilter.value;
+    matchFilter.innerHTML='<option value="">全部赛事</option>'+ts.map(t=>`<option value="${t.id}">${tournamentIcon(t.type)} ${t.shortName||t.name}</option>`).join('');
+    matchFilter.value=prev;
+  }
+}
+
+function openTournamentModal(editId){
+  const modal=document.getElementById('tournamentModal');
+  const form=modal.querySelector('form');
+  form.reset();
+  document.getElementById('tCoverPreview').innerHTML='';
+  document.getElementById('tCoverPreview').dataset.url='';
+  document.getElementById('tErr').textContent='';
+  document.getElementById('tEditId').value='';
+  document.getElementById('tournamentModalTitle').textContent='创建新赛事';
+  if(editId){
+    const t=DB.getTournamentById(editId);
+    if(t){
+      document.getElementById('tournamentModalTitle').textContent='编辑赛事：'+t.name;
+      document.getElementById('tEditId').value=t.id;
+      document.querySelector(`input[name=tType][value="${t.type}"]`).checked=true;
+      document.getElementById('tName').value=t.name||'';
+      document.getElementById('tShort').value=t.shortName||'';
+      document.getElementById('tSeason').value=t.season||'';
+      document.getElementById('tSport').value=t.sport||'softball';
+      document.getElementById('tStart').value=formatAdminDateOnly(t.startDate).replace('—','');
+      document.getElementById('tEnd').value=formatAdminDateOnly(t.endDate).replace('—','');
+      document.getElementById('tLocation').value=t.location||tournamentLocation(t)||'';
+      document.getElementById('tDesc').value=t.description||'';
+      if(t.cover){
+        document.getElementById('tCoverPreview').dataset.url=t.cover;
+        document.getElementById('tCoverPreview').innerHTML=`<div class="thumb cover-thumb" style="width:200px;height:auto;aspect-ratio:auto"><img src="${t.cover}" style="width:100%;height:auto;object-fit:contain"></div>`;
+      }
+    }
+  }
+  modal.classList.add('open');
+}
+window.openTournamentModal=openTournamentModal;
+
+function submitTournament(e){
+  e.preventDefault();
+  const err=document.getElementById('tErr');err.textContent='';
+  const id=document.getElementById('tEditId').value;
+  const payload={
+    type:document.querySelector('input[name=tType]:checked').value,
+    name:document.getElementById('tName').value.trim(),
+    shortName:document.getElementById('tShort').value.trim(),
+    season:document.getElementById('tSeason').value.trim(),
+    sport:document.getElementById('tSport').value,
+    startDate:document.getElementById('tStart').value,
+    endDate:document.getElementById('tEnd').value,
+    location:document.getElementById('tLocation').value.trim(),
+    cover:document.getElementById('tCoverPreview').dataset.url||'',
+    description:document.getElementById('tDesc').value.trim(),
+  };
+  if(!payload.name){err.textContent='请填写赛事全称';return}
+  if(id)DB.updateTournament(id,payload);
+  else DB.addTournament(payload);
+  document.getElementById('tournamentModal').classList.remove('open');
+  toast(id?'赛事已更新':'赛事已创建','success');
+  renderAll();
+}
+window.submitTournament=submitTournament;
+
+// ===== Games =====
+function openGameModal(){
+  const sel=document.getElementById('gTournament');
+  const ts=DB.allTournaments();
+  sel.innerHTML=ts.length
+    ? ts.map(t=>`<option value="${t.id}">${tournamentIcon(t.type)} ${t.name}</option>`).join('')
+    : '<option value="">-- 先创建赛事 --</option>';
+  document.getElementById('gameModal').classList.add('open');
+}
+window.openGameModal=openGameModal;
+
+// Batch selection state for games — Set of game IDs currently checked
+const gameSelection = new Set();
+const gameReviewDrafts = [];
+let revisionGameId = initialAdminParams.get('game') || '';
+let revisionDraftIndex = initialAdminParams.get('draft') ? Number(initialAdminParams.get('draft')) : null;
+let revisionPlayerFilter = (initialAdminParams.get('player') || '').trim();
+let revisionWorkingGame = null;
+let revisionWorkingMode = 'game';
+
+function cloneData(v){ return JSON.parse(JSON.stringify(v || null)); }
+function numVal(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function textVal(v){ return String(v ?? '').trim(); }
+function findPlayerByNameLoose(name){
+  const clean = textVal(name);
+  if (!clean) return null;
+  return DB.getPlayerByName(clean) || DB.allPlayers().find(p => (p.aliases||[]).some(a => DB.canonicalNameKey(a) === DB.canonicalNameKey(clean))) || null;
+}
+function gameTitle(g){
+  return `${g.away || '—'} ${g.awayScore ?? '—'}:${g.homeScore ?? '—'} ${g.home || '—'}`;
+}
+function gameTournamentLabel(g){
+  const t = DB.getTournamentById(g.tournamentId);
+  return t ? `${tournamentIcon(t.type)} ${escapeHtml(t.shortName || t.name)}` : '⚠ 未关联赛事';
+}
+function collectGameNameIssues(g){
+  const issues = [];
+  const seen = new Set();
+  const scan = (rows, label) => (rows || []).forEach(row => {
+    const name = textVal(row.name);
+    if (!name) return;
+    const key = `${label}:${DB.canonicalNameKey(name)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (/^[\u4e00-\u9fa5]$/.test(name)) issues.push(`${label}「${name}」疑似单字截断`);
+    if (!findPlayerByNameLoose(name)) issues.push(`${label}「${name}」未匹配注册球员`);
+  });
+  scan(g.batting, '猎户打者');
+  scan(g.pitching, '猎户投手');
+  return issues;
+}
+function gameHasPlayer(g, playerName){
+  if (!playerName) return true;
+  const key = DB.canonicalNameKey(playerName);
+  const rows = [...(g.batting||[]), ...(g.pitching||[]), ...(g.oppBatting||[]), ...(g.oppPitching||[])];
+  return rows.some(r => DB.canonicalNameKey(r.name) === key || DB.playerCanonicalKey(r.name) === key);
+}
+function queueGameReviewDrafts(games, source = 'import'){
+  const now = new Date().toISOString();
+  games.forEach((game, i) => {
+    gameReviewDrafts.push({
+      ...cloneData(game),
+      _reviewSource: source,
+      _reviewStatus: '待确认',
+      _reviewCreatedAt: now,
+      _reviewTempId: `draft_${Date.now()}_${i}_${Math.random().toString(36).slice(2,6)}`
+    });
+  });
+  renderReviewDrafts();
+  activateGameTab('confirm');
+}
+function renderReviewDrafts(){
+  const host = document.getElementById('gameReviewList');
+  if (!host) return;
+  if (!gameReviewDrafts.length) {
+    host.innerHTML = '<div class="revision-empty">暂无待确认数据。PDF / Excel 解析完成后会先停在这里。</div>';
+    return;
+  }
+  host.innerHTML = gameReviewDrafts.map((g, idx) => {
+    const issues = collectGameNameIssues(g);
+    const cover = g.cover || 'assets/img/group/2cac6152a7021cecfb69a968a8b0e73d.JPG';
+    const tags = [
+      `<span class="review-chip">待确认</span>`,
+      `<span class="review-chip">${(g.batting||[]).length} 打者</span>`,
+      `<span class="review-chip">${(g.pitching||[]).length} 投手</span>`,
+      issues.length ? `<span class="review-chip warn">${issues.length} 项需复核</span>` : `<span class="review-chip">姓名校验通过</span>`
+    ].join('');
+    return `<div class="review-card">
+      <img src="${cover}" alt="" onerror="this.src='assets/img/logo.jpg'">
+      <div>
+        <strong>${escapeHtml(gameTitle(g))}</strong>
+        <div class="review-sub">${gameTournamentLabel(g)} · ${escapeHtml(g.date || '—')} · ${escapeHtml(g.venue || '—')}</div>
+        <div class="review-tags">${tags}</div>
+        ${issues.length ? `<div class="review-sub" style="color:var(--gold-bright);margin-top:8px">${escapeHtml(issues.slice(0,3).join('；'))}${issues.length>3?' …':''}</div>` : ''}
+      </div>
+      <div class="actions">
+        <button onclick="openRevisionDraft(${idx})">编辑校准</button>
+        <button onclick="confirmReviewDraft(${idx})">确认入库</button>
+        <button class="danger" onclick="discardReviewDraft(${idx})">丢弃</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.renderReviewDrafts = renderReviewDrafts;
+function confirmReviewDraft(idx){
+  const draft = gameReviewDrafts[idx];
+  if (!draft) return;
+  const toSave = cloneData(draft);
+  delete toSave._reviewSource; delete toSave._reviewStatus; delete toSave._reviewCreatedAt; delete toSave._reviewTempId;
+  delete toSave._revisionReason; delete toSave._revisionSource;
+  DB.addGame(toSave);
+  gameReviewDrafts.splice(idx, 1);
+  toast('已确认入库，可在数据修订里继续修改', 'success');
+  renderReviewDrafts();
+  renderGames();
+  renderRevisionWorkbench();
+}
+window.confirmReviewDraft = confirmReviewDraft;
+function discardReviewDraft(idx){
+  const draft = gameReviewDrafts[idx];
+  if (!draft) return;
+  if (!confirm(`丢弃待确认数据：${gameTitle(draft)}？`)) return;
+  gameReviewDrafts.splice(idx, 1);
+  renderReviewDrafts();
+}
+window.discardReviewDraft = discardReviewDraft;
+function openRevisionDraft(idx){
+  const draft = gameReviewDrafts[idx];
+  if (!draft) return;
+  revisionWorkingMode = 'draft';
+  revisionDraftIndex = idx;
+  revisionGameId = '';
+  revisionWorkingGame = cloneData(draft);
+  activateGameTab('revise');
+  renderRevisionWorkbench();
+}
+window.openRevisionDraft = openRevisionDraft;
+function openGameRevision(gameId){
+  const g = DB.getGameById(gameId);
+  if (!g) { toast('未找到这场比赛', 'error'); return; }
+  revisionWorkingMode = 'game';
+  revisionGameId = gameId;
+  revisionDraftIndex = null;
+  revisionWorkingGame = cloneData(g);
+  activateAdminSection('match');
+  activateGameTab('revise');
+  renderRevisionWorkbench();
+}
+window.openGameRevision = openGameRevision;
+function fillRevisionTournamentFilter(){
+  const sel = document.getElementById('revisionTournamentFilter');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">全部赛事</option>' + DB.allTournaments().map(t => `<option value="${t.id}">${tournamentIcon(t.type)} ${escapeHtml(t.shortName || t.name)}</option>`).join('');
+  sel.value = prev;
+}
+function filteredRevisionGames(){
+  const q = textVal(document.getElementById('revisionSearch')?.value || '').toLowerCase();
+  const tid = document.getElementById('revisionTournamentFilter')?.value || '';
+  return DB.allGames().filter(g => {
+    if (tid && g.tournamentId !== tid) return false;
+    if (revisionPlayerFilter && !gameHasPlayer(g, revisionPlayerFilter)) return false;
+    if (!q) return true;
+    const t = DB.getTournamentById(g.tournamentId);
+    const hay = [g.date, g.away, g.home, g.awayScore, g.homeScore, t?.name, t?.shortName,
+      ...(g.batting||[]).map(r=>r.name), ...(g.pitching||[]).map(r=>r.name),
+      ...(g.oppBatting||[]).map(r=>r.name), ...(g.oppPitching||[]).map(r=>r.name)
+    ].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+function renderRevisionWorkbench(){
+  fillRevisionTournamentFilter();
+  const list = document.getElementById('revisionGameList');
+  const hint = document.getElementById('revisionPlayerFilterHint');
+  const chip = document.getElementById('revisionContextChip');
+  if (hint) {
+    hint.style.display = revisionPlayerFilter ? '' : 'none';
+    hint.innerHTML = revisionPlayerFilter ? `当前筛选球员：<strong>${escapeHtml(revisionPlayerFilter)}</strong> <button type="button" onclick="clearRevisionPlayerFilter()" style="margin-left:6px;background:transparent;border:0;color:var(--blue-300);cursor:pointer">清除</button>` : '';
+  }
+  if (chip) chip.textContent = revisionWorkingMode === 'draft' ? '待确认 · 修订中' : '已入库 · 修订中';
+  if (list) {
+    const games = filteredRevisionGames();
+    if (!games.length) {
+      list.innerHTML = '<div class="revision-empty">没有找到相关比赛</div>';
+    } else {
+      list.innerHTML = games.map(g => {
+        const active = revisionWorkingMode === 'game' && revisionGameId === g.id ? ' active' : '';
+        const issues = collectGameNameIssues(g);
+        return `<button type="button" class="revision-game-card${active}" onclick="openGameRevision('${g.id}')">
+          <div class="title">${escapeHtml(gameTitle(g))}</div>
+          <div class="meta">${gameTournamentLabel(g)} · ${escapeHtml(g.date || '—')}</div>
+          <div class="review-tags" style="margin-top:7px">
+            <span class="review-chip">${(g.batting||[]).length} 打者</span>
+            ${issues.length ? `<span class="review-chip warn">${issues.length} 需复核</span>` : '<span class="review-chip">正常</span>'}
+          </div>
+        </button>`;
+      }).join('');
+    }
+  }
+  const current = revisionWorkingMode === 'draft'
+    ? (revisionDraftIndex != null ? gameReviewDrafts[revisionDraftIndex] : null)
+    : (revisionGameId ? DB.getGameById(revisionGameId) : null);
+  if (!revisionWorkingGame && current) revisionWorkingGame = cloneData(current);
+  renderRevisionEditor();
+}
+window.renderRevisionWorkbench = renderRevisionWorkbench;
+function clearRevisionPlayerFilter(){
+  revisionPlayerFilter = '';
+  renderRevisionWorkbench();
+}
+window.clearRevisionPlayerFilter = clearRevisionPlayerFilter;
+function registeredPlayerOptionHtml(selectedName){
+  const selectedKey = DB.canonicalNameKey(selectedName || '');
+  const players = DB.allPlayers().filter(p => DB.getPlayerLevel(p) === 'verified');
+  return ['<option value="">保留原始姓名</option>'].concat(players.map(p => {
+    const keys = [p.name, ...(p.aliases||[])].map(DB.canonicalNameKey);
+    const sel = keys.includes(selectedKey) ? 'selected' : '';
+    return `<option value="${escapeHtml(p.name)}" ${sel}>${escapeHtml(p.name)}${p.number ? ' · #'+escapeHtml(p.number) : ''}</option>`;
+  })).join('');
+}
+function registeredPlayerOptions(selectedName, disabled = false){
+  return `<select data-field="_bindName" ${disabled ? 'disabled' : ''}>${registeredPlayerOptionHtml(selectedName)}</select>`;
+}
+const BAT_FIELDS = [
+  ['pos','POS','text'], ['AB','AB','num'], ['R','R','num'], ['H','H','num'], ['RBI','RBI','num'], ['BB','BB','num'], ['SO','SO','num'],
+  ['_1B','1B','num'], ['_2B','2B','num'], ['_3B','3B','num'], ['HR','HR','num'], ['TB','TB','num'], ['E','E','num']
+];
+const PIT_FIELDS = [
+  ['IP','IP','num'], ['H','H','num'], ['R','R','num'], ['ER','ER','num'], ['BB','BB','num'], ['SO','SO','num'], ['HR','HR','num'], ['decision','决策','text']
+];
+function renderRevisionRows(group, title, fields, isOpponent = false){
+  const rows = revisionWorkingGame?.[group] || [];
+  const pitch = group.toLowerCase().includes('pitch');
+  const sectionHint = pitch
+    ? '每张卡片显示投球核心摘要，点击修订后按“投球核心 / 控球结果”分组编辑。'
+    : '每张卡片显示打击摘要，点击修订后按“基础打击 / 长打 / 纪律守备”分组编辑。';
+  const body = rows.length ? `<div class="revision-player-grid">${rows.map((row, idx) => renderRevisionPlayerCard(group, row, idx, { pitch, isOpponent })).join('')}</div>` : '<div class="revision-empty">暂无记录</div>';
+  return `<div class="revision-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+      <div>
+        <h4>${title}</h4>
+        <div style="font-size:11px;color:var(--text-mute);line-height:1.5">${sectionHint}</div>
+      </div>
+      <button type="button" class="btn ghost" style="padding:6px 10px;font-size:11px" onclick="addRevisionRow('${group}')">+ 增加一行</button>
+    </div>
+    ${body}
+  </div>`;
+}
+function renderRevisionPlayerCard(group, row, idx, opts){
+  const p = opts.isOpponent ? null : findPlayerByNameLoose(row.name);
+  const displayName = p?.name || row.name || '未命名球员';
+  const avatar = p
+    ? `<span class="revision-player-photo-frame"><img src="${DB.playerPhotoUrl(p)}" alt="${escapeHtml(p.name)}" onerror="this.remove()"></span>`
+    : escapeHtml((displayName || '?').slice(0,1));
+  const number = p?.number ? `#${p.number}` : (row.number ? `#${row.number}` : '');
+  const bindChip = opts.isOpponent
+    ? '<span class="review-chip">对手原始姓名</span>'
+    : (p ? `<span class="review-chip">已绑定 ${escapeHtml(p.name)}</span>` : '<span class="review-chip warn">保留原始姓名</span>');
+  const issues = [];
+  if (row._needsReview) issues.push('需复核');
+  if (/^[\u4e00-\u9fa5]$/.test(row.name || '')) issues.push('疑似单字截断');
+  if (!opts.isOpponent && !p) issues.push('未匹配注册球员');
+  if (!opts.pitch && (+row.E || 0) > 0) issues.push(`E ${+row.E}`);
+  const chips = [bindChip].concat(issues.map(x => `<span class="review-chip warn">${escapeHtml(x)}</span>`)).join('');
+  const stats = opts.pitch ? [
+    ['IP', row.IP || 0],
+    ['R / ER', `${row.R||0} / ${row.ER||0}`],
+    ['SO / BB', `${row.SO||0} / ${row.BB||0}`],
+  ] : [
+    ['H / AB', `${row.H||0} / ${row.AB||0}`],
+    ['R / RBI', `${row.R||0} / ${row.RBI||0}`],
+    ['XBH / TB', `${(+row._2B||0)+(+row._3B||0)+(+row.HR||0)} / ${row.TB ?? ((+row._1B||0)+2*(+row._2B||0)+3*(+row._3B||0)+4*(+row.HR||0))}`],
+  ];
+  return `<div class="revision-player-card ${issues.length?'warn':''}">
+    <div class="revision-player-top">
+      <div class="revision-player-avatar">${avatar}</div>
+      <div style="min-width:0;flex:1">
+        <strong>${escapeHtml(displayName)}</strong>
+        <div class="revision-player-meta">${escapeHtml(number || '无背号')} · ${escapeHtml(row.pos || row.decision || (opts.pitch ? '投手记录' : '打击记录'))}</div>
+      </div>
+    </div>
+    <div class="revision-player-stats">
+      ${stats.map(([k,v]) => `<div class="revision-stat-tile"><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`).join('')}
+    </div>
+    <div class="review-tags">${chips}</div>
+    <div class="revision-player-actions">
+      <span style="font-size:11px;color:var(--text-mute)">${opts.pitch ? '投球侧' : '打击侧'}</span>
+      <button type="button" class="btn ghost" style="padding:7px 12px;font-size:12px" onclick="openRevisionLineEditor('${group}',${idx})">修订</button>
+    </div>
+  </div>`;
+}
+let revisionLineEditing = null;
+function openRevisionLineEditor(group, idx){
+  syncRevisionWorkingGameFromForm();
+  const row = revisionWorkingGame?.[group]?.[idx];
+  if (!row) return;
+  const pitch = group.toLowerCase().includes('pitch');
+  const isOpponent = group.startsWith('opp');
+  revisionLineEditing = { group, idx };
+  document.getElementById('revisionLineTitle').textContent = `${pitch ? '修订投手数据' : '修订打击数据'} · ${row.name || '未命名球员'}`;
+  document.getElementById('revisionLineSub').textContent = isOpponent ? '对手侧只保留原始姓名，不绑定猎户注册球员。' : '可把识别姓名绑定到注册球员，也可保留原始姓名并标记复核。';
+  document.getElementById('revisionLineBody').innerHTML = pitch
+    ? renderPitchLineEditor(row, isOpponent)
+    : renderBatLineEditor(row, isOpponent);
+  document.getElementById('revisionLineModal').classList.add('open');
+}
+window.openRevisionLineEditor = openRevisionLineEditor;
+function closeRevisionLineEditor(){
+  document.getElementById('revisionLineModal').classList.remove('open');
+  revisionLineEditing = null;
+}
+window.closeRevisionLineEditor = closeRevisionLineEditor;
+function revisionInput(id, label, value, type = 'number', step = '1'){
+  return `<div class="revision-line-field"><label>${label}</label><input id="${id}" type="${type}" step="${step}" value="${escapeHtml(value ?? '')}"></div>`;
+}
+function renderIdentityEditor(row, isOpponent){
+  return `<div class="revision-line-group">
+    <h4>身份</h4>
+    <div class="revision-line-fields">
+      <div class="revision-line-field"><label>识别姓名</label><input id="lineName" value="${escapeHtml(row.name || '')}" placeholder="原始姓名"></div>
+      <div class="revision-line-field"><label>绑定注册球员</label><select id="lineBind" ${isOpponent?'disabled':''}>${registeredPlayerOptionHtml(row.name)}</select></div>
+      <div class="revision-line-field"><label>位置 / 备注</label><input id="linePos" value="${escapeHtml(row.pos || row.decision || '')}" placeholder="POS / 决策"></div>
+      <label class="revision-review-check"><input id="lineNeedsReview" type="checkbox" ${row._needsReview?'checked':''}> 标记为需复核</label>
+    </div>
+  </div>`;
+}
+function renderBatLineEditor(row, isOpponent){
+  return `<div class="revision-line-grid">
+    ${renderIdentityEditor(row, isOpponent)}
+    <div class="revision-line-group"><h4>基础打击</h4><div class="revision-line-fields">
+      ${revisionInput('lineAB','AB · 打数',row.AB)}
+      ${revisionInput('lineR','R · 得分',row.R)}
+      ${revisionInput('lineH','H · 安打',row.H)}
+      ${revisionInput('lineRBI','RBI · 打点',row.RBI)}
+    </div></div>
+    <div class="revision-line-group"><h4>长打</h4><div class="revision-line-fields">
+      ${revisionInput('line1B','1B · 一垒安打',row._1B)}
+      ${revisionInput('line2B','2B · 二垒安打',row._2B)}
+      ${revisionInput('line3B','3B · 三垒安打',row._3B)}
+      ${revisionInput('lineHR','HR · 全垒打',row.HR)}
+      ${revisionInput('lineTB','TB · 垒打数',row.TB)}
+    </div></div>
+    <div class="revision-line-group"><h4>纪律 / 守备</h4><div class="revision-line-fields">
+      ${revisionInput('lineBB','BB · 保送',row.BB)}
+      ${revisionInput('lineSO','SO · 三振',row.SO)}
+      ${revisionInput('lineE','E · 失误',row.E)}
+    </div></div>
+  </div>`;
+}
+function renderPitchLineEditor(row, isOpponent){
+  return `<div class="revision-line-grid">
+    ${renderIdentityEditor(row, isOpponent)}
+    <div class="revision-line-group"><h4>投球核心</h4><div class="revision-line-fields">
+      ${revisionInput('lineIP','IP · 投球局数',row.IP,'number','0.1')}
+      ${revisionInput('lineH','H · 被安打',row.H)}
+      ${revisionInput('lineR','R · 失分',row.R)}
+      ${revisionInput('lineER','ER · 自责分',row.ER)}
+    </div></div>
+    <div class="revision-line-group"><h4>控球 / 结果</h4><div class="revision-line-fields">
+      ${revisionInput('lineBB','BB · 保送',row.BB)}
+      ${revisionInput('lineSO','SO · 三振',row.SO)}
+      ${revisionInput('lineHR','HR · 被全垒打',row.HR)}
+      ${revisionInput('lineDecision','决策',row.decision || '', 'text')}
+    </div></div>
+  </div>`;
+}
+function renderRevisionEditor(){
+  const host = document.getElementById('revisionEditor');
+  if (!host) return;
+  if (!revisionWorkingGame) {
+    host.innerHTML = '<div class="revision-empty">选择一场比赛开始修订。也可以从比赛详情页点击“修订本场数据”直达。</div>';
+    return;
+  }
+  const g = revisionWorkingGame;
+  const tOptions = DB.allTournaments().map(t => `<option value="${t.id}" ${g.tournamentId===t.id?'selected':''}>${tournamentIcon(t.type)} ${escapeHtml(t.name)}</option>`).join('');
+  host.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <div class="review-chip ${revisionWorkingMode==='draft'?'warn':''}">${revisionWorkingMode==='draft'?'待确认':'已入库'}</div>
+        <h3 style="margin:10px 0 4px">${escapeHtml(gameTitle(g))}</h3>
+        <div style="font-size:12px;color:var(--text-mute)">${gameTournamentLabel(g)} · ${escapeHtml(g.date || '—')}</div>
+      </div>
+      <button class="btn ghost" onclick="window.location.href='game-detail.html?id=${encodeURIComponent(g.id)}'" ${revisionWorkingMode==='draft'?'disabled':''}>查看前台</button>
+    </div>
+    <div class="revision-section">
+      <h4>1. 场次信息</h4>
+      <div class="revision-form-grid">
+        <div class="revision-field"><label>日期</label><input id="revDate" type="date" value="${escapeHtml(g.date || '')}"></div>
+        <div class="revision-field"><label>赛事</label><select id="revTournament">${tOptions}</select></div>
+        <div class="revision-field"><label>场地</label><input id="revVenue" value="${escapeHtml(g.venue || '')}" placeholder="Home / Away / 场地名"></div>
+        <div class="revision-field"><label>客队</label><input id="revAway" value="${escapeHtml(g.away || '')}"></div>
+        <div class="revision-field"><label>客队分</label><input id="revAwayScore" type="number" value="${escapeHtml(g.awayScore ?? '')}"></div>
+        <div class="revision-field"><label>封面 URL</label><input id="revCover" value="${escapeHtml(g.cover || '')}" placeholder="可粘贴已上传图片地址"></div>
+        <div class="revision-field"><label>主队</label><input id="revHome" value="${escapeHtml(g.home || '')}"></div>
+        <div class="revision-field"><label>主队分</label><input id="revHomeScore" type="number" value="${escapeHtml(g.homeScore ?? '')}"></div>
+        <div class="revision-field"><label>局数</label><input id="revInnings" type="number" value="${escapeHtml(g.innings ?? '')}"></div>
+      </div>
+    </div>
+    <div class="revision-section">
+      <h4>2. 修订原因</h4>
+      <div class="revision-field"><textarea id="revisionReason" placeholder="例如：GameChanger 识别姓名截断，晋应为晋飞；同步修正 E / TB。">${escapeHtml(g._pendingRevisionReason || '')}</textarea></div>
+    </div>
+    ${renderRevisionRows('batting', '2A. 猎户侧打击', BAT_FIELDS, false)}
+    ${renderRevisionRows('pitching', '2B. 猎户侧投手', PIT_FIELDS, false)}
+    ${renderRevisionRows('oppBatting', '2C. 对手侧打击', BAT_FIELDS, true)}
+    ${renderRevisionRows('oppPitching', '2D. 对手侧投手', PIT_FIELDS, true)}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn" onclick="saveRevision()">保存修订</button>
+      <button class="btn ghost" onclick="resetRevisionWorking()">撤销未保存修改</button>
+    </div>
+    <div class="revision-section">
+      <h4>3. 修订记录</h4>
+      <div id="revisionAuditList"><div class="revision-empty">加载修订记录…</div></div>
+    </div>`;
+  if (revisionWorkingMode === 'game') renderRevisionAudit(g.id);
+  else document.getElementById('revisionAuditList').innerHTML = '<div class="revision-empty">待确认数据尚未入库，确认后会进入正式修订记录。</div>';
+}
+function syncRevisionWorkingGameFromForm(){
+  if (!revisionWorkingGame) return null;
+  const g = revisionWorkingGame;
+  const reasonEl = document.getElementById('revisionReason');
+  if (reasonEl) g._pendingRevisionReason = textVal(reasonEl.value);
+  const tid = document.getElementById('revTournament')?.value || g.tournamentId || '';
+  const t = DB.getTournamentById(tid);
+  Object.assign(g, {
+    date: textVal(document.getElementById('revDate')?.value),
+    tournamentId: tid,
+    season: t?.season || g.season || '',
+    seasonName: t?.name || g.seasonName || '',
+    venue: textVal(document.getElementById('revVenue')?.value),
+    away: textVal(document.getElementById('revAway')?.value),
+    home: textVal(document.getElementById('revHome')?.value),
+    awayScore: numVal(document.getElementById('revAwayScore')?.value),
+    homeScore: numVal(document.getElementById('revHomeScore')?.value),
+    innings: numVal(document.getElementById('revInnings')?.value),
+    cover: textVal(document.getElementById('revCover')?.value),
+  });
+  return g;
+}
+function commitRevisionLineEditor(){
+  if (!revisionLineEditing || !revisionWorkingGame) return;
+  syncRevisionWorkingGameFromForm();
+  const { group, idx } = revisionLineEditing;
+  const row = revisionWorkingGame[group]?.[idx];
+  if (!row) return;
+  const pitch = group.toLowerCase().includes('pitch');
+  const isOpponent = group.startsWith('opp');
+  const bind = document.getElementById('lineBind')?.value || '';
+  row.name = (!isOpponent && bind) ? bind : textVal(document.getElementById('lineName')?.value);
+  if (pitch) {
+    row.decision = textVal(document.getElementById('linePos')?.value || document.getElementById('lineDecision')?.value);
+    row.IP = numVal(document.getElementById('lineIP')?.value);
+    row.H = numVal(document.getElementById('lineH')?.value);
+    row.R = numVal(document.getElementById('lineR')?.value);
+    row.ER = numVal(document.getElementById('lineER')?.value);
+    row.BB = numVal(document.getElementById('lineBB')?.value);
+    row.SO = numVal(document.getElementById('lineSO')?.value);
+    row.HR = numVal(document.getElementById('lineHR')?.value);
+  } else {
+    row.pos = textVal(document.getElementById('linePos')?.value);
+    row.AB = numVal(document.getElementById('lineAB')?.value);
+    row.R = numVal(document.getElementById('lineR')?.value);
+    row.H = numVal(document.getElementById('lineH')?.value);
+    row.RBI = numVal(document.getElementById('lineRBI')?.value);
+    row.BB = numVal(document.getElementById('lineBB')?.value);
+    row.SO = numVal(document.getElementById('lineSO')?.value);
+    row._1B = numVal(document.getElementById('line1B')?.value);
+    row._2B = numVal(document.getElementById('line2B')?.value);
+    row._3B = numVal(document.getElementById('line3B')?.value);
+    row.HR = numVal(document.getElementById('lineHR')?.value);
+    row.TB = numVal(document.getElementById('lineTB')?.value);
+    row.E = numVal(document.getElementById('lineE')?.value);
+  }
+  if (document.getElementById('lineNeedsReview')?.checked) row._needsReview = true;
+  else delete row._needsReview;
+  closeRevisionLineEditor();
+  renderRevisionEditor();
+}
+window.commitRevisionLineEditor = commitRevisionLineEditor;
+function deleteRevisionLineEditor(){
+  if (!revisionLineEditing || !revisionWorkingGame) return;
+  const { group, idx } = revisionLineEditing;
+  const row = revisionWorkingGame[group]?.[idx];
+  if (!row) return;
+  if (!confirm(`删除「${row.name || '未命名球员'}」这一行数据？`)) return;
+  revisionWorkingGame[group].splice(idx, 1);
+  closeRevisionLineEditor();
+  renderRevisionEditor();
+}
+window.deleteRevisionLineEditor = deleteRevisionLineEditor;
+function addRevisionRow(group){
+  syncRevisionWorkingGameFromForm();
+  if (!revisionWorkingGame[group]) revisionWorkingGame[group] = [];
+  const isPitch = group.toLowerCase().includes('pitch');
+  revisionWorkingGame[group].push(isPitch ? { name:'', IP:0, H:0, R:0, ER:0, BB:0, SO:0, HR:0, decision:'' } : { name:'', pos:'', AB:0, R:0, H:0, RBI:0, BB:0, SO:0, _1B:0, _2B:0, _3B:0, HR:0, TB:0, E:0 });
+  renderRevisionEditor();
+}
+window.addRevisionRow = addRevisionRow;
+async function saveRevision(){
+  const g = syncRevisionWorkingGameFromForm();
+  if (!g) return;
+  const reason = textVal(document.getElementById('revisionReason')?.value);
+  if (!reason) { toast('请填写修订原因，便于之后回溯', 'error'); return; }
+  const payload = cloneData(g);
+  payload._revisionReason = reason;
+  payload._revisionSource = revisionWorkingMode;
+  delete payload._pendingRevisionReason;
+  try {
+    if (revisionWorkingMode === 'draft') {
+      gameReviewDrafts[revisionDraftIndex] = { ...payload, _reviewStatus: '修订中' };
+      toast('待确认数据已更新，请回到数据确认后入库', 'success');
+      activateGameTab('confirm');
+      return;
+    }
+    if (DB.updateGameAsync) await DB.updateGameAsync(g.id, payload);
+    else DB.updateGame(g.id, payload);
+    toast('修订已保存，并写入操作记录', 'success');
+    revisionWorkingGame = cloneData(DB.getGameById(g.id) || g);
+    renderGames();
+    renderRevisionWorkbench();
+  } catch (e) {
+    toast(e.message || String(e), 'error');
+  }
+}
+window.saveRevision = saveRevision;
+function resetRevisionWorking(){
+  const source = revisionWorkingMode === 'draft' ? gameReviewDrafts[revisionDraftIndex] : DB.getGameById(revisionGameId);
+  revisionWorkingGame = cloneData(source);
+  renderRevisionEditor();
+}
+window.resetRevisionWorking = resetRevisionWorking;
+async function renderRevisionAudit(gameId){
+  const host = document.getElementById('revisionAuditList');
+  if (!host) return;
+  try {
+    const data = await DB.getAuditLogs(200);
+    const logs = (data.logs || []).filter(log => log.targetType === 'game' && log.targetId === gameId);
+    if (!logs.length) {
+      host.innerHTML = '<div class="revision-empty">暂无修订记录</div>';
+      return;
+    }
+    host.innerHTML = logs.map(log => {
+      const time = log.createdAt ? new Date(log.createdAt).toLocaleString('zh-CN', {hour12:false}).slice(5,16) : '—';
+      return `<div class="revision-audit-row">
+        <div style="color:var(--gold-bright);font-family:var(--font-display)">${escapeHtml(time)}</div>
+        <div>
+          <div style="color:var(--text)">${escapeHtml(log.summary || log.action)}</div>
+          <div style="color:var(--text-mute);margin-top:3px">by ${escapeHtml(log.actorName || log.actorUserId || 'system')}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    host.innerHTML = `<div class="revision-empty" style="color:#ff9a9a">${escapeHtml(e.message || String(e))}</div>`;
+  }
+}
+
+function renderGames(){
+  const list=document.getElementById('gameList');
+  const filter=document.getElementById('matchFilterTournament')?.value||'';
+  let games=DB.allGames();
+  if(filter)games=games.filter(g=>g.tournamentId===filter);
+  // Drop selections that no longer exist
+  for (const id of gameSelection) if (!games.some(g => g.id === id)) gameSelection.delete(id);
+  updateGameBatchBar();
+  if(!games.length){list.innerHTML='<div class="empty">暂无比赛场次</div>';return}
+  list.innerHTML=games.map(g=>{
+    const cover=g.cover||'assets/img/group/2cac6152a7021cecfb69a968a8b0e73d.JPG';
+    const t=DB.getTournamentById(g.tournamentId);
+    const badge=t?`${tournamentIcon(t.type)} ${t.shortName||t.name}`:'⚠ 未关联赛事';
+    const checked = gameSelection.has(g.id) ? 'checked' : '';
+    return `<div class="event-item">
+      <input type="checkbox" data-game-id="${g.id}" ${checked} onchange="toggleGameSelection('${g.id}', this.checked)" style="margin:0 12px 0 0;width:18px;height:18px;accent-color:var(--gold-bright);cursor:pointer;flex:0 0 auto">
+      <img src="${cover}" alt="" onerror="this.src='assets/img/logo.jpg'">
+      <div class="meta">
+        <strong>${g.away} ${g.awayScore}:${g.homeScore} ${g.home}</strong>
+        <div class="sub">${badge} · ${g.date}${g.cover?' · 🖼 自定义封面':' · 🖼 默认封面'}</div>
+      </div>
+      <div class="actions">
+        <button onclick="openGameCoverEdit('${g.id}')">换封面</button>
+        <button onclick="openGameRevision('${g.id}')">修订</button>
+        <button onclick="window.location.href='game-detail.html?id=${g.id}'">查看</button>
+        <button class="danger" onclick="if(confirm('删除此比赛?')){DB.deleteGame('${g.id}');renderAll()}">删</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.renderGames=renderGames;
+
+function toggleGameSelection(id, checked){
+  if (checked) gameSelection.add(id); else gameSelection.delete(id);
+  updateGameBatchBar();
+}
+window.toggleGameSelection = toggleGameSelection;
+
+function updateGameBatchBar(){
+  const bar = document.getElementById('gameBatchBar');
+  const cnt = document.getElementById('gameBatchCount');
+  if (!bar) return;
+  bar.style.display = gameSelection.size > 0 ? 'flex' : 'none';
+  if (cnt) cnt.textContent = gameSelection.size;
+}
+
+function toggleGameBatchSelectAll(){
+  const filter = document.getElementById('matchFilterTournament')?.value || '';
+  let games = DB.allGames();
+  if (filter) games = games.filter(g => g.tournamentId === filter);
+  const allSelected = games.every(g => gameSelection.has(g.id));
+  gameSelection.clear();
+  if (!allSelected) games.forEach(g => gameSelection.add(g.id));
+  renderGames();
+}
+window.toggleGameBatchSelectAll = toggleGameBatchSelectAll;
+
+function clearGameSelection(){
+  gameSelection.clear();
+  renderGames();
+}
+window.clearGameSelection = clearGameSelection;
+
+function batchDeleteGames(){
+  const n = gameSelection.size;
+  if (!n) return;
+  if (!confirm(`确认删除选中的 ${n} 场比赛？此操作不可撤销。`)) return;
+  for (const id of gameSelection) DB.deleteGame(id);
+  gameSelection.clear();
+  toast(`已删除 ${n} 场比赛`, 'success');
+  renderAll();
+}
+window.batchDeleteGames = batchDeleteGames;
+
+function openGameBatchReassign(){
+  const n = gameSelection.size;
+  if (!n) return;
+  const tournaments = DB.allTournaments();
+  if (!tournaments.length) { toast('暂无赛事可选', 'error'); return; }
+  const opts = tournaments.map((t,i) => `${i+1}. ${t.name}`).join('\n');
+  const pick = prompt(`把选中的 ${n} 场比赛移到哪个赛事？输入序号：\n\n${opts}`);
+  if (!pick) return;
+  const idx = parseInt(pick, 10) - 1;
+  const target = tournaments[idx];
+  if (!target) { toast('序号无效', 'error'); return; }
+  for (const id of gameSelection) {
+    DB.updateGame(id, { tournamentId: target.id, season: target.season || '', seasonName: target.name || '' });
+  }
+  toast(`已将 ${n} 场比赛移到「${target.name}」`, 'success');
+  gameSelection.clear();
+  renderAll();
+}
+window.openGameBatchReassign = openGameBatchReassign;
+
+// Edit existing game's cover
+let currentGameForCover=null;
+function openGameCoverEdit(gameId){
+  currentGameForCover=gameId;
+  const g=DB.getGameById(gameId);
+  document.getElementById('gameCoverTitle').textContent=`${g.away} vs ${g.home} · ${g.date}`;
+  // Show current cover if any
+  const preview=document.getElementById('gameCoverPreview');
+  preview.innerHTML='';preview.dataset.url='';
+  if(g.cover){
+    preview.dataset.url=g.cover;
+    preview.innerHTML=`<div class="thumb" style="width:auto;max-width:240px;height:auto;aspect-ratio:auto"><img src="${g.cover}" style="width:100%;height:auto;object-fit:contain"></div>`;
+  }
+  document.getElementById('gameCoverModal').classList.add('open');
+}
+window.openGameCoverEdit=openGameCoverEdit;
+function submitGameCover(){
+  if(!currentGameForCover)return;
+  const url=document.getElementById('gameCoverPreview').dataset.url;
+  if(!url){toast('请先上传封面图','error');return}
+  DB.updateGame(currentGameForCover,{cover:url});
+  document.getElementById('gameCoverModal').classList.remove('open');
+  toast('封面已更新','success');
+  renderAll();
+}
+window.submitGameCover=submitGameCover;
+// File → DataURL helpers
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+// Compress an image File to a JPEG data URL bounded by maxW × maxH.
+// Used to prevent localStorage quota overflow when admin uploads cover images.
+// Typical phone photo: 3-5 MB → ~150-300 KB after compression.
+//
+// 自动分级：> 8 MB 的大图（一般是单反原图 / HEIC 转 JPG）走更激进的参数，
+// 一是省内存（canvas decode 大图很容易把移动端浏览器卡爆），二是产物更小。
+async function compressImage(file, maxW=1280, maxH=1280, quality=0.78){
+  if (!file.type.startsWith('image/')) return fileToDataUrl(file);
+  if (file.size > 8 * 1024 * 1024) {
+    maxW = Math.min(maxW, 1024);
+    maxH = Math.min(maxH, 1024);
+    quality = Math.min(quality, 0.7);
+  }
+  const dataUrl = await fileToDataUrl(file);
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = () => {
+      let { width:w, height:h } = img;
+      const ratio = Math.min(1, maxW/w, maxH/h);
+      w = Math.round(w * ratio); h = Math.round(h * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      // PNG with transparency? keep PNG. Otherwise JPEG for size.
+      const isPng = file.type === 'image/png';
+      resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+// 从 previewId 推断 kind（决定 COS 路径前缀）
+function _inferUploadKind(previewId) {
+  if (/photo|player/i.test(previewId)) return 'player';
+  if (/event|ev/i.test(previewId))     return 'event';
+  if (/tournament|^t/i.test(previewId)) return 'tournament';
+  if (/game|^g/i.test(previewId))      return 'game';
+  if (/hl|highlight/i.test(previewId)) return 'highlight';
+  return 'misc';
+}
+async function previewCover(input, previewId){
+  const f=input.files[0];const host=document.getElementById(previewId);
+  if(!f){host.innerHTML='';host.dataset.url='';return}
+  // Hard cap 50 MB — protects against 单反 RAW / 巨型 HEIC 把浏览器卡死
+  if(f.size>50*1024*1024){toast('图片超过 50 MB，请先在本地缩一下再传','error');input.value='';return}
+  host.innerHTML='<span style="color:var(--text-dim);font-size:12px">⏳ 压缩 + 上传 COS 中…</span>';
+  const wasHuge = f.size > 8*1024*1024;
+  let url;
+  try {
+    // 压缩 → 得到 base64 jpg
+    const dataUrl = await compressImage(f);
+    // base64 → Blob → 上传到 COS（云托管自带的对象存储）
+    const blob = await (await fetch(dataUrl)).blob();
+    const fd = new FormData();
+    fd.append('file', new File([blob], (f.name||'cover')+'.jpg', { type: 'image/jpeg' }));
+    fd.append('kind', _inferUploadKind(previewId));
+    const r = await fetch('/api/upload', { method:'POST', body: fd, credentials:'include' });
+    const data = await r.json();
+    if (!r.ok || !data.url) throw new Error(data.message || '上传失败');
+    url = data.url;
+    if (wasHuge) toast(`原图 ${(f.size/1024/1024).toFixed(1)} MB → 已压缩 + 上传到 COS`, 'info');
+  } catch (e) {
+    host.innerHTML = '<span style="color:#ff8a8a;font-size:12px">❌ 上传失败：'+e.message+'</span>';
+    return;
+  }
+  host.dataset.url = url;
+  // 预览自适应宽高比
+  const img=new Image();
+  img.onload=()=>{
+    const ratio=img.naturalWidth/img.naturalHeight;
+    let label='方形';
+    if(ratio>1.2)label='横版 '+ratio.toFixed(2)+':1';
+    else if(ratio<0.85)label='竖版 1:'+(1/ratio).toFixed(2);
+    const w=ratio>1?280:Math.round(180*ratio);
+    const h=ratio>1?Math.round(280/ratio):180;
+    host.innerHTML=`
+      <div class="thumb cover-thumb" style="width:${w}px;height:${h}px;aspect-ratio:auto">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div style="font-size:11px;color:var(--text-mute);margin-top:6px;line-height:1.6">
+        ✓ ${img.naturalWidth} × ${img.naturalHeight} · ${label} · 已上传 COS
+      </div>`;
+  };
+  img.src=url;
+}
+async function previewMulti(input, previewId){
+  const files=[...input.files].slice(0,9);
+  const host=document.getElementById(previewId);
+  host.innerHTML='';host.dataset.urls='';
+  const urls=[];
+  let bigCount = 0;
+  for(const f of files){
+    if(f.size>50*1024*1024){toast(`${f.name} 超过 50 MB 已跳过`,'error');continue}
+    if(f.size>8*1024*1024) bigCount++;
+    const url=await compressImage(f, 1024, 1024, 0.75);
+    urls.push(url);
+    const t=document.createElement('div');t.className='thumb';
+    t.innerHTML=`<img src="${url}">`;
+    host.appendChild(t);
+  }
+  host.dataset.urls=JSON.stringify(urls);
+  if (bigCount > 0) toast(`${bigCount} 张大图已自动压缩`, 'info');
+}
+window.previewCover=previewCover;window.previewMulti=previewMulti;
+
+// Wire drag & drop on every .file-picker label so dropping a file behaves
+// the same as picking it via the dialog. We use a single delegated listener
+// on document so dynamically added pickers (in modals) work too.
+(function setupDragDrop(){
+  function findInput(picker){
+    return picker.querySelector('input[type=file]');
+  }
+  document.addEventListener('dragover', e => {
+    const picker = e.target.closest('.file-picker');
+    if (!picker) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    picker.classList.add('dragover');
+  });
+  document.addEventListener('dragleave', e => {
+    const picker = e.target.closest('.file-picker');
+    if (picker && !picker.contains(e.relatedTarget)) picker.classList.remove('dragover');
+  });
+  // Recursively walk a DataTransferItem.webkitGetAsEntry() entry tree,
+  // collecting all File objects (for folder drag-drop on `webkitdirectory` inputs)
+  function attachRelativePath(file, relativePath) {
+    if (!relativePath) return file;
+    try {
+      Object.defineProperty(file, '_orionRelativePath', {
+        value: relativePath,
+        configurable: true
+      });
+    } catch (_) {
+      file._orionRelativePath = relativePath;
+    }
+    return file;
+  }
+  async function readEntryFiles(entry, out, basePath = '') {
+    if (!entry) return;
+    if (entry.isFile) {
+      const file = await new Promise((res, rej) => entry.file(res, rej));
+      out.push(attachRelativePath(file, basePath + file.name));
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const readBatch = () => new Promise((res, rej) => reader.readEntries(res, rej));
+      let entries;
+      do {
+        entries = await readBatch();
+        for (const e2 of entries) await readEntryFiles(e2, out, basePath + entry.name + '/');
+      } while (entries.length > 0);
+    }
+  }
+
+  document.addEventListener('drop', async e => {
+    const picker = e.target.closest('.file-picker');
+    if (!picker) return;
+    e.preventDefault();
+    picker.classList.remove('dragover');
+    const input = findInput(picker);
+    if (!input) return;
+
+    const isDir = input.hasAttribute('webkitdirectory');
+    if (isDir) {
+      // Folder drop: traverse entry tree (e.dataTransfer.files is empty for folders).
+      // We CANNOT inject the collected files into input.files (browser security),
+      // and faking input.onchange doesn't help because the inline onchange handler
+      // reads from input.files (still empty). Bypass that and call the
+      // batch processor directly via window.processBatchFiles.
+      const items = [...(e.dataTransfer.items || [])];
+      const collected = [];
+      for (const item of items) {
+        const entry = item.webkitGetAsEntry?.();
+        if (entry) await readEntryFiles(entry, collected);
+      }
+      // Plain (non-folder) files go through here too, in case user drops loose files
+      if (!collected.length && e.dataTransfer.files.length) {
+        for (const f of e.dataTransfer.files) collected.push(f);
+      }
+      if (!collected.length) { toast('未识别到文件夹内容', 'error'); return; }
+      console.log(`[orion-batch] folder drop: collected ${collected.length} files`);
+      if (typeof window.processBatchFiles === 'function') {
+        window.processBatchFiles(collected);
+      } else {
+        // Generic path: try the input's onchange (best-effort)
+        if (typeof input.onchange === 'function') input.onchange({ target: { files: collected } });
+      }
+      return;
+    }
+
+    if (!e.dataTransfer.files.length) return;
+    // Filter to types the input accepts (e.g. accept=".pdf,.xlsx")
+    const accept = (input.accept||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+    const ok = [...e.dataTransfer.files].filter(f => {
+      if (!accept.length) return true;
+      const ext = '.'+f.name.split('.').pop().toLowerCase();
+      return accept.some(a => a === ext || (a.endsWith('/*') && f.type.startsWith(a.slice(0,-1))) || a === f.type);
+    });
+    if (!ok.length) { toast('文件类型不被接受','error'); return; }
+    // Build a DataTransfer to set as input.files (lets onchange handlers fire)
+    const dt = new DataTransfer();
+    (input.multiple ? ok : ok.slice(0,1)).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles:true }));
+  });
+  // Prevent the browser from opening the file when dropped outside a picker
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => {
+    if (!e.target.closest('.file-picker')) e.preventDefault();
+  });
+})();
+
+// Wait for pdf.js ready (it's loaded as an ES module, so it may arrive
+// after this classic script runs). We resolve immediately if already present.
+let pdfjsReadyPromise = new Promise(resolve => {
+  if (window.pdfjsLib) return resolve();
+  window.addEventListener('pdfjsReady', () => resolve(), { once: true });
+  // Safety fallback — resolve after 4s even if event never fires
+  setTimeout(resolve, 4000);
+});
+
+// Show a preview line under the file picker as soon as admin selects a file —
+// confirms the filename pattern parses + what date/teams will be used.
+function onGameFilePick(input){
+  const f = input.files[0];
+  document.getElementById('gFileName').textContent = f ? f.name : '';
+  const hint = document.getElementById('gFilenameParsed');
+  if (!f) { hint.innerHTML = ''; return; }
+  const ext = f.name.toLowerCase().split('.').pop();
+  if (ext !== 'pdf') {
+    hint.innerHTML = `<span style="color:var(--gold-bright)">✓ Excel 将优先按工作簿内的比赛编号、比分 RHE、球员单场总表等字段解析；可一次导入多场</span>`;
+    return;
+  }
+  const fn = OrionParser.parseGameFilename(f.name);
+  if (!fn) {
+    hint.innerHTML = `<span style="color:#ff8a8a">✗ 文件名不符合 &lt;客队&gt;_vs_&lt;主队&gt;_&lt;Mon&gt;_&lt;DD&gt;_&lt;YYYY&gt;.pdf 模板，请重命名后再上传</span>`;
+    return;
+  }
+  hint.innerHTML = `✓ 自动识别：<strong style="color:var(--text)">${fn.away}</strong>（客）vs <strong style="color:var(--text)">${fn.home}</strong>（主） · ${fn.date}`;
+}
+window.onGameFilePick = onGameFilePick;
+
+async function submitGame(e){
+  e.preventDefault();
+  const err = document.getElementById('gErr');
+  err.textContent = '';
+
+  const tid = document.getElementById('gTournament').value;
+  if (!tid) { err.textContent = '请选择所属赛事'; return; }
+
+  const file = document.getElementById('gFile').files[0];
+  if (!file) { err.textContent = '请选择比赛数据文件 PDF / Excel'; return; }
+  if (file.size > 10 * 1024 * 1024) { err.textContent = '文件超过 10 MB'; return; }
+
+  // === Filename is the AUTHORITATIVE source for date/home/away/opponent ===
+  // Convention: <Away>_vs_<Home>_<Mon>_<DD>_<YYYY>.pdf
+  // For PDFs, we REQUIRE this pattern. Excel uploads (赛季合计) skip filename gating.
+  const ext = file.name.toLowerCase().split('.').pop();
+  const fn = ext === 'pdf' ? OrionParser.parseGameFilename(file.name) : null;
+  if (ext === 'pdf' && !fn) {
+    err.textContent = 'PDF 文件名格式不对：必须是 <客队>_vs_<主队>_<Mon>_<DD>_<YYYY>.pdf（如 神策_vs_猎户座_Mar_30_2026.pdf），请重命名后再上传';
+    return;
+  }
+
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.textContent = '解析中...';
+
+  try {
+    const t = DB.getTournamentById(tid);
+    const sport = t?.sport || 'softball';
+    const orionName = sport === 'baseball' ? '猎户星' : '猎户座';
+
+    // Dispatch to the correct parser based on extension
+    let parsed;
+    if (ext === 'pdf') {
+      await pdfjsReadyPromise; // make sure pdf.js has loaded
+      if (!window.pdfjsLib) throw new Error('pdf.js 加载失败，请检查网络');
+      parsed = await OrionParser.parsePdfFile(file, { orionName });
+    } else if (ext === 'xls' || ext === 'xlsx') {
+      if (!window.XLSX) throw new Error('SheetJS 加载失败，请检查网络');
+      parsed = await OrionParser.parseExcelFile(file, { orionName });
+    } else {
+      throw new Error('不支持的文件格式：' + ext + '（仅支持 PDF / XLS / XLSX）');
+    }
+
+    const parsedGames = Array.isArray(parsed.games) ? parsed.games : [parsed];
+    if (!parsedGames.length) throw new Error('未解析到任何比赛');
+
+    // === Apply filename override (PDF only) ===
+    if (fn) {
+      const parsed = parsedGames[0];
+      const orionIsHomeFn = DB.isOrionTeam(fn.home);
+      const orionIsHomeP  = DB.isOrionTeam(parsed.home);
+      // If parser put Orion on the opposite side, flip every paired field
+      if (orionIsHomeFn !== orionIsHomeP) {
+        [parsed.home,       parsed.away]       = [parsed.away,       parsed.home];
+        [parsed.homeScore,  parsed.awayScore]  = [parsed.awayScore,  parsed.homeScore];
+        [parsed.homeTotals, parsed.awayTotals] = [parsed.awayTotals, parsed.homeTotals];
+        if (parsed.linescore) {
+          [parsed.linescore.home, parsed.linescore.away] = [parsed.linescore.away, parsed.linescore.home];
+        }
+      }
+      // Replace names with filename's canonical spelling, force date + venue
+      parsed.home  = fn.home;
+      parsed.away  = fn.away;
+      parsed.date  = fn.date;
+      parsed.venue = orionIsHomeFn ? 'Home' : 'Away';
+    }
+
+    const cover = document.getElementById('gCoverPreview').dataset.url || '';
+    const now = Date.now();
+    const gamesToImport = parsedGames.map((pg, i) => Object.assign({
+      id: pg.id || (parsedGames.length > 1 ? `g_excel_${now}_${i}` : `g_${now}`),
+      tournamentId: tid,
+      sport,
+      season: t?.season || '',
+      seasonName: t?.name || '',
+      cover,
+    }, pg));
+
+    btn.disabled = false;
+    btn.textContent = '上传并解析';
+    document.getElementById('gameModal').classList.remove('open');
+    document.querySelector('#gameModal form').reset();
+    document.getElementById('gCoverPreview').innerHTML = '';
+    document.getElementById('gCoverPreview').dataset.url = '';
+    document.getElementById('gFileName').textContent = '';
+
+    const totalBat = gamesToImport.reduce((n,g)=>n+(g.batting||[]).length+(g.oppBatting||[]).length,0);
+    const totalPit = gamesToImport.reduce((n,g)=>n+(g.pitching||[]).length+(g.oppPitching||[]).length,0);
+    queueGameReviewDrafts(gamesToImport, ext === 'pdf' ? 'pdf' : 'excel');
+    toast(`解析成功，已进入数据确认：${gamesToImport.length} 场 · ${totalBat} 名打者记录 · ${totalPit} 名投手记录`, 'success');
+    renderAll();
+
+  } catch (ex) {
+    console.error('Parse failed:', ex);
+    err.textContent = '解析失败：' + (ex.message || ex);
+    btn.disabled = false;
+    btn.textContent = '上传并解析';
+  }
+}
+window.submitGame = submitGame;
+
+// ====================================================================
+// Batch import — drop a folder containing GameChanger PDFs + cover images
+// ====================================================================
+let gbPairs = []; // [{ pdf:File, cover:File|null, fn:{away,home,date}|null, error:string|null }]
+let gbPathWarning = '';
+
+function openGameBatchModal(){
+  // Populate tournament select (reuse existing function)
+  const sel = document.getElementById('gbTournament');
+  sel.innerHTML = '<option value="">请选择赛事</option>' +
+    DB.allTournaments().map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('gameBatchModal').classList.add('open');
+  document.getElementById('gbPreview').innerHTML = '';
+  document.getElementById('gbErr').textContent = '';
+  document.getElementById('gbProgress').style.display = 'none';
+  document.getElementById('gbProgress').textContent = '';
+  document.getElementById('gbSubmit').disabled = true;
+  gbPairs = [];
+  gbPathWarning = '';
+}
+window.openGameBatchModal = openGameBatchModal;
+
+// Handle folder pick (webkitdirectory click → input.files populated)
+async function onGameBatchFolderPick(input){
+  const files = [...input.files];
+  console.log(`[orion-batch] onGameBatchFolderPick: ${files.length} files from input`);
+  return processBatchFiles(files);
+}
+window.onGameBatchFolderPick = onGameBatchFolderPick;
+
+// Image-cover pairing rules — based on the SUBFOLDER each file lives in:
+//   每个 PDF 跟它所在子目录的图片配对，子目录是分组单位
+//   ① 同名匹配（PDF base name == 图片 base name in same dir）→ 锁定
+//   ② 同目录恰好 1 张图 → 自动用那张
+//   ③ 同目录 1 PDF + 多图 → 默认取 lastModified 最新的（可下拉切换）
+//   ④ 同目录多 PDF + 多图 → 按 mtime 顺序 1:1 默认分配，标"请确认"，下拉可调
+//   ⑤ 同目录多 PDF + 1 图 → 全部共用那张
+//   ⑥ 0 图 → 无封面
+// 每个 pair 还带 candidates 列表，preview 渲染成 <select> 让 admin 改
+function getFileDir(f){
+  const path = f._orionRelativePath || f.webkitRelativePath || f.name;
+  const idx = path.lastIndexOf('/');
+  return idx >= 0 ? path.slice(0, idx) : '';
+}
+
+function processBatchFiles(files){
+  const IMG_RE = /\.(jpe?g|png|webp)$/i;
+  const PDF_RE = /\.pdf$/i;
+
+  // Group all files by their parent directory
+  const dirMap = {};
+  for (const f of files) {
+    const dir = getFileDir(f);
+    if (!dirMap[dir]) dirMap[dir] = { pdfs: [], imgs: [] };
+    if (PDF_RE.test(f.name)) dirMap[dir].pdfs.push(f);
+    else if (IMG_RE.test(f.name)) dirMap[dir].imgs.push(f);
+  }
+  const totalPdfs = Object.values(dirMap).reduce((n, d) => n + d.pdfs.length, 0);
+  const totalImgs = Object.values(dirMap).reduce((n, d) => n + d.imgs.length, 0);
+  const hasFolderPaths = files.some(f => /\/.+/.test(f._orionRelativePath || f.webkitRelativePath || ''));
+  gbPathWarning = !hasFolderPaths && totalPdfs > 1 && totalImgs > 1
+    ? '当前文件没有携带子文件夹路径，只能按时间顺序猜封面。请拖入“包含各场子文件夹的父文件夹”，或用选择文件夹按钮重新选择。'
+    : '';
+  console.log(`[orion-batch] ${files.length} files → ${Object.keys(dirMap).length} dirs · ${totalPdfs} PDFs · ${totalImgs} images`);
+
+  const pairs = [];
+  for (const dir of Object.keys(dirMap).sort()) {
+    const { pdfs, imgs } = dirMap[dir];
+    if (!pdfs.length) continue;
+
+    // Sort imgs by mtime descending (latest first) — default pick order
+    const sortedImgs = imgs.slice().sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
+    const imgByBase = {};
+    for (const img of sortedImgs) imgByBase[img.name.replace(/\.[^.]+$/, '').toLowerCase()] = img;
+
+    pdfs.forEach((pdf, idxInDir) => {
+      const base = pdf.name.replace(/\.[^.]+$/, '').toLowerCase();
+      const sameName = imgByBase[base] || null;
+      const fn = OrionParser.parseGameFilename(pdf.name);
+
+      let defaultCover = null, coverNote = '';
+      if (sameName) {
+        defaultCover = sameName; coverNote = '同子目录同名';
+      } else if (sortedImgs.length === 0) {
+        coverNote = '无封面';
+      } else if (sortedImgs.length === 1) {
+        defaultCover = sortedImgs[0];
+        coverNote = pdfs.length === 1 ? '同子目录匹配' : '同目录共用';
+      } else if (pdfs.length === 1) {
+        // 1 PDF + 多图 → 取最新
+        defaultCover = sortedImgs[0]; coverNote = '同目录最新';
+      } else {
+        // 多 PDF + 多图 → 按 mtime 顺序 1:1 默认；标"请确认"提示用户复核
+        defaultCover = sortedImgs[idxInDir] || sortedImgs[0];
+        coverNote = '请确认';
+      }
+
+      pairs.push({
+        pdf, fn,
+        cover: defaultCover, coverNote,
+        candidates: sortedImgs,           // preview 给下拉用
+        dir: dir || '(顶层)',
+        error: fn ? null : '文件名格式不对（需 <客>_vs_<主>_<Mon>_<DD>_<YYYY>.pdf）'
+      });
+    });
+  }
+
+  gbPairs = pairs;
+  renderBatchPreview();
+}
+window.processBatchFiles = processBatchFiles;
+
+// Admin can override the auto-picked cover via the preview dropdown
+function setBatchCover(pairIdx, candidateIdx){
+  const p = gbPairs[pairIdx];
+  if (!p) return;
+  if (candidateIdx === '' || candidateIdx == null) {
+    p.cover = null; p.coverNote = '手动留空';
+  } else {
+    const i = parseInt(candidateIdx, 10);
+    p.cover = p.candidates[i] || null;
+    p.coverNote = p.cover ? '手动选择' : '无封面';
+  }
+  renderBatchPreview();
+}
+window.setBatchCover = setBatchCover;
+
+function renderBatchPreview(){
+  const host = document.getElementById('gbPreview');
+  if (!gbPairs.length) {
+    host.innerHTML = '<div style="font-size:12px;color:var(--text-mute);padding:8px">未发现 PDF 文件</div>';
+    document.getElementById('gbSubmit').disabled = true;
+    return;
+  }
+  const ok = gbPairs.filter(p => !p.error).length;
+  const withCover = gbPairs.filter(p => !p.error && p.cover).length;
+  const needsReview = gbPairs.filter(p => p.coverNote === '请确认').length;
+
+  // Group pairs by directory for display
+  const byDir = {};
+  gbPairs.forEach((p, i) => {
+    if (!byDir[p.dir]) byDir[p.dir] = [];
+    byDir[p.dir].push({ ...p, _idx: i });
+  });
+
+  const reviewBanner = needsReview > 0
+    ? `<div style="font-size:12px;color:var(--gold-bright);margin-bottom:8px;padding:6px 10px;background:rgba(228,199,122,.08);border-radius:6px">
+         ⚠ ${needsReview} 个 PDF 在多 PDF + 多图的目录里，已按时间顺序自动配对，<strong>请用下拉框确认</strong>是否正确
+       </div>`
+    : '';
+  const pathBanner = gbPathWarning
+    ? `<div style="font-size:12px;color:#ffcc7a;margin-bottom:8px;padding:6px 10px;background:rgba(255,138,77,.10);border:1px solid rgba(255,138,77,.22);border-radius:6px">${gbPathWarning}</div>`
+    : '';
+
+  host.innerHTML = `
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px">
+      共发现 <strong style="color:var(--text)">${gbPairs.length}</strong> 个 PDF，<strong style="color:${ok===gbPairs.length?'var(--gold-bright)':'#ff8a8a'}">${ok}</strong> 个文件名合规，<strong>${withCover}</strong> 个匹配到封面图，<strong>${Object.keys(byDir).length}</strong> 个子目录。
+    </div>
+    ${pathBanner}
+    ${reviewBanner}
+    <div style="max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:8px">
+      ${Object.keys(byDir).sort().map(dir => {
+        const items = byDir[dir];
+        return `
+          <div style="background:rgba(46,107,255,.06);padding:6px 12px;font-size:11px;color:var(--blue-300);border-bottom:1px solid var(--line)">📂 ${dir} <span style="color:var(--text-mute)">· ${items.length} PDF · ${items[0].candidates.length} 图</span></div>
+          ${items.map(p => {
+            const fn = p.fn;
+            const i = p._idx;
+            const cls = p.error ? 'color:#ff8a8a' : (p.cover ? 'color:var(--text)' : 'color:var(--text-dim)');
+            const icon = p.error ? '✗' : (p.cover ? '✓' : '◯');
+            const noteColor = p.coverNote === '请确认' ? 'color:var(--gold-bright)'
+                            : p.coverNote === '同子目录同名' || p.coverNote === '同子目录匹配' ? 'color:var(--blue-300)'
+                            : p.coverNote === '手动选择' || p.coverNote === '手动留空' ? 'color:var(--gold-bright)'
+                            : 'color:var(--text-mute)';
+            // Cover dropdown
+            let coverEditor = '';
+            if (!p.error && p.candidates && p.candidates.length > 0) {
+              const opts = ['<option value="">（无封面）</option>']
+                .concat(p.candidates.map((img, j) =>
+                  `<option value="${j}" ${img === p.cover ? 'selected' : ''}>${img.name}</option>`
+                )).join('');
+              coverEditor = `<select onchange="setBatchCover(${i}, this.value)" style="font-size:11px;padding:3px 6px;background:var(--navy-700);border:1px solid var(--line-strong);border-radius:4px;color:var(--text);max-width:240px;font-family:monospace">${opts}</select>
+                <span style="${noteColor};font-size:11px;margin-left:8px">(${p.coverNote})</span>`;
+            } else if (!p.error) {
+              coverEditor = `<span style="color:var(--text-mute);font-size:11px">无图片可选</span>`;
+            }
+            const right = p.error
+              ? p.error
+              : `${fn.away} (客) vs ${fn.home} (主) · ${fn.date}`;
+            return `<div style="padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;${cls}">
+              <div style="display:flex;gap:10px;align-items:center">
+                <span style="font-family:monospace">${icon}</span>
+                <span style="flex:0 0 220px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.pdf.name}</span>
+                <span style="flex:1">${right}</span>
+              </div>
+              ${coverEditor ? `<div style="margin-top:4px;margin-left:24px">🖼 ${coverEditor}</div>` : ''}
+            </div>`;
+          }).join('')}`;
+      }).join('')}
+    </div>
+  `;
+  document.getElementById('gbSubmit').disabled = (ok === 0);
+  document.getElementById('gbSubmit').textContent = `批量导入 ${ok} 场`;
+}
+
+async function submitGameBatch(e){
+  e.preventDefault();
+  const err = document.getElementById('gbErr');
+  const prog = document.getElementById('gbProgress');
+  err.textContent = '';
+
+  const tid = document.getElementById('gbTournament').value;
+  if (!tid) { err.textContent = '请选择所属赛事'; return; }
+  if (!gbPairs.length) { err.textContent = '请先选择含 PDF 的文件夹'; return; }
+  const validPairs = gbPairs.filter(p => !p.error);
+  if (!validPairs.length) { err.textContent = '没有任何文件名合规的 PDF 可导入'; return; }
+
+  const t = DB.getTournamentById(tid);
+  const sport = t?.sport || 'softball';
+  const orionName = sport === 'baseball' ? '猎户星' : '猎户座';
+
+  const btn = document.getElementById('gbSubmit');
+  btn.disabled = true;
+  prog.style.display = 'block';
+
+  await pdfjsReadyPromise;
+  if (!window.pdfjsLib) { err.textContent = 'pdf.js 加载失败'; btn.disabled=false; return; }
+
+  let success = 0, failed = 0;
+  const parsedDrafts = [];
+  for (let i = 0; i < validPairs.length; i++) {
+    const { pdf, cover, fn } = validPairs[i];
+    prog.textContent = `[${i+1}/${validPairs.length}] 解析中：${pdf.name}`;
+    try {
+      const parsed = await OrionParser.parsePdfFile(pdf, { orionName });
+      // Filename override (same logic as submitGame)
+      const orionIsHomeFn = DB.isOrionTeam(fn.home);
+      const orionIsHomeP  = DB.isOrionTeam(parsed.home);
+      if (orionIsHomeFn !== orionIsHomeP) {
+        [parsed.home, parsed.away] = [parsed.away, parsed.home];
+        [parsed.homeScore, parsed.awayScore] = [parsed.awayScore, parsed.homeScore];
+        [parsed.homeTotals, parsed.awayTotals] = [parsed.awayTotals, parsed.homeTotals];
+        if (parsed.linescore) [parsed.linescore.home, parsed.linescore.away] = [parsed.linescore.away, parsed.linescore.home];
+      }
+      parsed.home = fn.home; parsed.away = fn.away; parsed.date = fn.date;
+      parsed.venue = orionIsHomeFn ? 'Home' : 'Away';
+
+      // Compress cover image if present
+      let coverUrl = '';
+      if (cover) {
+        try { coverUrl = await compressImage(cover); }
+        catch (e) { console.warn('Cover compression failed for', pdf.name, e); }
+      }
+
+      const newGame = Object.assign({
+        id: 'g_' + Date.now() + '_' + i,
+        tournamentId: tid,
+        sport,
+        season: t?.season || '',
+        seasonName: t?.name || '',
+        cover: coverUrl,
+      }, parsed);
+      parsedDrafts.push(newGame);
+      success++;
+    } catch (ex) {
+      console.error('Batch import failed for', pdf.name, ex);
+      failed++;
+    }
+  }
+
+  prog.textContent = `✓ 完成：${success} 场导入成功${failed ? '，'+failed+' 场失败（详见控制台）' : ''}`;
+  btn.disabled = false;
+  if (parsedDrafts.length) queueGameReviewDrafts(parsedDrafts, 'batch-pdf');
+  toast(`批量解析：${success} 场进入数据确认 / ${failed} 场失败`, failed ? 'info' : 'success');
+  renderAll();
+
+  // Auto-close on full success
+  if (failed === 0) setTimeout(() => {
+    document.getElementById('gameBatchModal').classList.remove('open');
+  }, 1500);
+}
+window.submitGameBatch = submitGameBatch;
+
+// Build a human-readable summary of what the parser extracted, so the
+// admin can sanity-check before committing to the DB.
+function buildParsePreview(g){
+  const lines = [];
+  lines.push('━━━━━━━━━━ 解析结果预览 ━━━━━━━━━━');
+  lines.push(`比赛日期：${g.date || '—'}`);
+  lines.push(`主客场：${g.venue === 'Away' ? '客场' : '主场'}`);
+  lines.push(`对阵：${g.away} ${g.awayScore} - ${g.homeScore} ${g.home}`);
+  lines.push(`局数：${g.innings || '—'}`);
+  lines.push(`打者数：我方 ${(g.batting||[]).length} · 对方 ${(g.oppBatting||[]).length}`);
+  lines.push(`投手数：我方 ${(g.pitching||[]).length} · 对方 ${(g.oppPitching||[]).length}`);
+  if (g.mvpPlayerName) lines.push(`推测 MVP：${g.mvpPlayerName} (${g.mvpNote || ''})`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  // 解析校验告警 — H/TB 一致性、footer 提到的姓名是否能匹配到 batting 行
+  const warnings = Array.isArray(g.warnings) ? g.warnings : [];
+  if (warnings.length) {
+    lines.push('');
+    lines.push(`⚠️  解析校验发现 ${warnings.length} 个潜在问题：`);
+    for (const w of warnings) lines.push('   · ' + w);
+    lines.push('');
+    lines.push('建议先核对原 PDF 数据，再决定是否导入。');
+  }
+  return lines.join('\n');
+}
+
+function buildParseBatchPreview(games){
+  const lines = [];
+  const warnings = games.flatMap(g => Array.isArray(g.warnings) ? g.warnings : []);
+  const totalBat = games.reduce((n,g)=>n+(g.batting||[]).length+(g.oppBatting||[]).length,0);
+  const totalPit = games.reduce((n,g)=>n+(g.pitching||[]).length+(g.oppPitching||[]).length,0);
+  lines.push('━━━━━━━━━━ Excel 解析结果预览 ━━━━━━━━━━');
+  lines.push(`比赛数量：${games.length}`);
+  lines.push(`打者记录：${totalBat}`);
+  lines.push(`投手记录：${totalPit}`);
+  lines.push('');
+  games.slice(0, 12).forEach((g, idx) => {
+    lines.push(`${idx+1}. ${g.date || '—'}  ${g.away} ${g.awayScore ?? '—'} - ${g.homeScore ?? '—'} ${g.home} · ${g.innings || '—'} 局`);
+    lines.push(`   打者：我方 ${(g.batting||[]).length} / 对方 ${(g.oppBatting||[]).length} · 投手：我方 ${(g.pitching||[]).length} / 对方 ${(g.oppPitching||[]).length}`);
+  });
+  if (games.length > 12) lines.push(`... 另有 ${games.length - 12} 场未展开`);
+  if (warnings.length) {
+    lines.push('');
+    lines.push(`⚠️  解析校验发现 ${warnings.length} 个潜在问题：`);
+    warnings.slice(0, 16).forEach(w => lines.push('   · ' + w));
+    if (warnings.length > 16) lines.push(`   · ... 另有 ${warnings.length - 16} 条`);
+    lines.push('建议先核对 Excel 的校验 sheet，再决定是否导入。');
+  }
+  return lines.join('\n');
+}
+window.buildParsePreview = buildParsePreview;
+
+// ===== Events =====
+const eventSelection = new Set();
+
+function renderEvents(){
+  const list=document.getElementById('eventList');
+  const events=DB.allEvents();
+  for (const id of eventSelection) if (!events.some(e => e.id === id)) eventSelection.delete(id);
+  updateEventBatchBar();
+  if(!events.length){list.innerHTML='<div class="empty">暂无活动</div>';return}
+  list.innerHTML=events.map(ev=>{
+    const checked = eventSelection.has(ev.id) ? 'checked' : '';
+    return `<div class="event-item">
+      <input type="checkbox" data-event-id="${ev.id}" ${checked} onchange="toggleEventSelection('${ev.id}', this.checked)" style="margin:0 12px 0 0;width:18px;height:18px;accent-color:var(--gold-bright);cursor:pointer;flex:0 0 auto">
+      <img src="${ev.cover}" alt="" onerror="this.src='assets/img/logo.jpg'">
+      <div class="meta">
+        <strong>${ev.title}</strong>
+        <div class="sub">${ev.tag} · ${ev.date} · 📍${ev.location}${ev.sourceLink?' · 📕 含小红书链接':''}</div>
+      </div>
+      <div class="actions">
+        <button onclick="window.open('index.html#events','_blank')">查看</button>
+        <button class="danger" onclick="if(confirm('删除活动 ${ev.title.replace(/'/g,'')}?')){DB.deleteEvent('${ev.id}');renderAll();toast('已删除','success')}">删</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEventSelection(id, checked){
+  if (checked) eventSelection.add(id); else eventSelection.delete(id);
+  updateEventBatchBar();
+}
+window.toggleEventSelection = toggleEventSelection;
+
+function updateEventBatchBar(){
+  const bar = document.getElementById('eventBatchBar');
+  const cnt = document.getElementById('eventBatchCount');
+  if (!bar) return;
+  bar.style.display = eventSelection.size > 0 ? 'flex' : 'none';
+  if (cnt) cnt.textContent = eventSelection.size;
+}
+
+function toggleEventBatchSelectAll(){
+  const events = DB.allEvents();
+  const allSelected = events.every(e => eventSelection.has(e.id));
+  eventSelection.clear();
+  if (!allSelected) events.forEach(e => eventSelection.add(e.id));
+  renderEvents();
+}
+window.toggleEventBatchSelectAll = toggleEventBatchSelectAll;
+
+function clearEventSelection(){
+  eventSelection.clear();
+  renderEvents();
+}
+window.clearEventSelection = clearEventSelection;
+
+function batchDeleteEvents(){
+  const n = eventSelection.size;
+  if (!n) return;
+  if (!confirm(`确认删除选中的 ${n} 个活动？此操作不可撤销。`)) return;
+  for (const id of eventSelection) DB.deleteEvent(id);
+  eventSelection.clear();
+  toast(`已删除 ${n} 个活动`, 'success');
+  renderAll();
+}
+window.batchDeleteEvents = batchDeleteEvents;
+function openEventModal(){
+  document.getElementById('eventModal').classList.add('open');
+}
+window.openEventModal=openEventModal;
+
+function parseXhs(){
+  const raw=document.getElementById('xhsRaw').value.trim();
+  if(!raw){toast('请先粘贴小红书内容','error');return}
+  // Strategy: first non-empty line = title, rest = body
+  const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){toast('未识别到有效内容','error');return}
+  let title=lines[0].replace(/^[#📕📍🗓⭐✨🌟]+\s*/,'').trim();
+  if(title.length>60)title=title.slice(0,60);
+  const body=lines.slice(1).join('\n').trim() || lines[0];
+  document.getElementById('evTitle').value=title;
+  document.getElementById('evBody').value=body;
+  // Auto-pick a tag based on keywords
+  const tagSel=document.getElementById('evTag');
+  const text=raw.toLowerCase();
+  if(text.includes('杯')||text.includes('邀请赛')||text.includes('联赛'))tagSel.value='Tournament · 杯赛';
+  else if(text.includes('训练'))tagSel.value='Training · 训练';
+  else if(text.includes('团建')||text.includes('郊游'))tagSel.value='Team Building · 团建';
+  else if(text.includes('年会'))tagSel.value='Annual · 年会';
+  else if(text.includes('招新')||text.includes('试训'))tagSel.value='Recruitment · 招新';
+  toast('已识别 · 请补充日期/地点/封面后发布','success');
+}
+window.parseXhs=parseXhs;
+
+function submitEvent(e){
+  e.preventDefault();
+  const err=document.getElementById('evErr');err.textContent='';
+  const cover=document.getElementById('evCoverPreview').dataset.url||'';
+  if(!cover){err.textContent='请上传封面图';return}
+  const imgsRaw=document.getElementById('evImagesPreview').dataset.urls||'[]';
+  const images=JSON.parse(imgsRaw||'[]');
+  DB.addEvent({
+    title:document.getElementById('evTitle').value,
+    tag:document.getElementById('evTag').value,
+    date:document.getElementById('evDate').value,
+    location:document.getElementById('evLoc').value,
+    body:document.getElementById('evBody').value,
+    cover,
+    images,
+    sourceLink:document.getElementById('evSource').value||null,
+  });
+  document.getElementById('eventModal').classList.remove('open');
+  document.querySelector('#eventModal form').reset();
+  document.getElementById('evCoverPreview').innerHTML='';
+  document.getElementById('evCoverPreview').dataset.url='';
+  document.getElementById('evImagesPreview').innerHTML='';
+  document.getElementById('evImagesPreview').dataset.urls='';
+  document.getElementById('xhsRaw').value='';
+  toast('活动已发布','success');
+  renderAll();
+}
+window.submitEvent=submitEvent;
+
+// ===== Highlight upload =====
+function openHLModal(){
+  const gSel=document.getElementById('hlGame');
+  gSel.innerHTML=DB.allGames().map(g=>`<option value="${g.id}">${g.away} vs ${g.home} · ${g.date}</option>`).join('') || '<option value="">暂无比赛</option>';
+  const pSel=document.getElementById('hlPlayer');
+  pSel.innerHTML='<option value="">— 不指定 / 全场回放 —</option>'+DB.allPlayers().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  document.getElementById('hlModal').classList.add('open');
+}
+window.openHLModal=openHLModal;
+function hlTypeChange(){
+  const t=document.querySelector('input[name=hlType]:checked').value;
+  document.getElementById('hlImgBlock').style.display=t==='image'?'':'none';
+  document.getElementById('hlVideoBlock').style.display=t==='video'?'':'none';
+}
+window.hlTypeChange=hlTypeChange;
+function submitHL(e){
+  e.preventDefault();
+  const err=document.getElementById('hlErr');err.textContent='';
+  const t=document.querySelector('input[name=hlType]:checked').value;
+  let cover='', url='';
+  if(t==='image'){
+    cover=document.getElementById('hlImgPreview').dataset.url||'';
+    if(!cover){err.textContent='请上传图片';return}
+  } else {
+    url=document.getElementById('hlVideoUrl').value;
+    if(!url){err.textContent='请填写视频链接';return}
+    if(!DB.videoEmbedUrl(url)){err.textContent='链接格式不支持，仅 B 站 BV / YouTube';return}
+    cover=document.getElementById('hlImgPreview').dataset.url||'assets/img/group/2cac6152a7021cecfb69a968a8b0e73d.JPG';
+  }
+  DB.addHighlight({
+    gameId:document.getElementById('hlGame').value,
+    playerName:document.getElementById('hlPlayer').value,
+    title:document.getElementById('hlTitle').value,
+    url:url,
+    cover:cover,
+    uploader:'admin',
+    status:'approved',
+  });
+  document.getElementById('hlModal').classList.remove('open');
+  document.querySelector('#hlModal form').reset();
+  document.getElementById('hlImgPreview').innerHTML='';
+  document.getElementById('hlImgPreview').dataset.url='';
+  toast('已发布','success');
+  renderAll();
+}
+window.submitHL=submitHL;
+
+// ===== HOF =====
+function renderHOF(){
+  const sel=document.getElementById('hofPlayer');
+  sel.innerHTML=DB.allPlayers().map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const grid=document.getElementById('hofGrid');
+  const list=DB.allHallOfFame();
+  if(!list.length){grid.innerHTML='<div class="empty">名人堂暂无成员</div>';return}
+  grid.innerHTML=list.map(h=>`
+    <div class="pool-card">
+      <img class="photo" src="${DB.playerPhotoUrl(h.player)}" alt="" onerror="this.src='assets/img/logo.jpg'" style="border-color:var(--gold)">
+      <div class="name" style="color:var(--gold-bright)">${h.player?h.player.name:'—'}</div>
+      <div class="num">${h.inductedYear}</div>
+      <div class="pos" style="color:var(--text-dim);font-size:11px">${h.reason||''}</div>
+      <div class="actions">
+        <button class="danger" onclick="DB.removeFromHallOfFame('${h.playerId}');renderAll();toast('已移除','success')">移除</button>
+      </div>
+    </div>
+  `).join('');
+}
+function addHOF(){
+  const pid=document.getElementById('hofPlayer').value;
+  const reason=document.getElementById('hofReason').value;
+  if(!pid){toast('请选择球员','error');return}
+  DB.addToHallOfFame(pid,reason);
+  toast('已加入名人堂','success');
+  document.getElementById('hofReason').value='';
+  renderAll();
+}
+window.addHOF=addHOF;
+
+// ===== Highlights =====
+function renderHL(){
+  const list=document.getElementById('hlList');
+  const all=DB.allHighlights();
+  if(!all.length){list.innerHTML='<div class="empty">暂无高亮</div>';return}
+  list.innerHTML=all.map(h=>{
+    const g=DB.getGameById(h.gameId);
+    return `<div class="code-item">
+      <img src="${h.cover}" style="width:60px;height:40px;object-fit:cover;border-radius:4px">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:500">${h.title}</div>
+        <div class="meta">${h.playerName||'无关联'} · ${g?g.away+' vs '+g.home:'—'} · 上传：${h.uploader==='admin'?'管理员':'球员'}</div>
+      </div>
+      <span class="status ${h.status==='approved'?'unused':'used'}">${h.status==='approved'?'已发布':'待审核'}</span>
+      ${h.status!=='approved'?`<button class="btn-nav" style="padding:4px 12px;font-size:11px" onclick="(()=>{const d=DB._data.highlights.find(x=>x.id==='${h.id}');d.status='approved';DB._save();renderAll();toast('已通过','success')})()">通过</button>`:''}
+      <button class="btn-nav ghost" style="padding:4px 12px;font-size:11px;border-color:rgba(255,100,100,.4);color:#ff8a8a" onclick="if(confirm('删除?')){DB.deleteHighlight('${h.id}');renderAll()}">删除</button>
+    </div>`;
+  }).join('');
+}
+
+// =================== 积分管理 ===================
+// 子 tab 切换
+document.querySelectorAll('[data-ptab]').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('[data-ptab]').forEach(x => x.classList.toggle('active', x === t));
+  document.querySelectorAll('[data-ppanel]').forEach(p => p.style.display = p.dataset.ppanel === t.dataset.ptab ? '' : 'none');
+}));
+
+// 通用：搜索框 + 下拉 + hidden id 三元组（用于积分管理 + 绑定码）
+// fields: 输入数组 [searchInputId, hiddenInputId, dropdownId, selectedLabelId]
+// items: 候选数据，{id, label, sublabel, photo, badge}
+// onSelect: 选中后回调（可选）
+function _attachSearchPicker(fields, getItems, onSelect) {
+  const [siId, hiId, ddId, lbId] = fields;
+  const search = document.getElementById(siId);
+  const hidden = document.getElementById(hiId);
+  const dd = document.getElementById(ddId);
+  const lb = document.getElementById(lbId);
+  if (!search || search._wired) return;
+  search._wired = true;
+  function render() {
+    const q = search.value.trim();
+    const items = getItems(q).slice(0, 20);
+    if (!q || !items.length) {
+      dd.innerHTML = !q ? '' : '<div style="padding:12px;color:var(--text-mute);text-align:center;font-size:13px">未匹配到结果</div>';
+      dd.style.display = q ? 'block' : 'none';
+      return;
+    }
+    dd.innerHTML = items.map(it => `
+      <div class="dd-item" data-id="${it.id}" data-label="${(it.label||'').replace(/"/g,'&quot;')}"
+           style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;transition:background .12s">
+        ${it.photo ? `<img src="${it.photo}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.src='assets/img/logo.jpg'">` : ''}
+        <div style="flex:1;min-width:0;line-height:1.4">
+          <div><strong>${it.label}</strong>${it.sublabel ? ` <span style="color:var(--text-dim);font-size:12px">${it.sublabel}</span>` : ''}${it.badge||''}</div>
+          ${it.detail ? `<div style="font-size:11px;color:var(--text-mute);margin-top:2px">${it.detail}</div>` : ''}
+        </div>
+      </div>`).join('');
+    dd.style.display = 'block';
+  }
+  // debounce 200ms 减少高频 input 刷新
+  const debouncedRender = DB.debounce(render, 180);
+  search.addEventListener('input', debouncedRender);
+  search.addEventListener('focus', render);
+  document.addEventListener('click', e => {
+    if (!search.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+  });
+  dd.addEventListener('click', e => {
+    const item = e.target.closest('.dd-item');
+    if (!item) return;
+    hidden.value = item.dataset.id;
+    search.value = item.dataset.label;
+    if (lb) lb.innerHTML = `✓ 已选择 <strong style="color:var(--gold-bright)">${item.dataset.label}</strong>`;
+    dd.style.display = 'none';
+    if (typeof onSelect === 'function') onSelect(item.dataset.id);
+  });
+  dd.addEventListener('mouseover', e => {
+    const item = e.target.closest('.dd-item');
+    if (item) item.style.background = 'rgba(46,107,255,.12)';
+  });
+  dd.addEventListener('mouseout', e => {
+    const item = e.target.closest('.dd-item');
+    if (item) item.style.background = '';
+  });
+}
+
+// 积分管理 ① 球员搜索
+function _setupAdjPlayerSearch() {
+  _attachSearchPicker(
+    ['adjPlayerSearch', 'adjPlayerId', 'adjPlayerDropdown', 'adjPlayerSelected'],
+    (q) => {
+      return DB.allPlayers()
+        .filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position))
+        .map(p => {
+          const level = DB.getPlayerLevel(p);
+          const tagBadge = level === 'casual'
+            ? ' <span style="font-size:10px;color:var(--blue-300);background:rgba(46,107,255,.12);border:1px solid rgba(46,107,255,.3);padding:1px 6px;border-radius:999px;margin-left:4px">⏳ 试训</span>'
+            : '';
+          return {
+            id: p.id,
+            label: p.name + (p.number ? ' · #' + p.number : ''),
+            sublabel: p.position || '',
+            photo: DB.playerPhotoUrl(p),
+            badge: tagBadge,
+          };
+        });
+    }
+  );
+}
+
+// 积分管理 ② 比赛搜索
+function _setupAdjGameSearch() {
+  _attachSearchPicker(
+    ['adjGameSearch', 'adjGameId', 'adjGameDropdown', 'adjGameSelected'],
+    (q) => {
+      return DB.allGames({includeAggregate: true}).map(g => {
+        const t = DB.getTournamentById(g.tournamentId);
+        const isHome = DB.isOrionTeam(g.home);
+        const opp = isHome ? g.away : g.home;
+        const date = g.date || '';
+        const tname = t ? (t.shortName || t.name) : '';
+        const sport = g.sport === 'baseball' ? '⚾' : '🥎';
+        return {
+          id: g.id,
+          searchText: [opp, date, tname, g.home, g.away, g.sport].join(' '),
+          label: `${sport} ${date} vs ${opp}`,
+          sublabel: tname ? `· ${tname}` : '',
+          detail: g.isAggregate ? '🟢 赛季合计' : `比分 ${g.homeScore ?? '?'} - ${g.awayScore ?? '?'}`,
+        };
+      }).filter(it => DB.fuzzyMatch(q, it.searchText));
+    }
+  );
+}
+
+function quickAdj(delta, reason){
+  document.getElementById('adjDelta').value = delta;
+  document.getElementById('adjReason').value = reason;
+  document.getElementById('adjDelta').focus();
+}
+
+function submitAdjustment(){
+  const playerId = document.getElementById('adjPlayerId').value;
+  const gameId = document.getElementById('adjGameId').value || null;
+  const delta = Number(document.getElementById('adjDelta').value);
+  const reason = document.getElementById('adjReason').value.trim();
+  if (!playerId) return toast('请先在搜索框选择球员', 'error');
+  if (!Number.isFinite(delta) || delta === 0) return toast('积分变化必须是非零数字', 'error');
+  if (!reason) return toast('请填写备注', 'error');
+  try {
+    const cu = DB.currentUser();
+    DB.addPointsAdjustment({ playerId, delta, reason, gameId, createdBy: cu?.id || null });
+    const p = DB.getPlayerById(playerId);
+    const g = gameId ? DB.getGameById(gameId) : null;
+    const gameTag = g ? ` · ${(DB.isOrionTeam(g.home)?g.away:g.home)} (${g.date})` : '';
+    toast(`✓ 已为 ${p?.name||''} ${delta>=0?'+':''}${delta} 分${gameTag}`, 'success');
+    // 清空表单
+    document.getElementById('adjPlayerSearch').value = '';
+    document.getElementById('adjPlayerId').value = '';
+    document.getElementById('adjPlayerSelected').innerHTML = '';
+    document.getElementById('adjGameSearch').value = '';
+    document.getElementById('adjGameId').value = '';
+    document.getElementById('adjGameSelected').innerHTML = '未关联具体比赛 · 该调整不会出现在某场 box-score 链接';
+    document.getElementById('adjDelta').value = '';
+    document.getElementById('adjReason').value = '';
+    renderAdjustments();
+    renderOverview();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderAdjustments(){
+  const host = document.getElementById('adjList');
+  if (!host) return;
+  const rows = DB.allPointsAdjustments().slice().reverse();
+  if (!rows.length) { host.innerHTML = '<div class="empty" style="padding:20px">暂无手动调整记录</div>'; return; }
+  host.innerHTML = rows.map(a => {
+    const p = DB.getPlayerById(a.playerId);
+    const g = a.gameId ? DB.getGameById(a.gameId) : null;
+    const sign = a.delta >= 0 ? '+' : '';
+    const color = a.delta >= 0 ? '#4ade80' : '#ff8a8a';
+    const gameLabel = g
+      ? `<a href="game-detail.html?id=${g.id}" style="font-size:11px;color:var(--blue-300);text-decoration:none" target="_blank">⚾ ${(DB.isOrionTeam(g.home)?g.away:g.home)} · ${g.date||''}</a>`
+      : '<span style="font-size:11px;color:var(--text-mute)">— 未关联比赛</span>';
+    return `<div class="points-record-row">
+      <span style="color:var(--text-dim);font-size:12px;font-family:var(--font-display)">${(a.createdAt||'').slice(0,16).replace('T',' ')}</span>
+      <span style="color:var(--text)">${p ? p.name : '<span style="color:var(--text-mute)">球员已删除</span>'}</span>
+      <span style="font-family:var(--font-display);font-size:18px;color:${color};text-align:center">${sign}${a.delta}</span>
+      <span style="color:var(--text-dim);font-size:13px">${escapeHtml(a.reason||'—')}</span>
+      <span>${gameLabel}</span>
+      <button class="btn ghost" style="padding:4px 10px;font-size:12px;color:#ff8a8a;border-color:rgba(255,138,138,.3)" onclick="deleteAdjustment('${a.id}')">删除</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteAdjustment(id){
+  if (!confirm('确定删除这条积分调整？球员的总积分会相应回退。')) return;
+  DB.removePointsAdjustment(id);
+  toast('已删除调整记录', 'success');
+  renderAdjustments();
+  renderOverview();
+}
+
+// ----- Attendance -----
+let attSelected = new Set();
+
+function onAttKindChange(){
+  const kind = document.getElementById('attKind').value;
+  const ef = document.getElementById('attEventField');
+  if (ef) ef.style.display = (kind === 'event') ? '' : 'none';
+}
+
+function fillAttEvents(){
+  const sel = document.getElementById('attEventId');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 不关联具体活动 —</option>' +
+    DB.allEvents().map(e => `<option value="${e.id}">${e.title} · ${e.date||''}</option>`).join('');
+}
+
+function renderAttRoster(){
+  const host = document.getElementById('attRoster');
+  if (!host) return;
+  const q = document.getElementById('attSearch')?.value || '';
+  const players = DB.allPlayers().filter(p => DB.fuzzyMatch(q, p.name, p.number, p.position));
+  host.innerHTML = players.map(p => {
+    const checked = attSelected.has(p.id);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${checked?'rgba(228,199,122,.12)':'rgba(255,255,255,.02)'};border:1px solid ${checked?'var(--gold)':'var(--line)'};border-radius:6px;cursor:pointer;transition:all .15s ease">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleAtt('${p.id}', this.checked)" style="accent-color:var(--gold)">
+      <img src="${DB.playerPhotoUrl(p)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover" onerror="this.src='assets/img/logo.jpg'">
+      <span style="font-size:13px;${checked?'color:var(--gold-bright)':''}">${p.name}${p.number?' #'+p.number:''}</span>
+    </label>`;
+  }).join('');
+  document.getElementById('attCount').textContent = attSelected.size;
+  document.getElementById('attSum').textContent = attSelected.size * 5;
+}
+
+function toggleAtt(playerId, checked){
+  if (checked) attSelected.add(playerId); else attSelected.delete(playerId);
+  renderAttRoster();
+}
+
+function toggleAttSelectAll(){
+  const all = DB.allPlayers();
+  if (attSelected.size === all.length) attSelected.clear();
+  else attSelected = new Set(all.map(p => p.id));
+  renderAttRoster();
+}
+
+function submitAttendance(){
+  if (!attSelected.size) return toast('请至少勾选一名球员', 'error');
+  const kind = document.getElementById('attKind').value;
+  const date = document.getElementById('attDate').value || new Date().toISOString().slice(0,10);
+  const refId = (kind === 'event') ? (document.getElementById('attEventId').value || null) : null;
+  const cu = DB.currentUser();
+  let n = 0;
+  attSelected.forEach(pid => {
+    DB.recordAttendance({ playerId: pid, kind, refId, date, createdBy: cu?.id || null });
+    n++;
+  });
+  toast(`✓ 已为 ${n} 名球员记录${kind==='training'?'训练':'活动'}签到（每人 +5 分）`, 'success');
+  attSelected.clear();
+  renderAttRoster();
+  renderAttList();
+  renderOverview();
+}
+
+function renderAttList(){
+  const host = document.getElementById('attList');
+  if (!host) return;
+  const rows = DB.allAttendances().slice().reverse();
+  if (!rows.length) { host.innerHTML = '<div class="empty" style="padding:20px">暂无签到记录</div>'; return; }
+  // 按 date+kind+refId 分组
+  const groups = {};
+  rows.forEach(a => {
+    const key = `${a.date}|${a.kind}|${a.refId||''}`;
+    if (!groups[key]) groups[key] = { date: a.date, kind: a.kind, refId: a.refId, items: [] };
+    groups[key].items.push(a);
+  });
+  host.innerHTML = Object.values(groups)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))
+    .map(g => {
+      const ev = g.refId ? DB.getEventById(g.refId) : null;
+      const title = g.kind === 'training' ? '🏋 训练签到' : (`🎉 活动${ev ? ' · '+ev.title : ' 签到'}`);
+      return `<div class="points-att-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div><b style="color:var(--gold-bright)">${g.date}</b> · ${title} · <span style="color:var(--text-dim)">${g.items.length} 人 · +${g.items.length*5} 分</span></div>
+        </div>
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+          ${g.items.map(a => {
+            const p = DB.getPlayerById(a.playerId);
+            return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(46,107,255,.08);border:1px solid rgba(46,107,255,.2);border-radius:999px;font-size:12px">
+              ${p ? p.name : '已删除球员'}
+              <button onclick="deleteAttendance('${a.id}')" title="撤销" style="background:transparent;border:0;color:#ff8a8a;cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button>
+            </span>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function deleteAttendance(id){
+  DB.removeAttendance(id);
+  renderAttList();
+  renderOverview();
+}
+
+// ----- Overview -----
+function renderOverview(){
+  const host = document.getElementById('overviewList');
+  if (!host) return;
+  const lb = DB.getPointsLeaderboard();
+  if (!lb.length) { host.innerHTML = '<div class="empty" style="padding:20px">暂无积分记录</div>'; return; }
+  host.innerHTML = lb.map((row, i) => {
+    const p = row.player;
+    const bd = row.breakdown;
+    return `<div class="points-overview-row ${i<3?'is-top':''}">
+      <div style="font-family:var(--font-display);font-size:18px;color:${i===0?'var(--gold-bright)':i<3?'var(--text)':'var(--text-dim)'}">${i+1}</div>
+      <img src="${DB.playerPhotoUrl(p)}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.src='assets/img/logo.jpg'">
+      <div>
+        <div style="color:var(--text);font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+          ${bd.base?`<span>出场 ${bd.base}</span>`:''}
+          ${bd.performance?`<span>· 表现 ${bd.performance>=0?'+':''}${bd.performance}</span>`:''}
+          ${bd.awards?`<span>· 奖项 ${bd.awards}</span>`:''}
+          ${bd.manual?`<span>· 手动 ${bd.manual>=0?'+':''}${bd.manual}</span>`:''}
+        </div>
+      </div>
+      <div style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright)">${row.total}</div>
+      <a class="btn ghost" style="padding:6px 12px;font-size:12px" href="player-points.html?id=${p.id}" target="_blank">明细 →</a>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderPoints(){
+  // 加分模块：球员搜索 + 比赛搜索
+  _setupAdjPlayerSearch();
+  _setupAdjGameSearch();
+  // 签到模块：活动下拉 + 默认日期 + 球员搜索
+  fillAttEvents();
+  const dateInput = document.getElementById('attDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
+  const searchEl = document.getElementById('attSearch');
+  if (searchEl && !searchEl._wired) {
+    searchEl.addEventListener('input', DB.debounce(renderAttRoster, 180));
+    searchEl._wired = true;
+  }
+  renderAttRoster();
+  renderAdjustments();
+  renderAttList();
+  renderOverview();
+}
+
+function renderAll(){renderPool();renderCodes();renderTournaments();renderGames();renderReviewDrafts();renderRevisionWorkbench();renderEvents();renderHOF();renderHL();renderPoints();}
+window.renderAll = renderAll;
+
+// 把所有 inline onclick="" 用到的函数挂到 window（IIFE 内 declared 的函数默认外部访问不到）
+// 修 bug：admin 球员池「⚡ 升级」按钮、积分管理快捷加分 / 签到操作之前都点不动
+// 用字符串名 + try 安全 lookup（防止某个函数没声明导致整段 throw）
+['quickUpgradePlayer', 'quickAdj', 'submitAdjustment', 'deleteAdjustment',
+ 'toggleAttSelectAll', 'submitAttendance', 'deleteAttendance',
+ 'onAttKindChange', 'toggleAtt'].forEach(name => {
+  try { const fn = eval(name); if (typeof fn === 'function') window[name] = fn; }
+  catch(_) { /* 函数未定义 → 跳过 */ }
+});
+
+renderAll();
+
+function applyAdminDeepLink(){
+  const section = initialAdminParams.get('section');
+  if (section && SECTIONS[section]) activateAdminSection(section);
+  const gtab = initialAdminParams.get('gtab');
+  if (gtab && document.querySelector(`[data-gtab="${gtab}"]`)) activateGameTab(gtab);
+  if (revisionPlayerFilter || revisionGameId) {
+    activateAdminSection('match');
+    activateGameTab('revise');
+    if (revisionGameId) {
+      const g = DB.getGameById(revisionGameId);
+      if (g) revisionWorkingGame = cloneData(g);
+    }
+    renderRevisionWorkbench();
+  }
+}
+applyAdminDeepLink();
+
+// 兜底：IIFE 末尾再补一次"用户"懒加载（init 时 reloadUsers 可能还没挂到 window 上）
+if (typeof window.reloadUsers === 'function' && !window._usersLoaded) {
+  const visibleUsers = document.querySelector('[data-panel="users"]')?.style.display !== 'none';
+  if (visibleUsers) { window.reloadUsers(); window.reloadAuditLogs(); window._usersLoaded = true; }
+}
+})();
+</script>
+</body>
+</html>

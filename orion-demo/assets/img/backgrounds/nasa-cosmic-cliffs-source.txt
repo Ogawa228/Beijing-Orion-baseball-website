@@ -1,0 +1,7 @@
+Source image: "Cosmic Cliffs" in the Carina Nebula (NIRCam Image)
+Credit: NASA, ESA, CSA, STScI
+NASA Science page: https://science.nasa.gov/asset/webb/cosmic-cliffs-in-the-carina-nebula-nircam-image/
+Downloaded source: https://assets.science.nasa.gov/content/dam/science/missions/webb/science/2022/07/STScI-01GA6KKWG229B16K4Q38CH3BXS.png
+Source dimensions: 14575 x 8441
+Source archive asset: nasa-cosmic-cliffs-14575w.jpg, converted from the full-resolution PNG to JPEG at the same pixel dimensions.
+Display asset: nasa-cosmic-cliffs-2400w.jpg, resized from the archive asset for CSS backgrounds to reduce decode cost.

@@ -1,0 +1,4852 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>球员 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+<style>
+@font-face {
+  font-family: "OrionQijiTitle";
+  src: url("assets/fonts/huanglingdong-qiji-orion-title.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============ Player Card v2.4 · 轻玻璃球星卡 ============ */
+
+/* === 卡片外壳 — Topps 标准球星卡比例 2.5×3.5 = 1:1.4 === */
+.player-card-shell {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.4;
+  min-height: 460px;
+  perspective: 1400px;
+  cursor: pointer;
+  transition: transform .3s var(--ease);
+  outline: none;
+}
+.player-card-shell:hover { transform: translateY(-4px); }
+.player-card-shell:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold-bright);
+  border-radius: var(--r-lg);
+}
+
+.player-card-flip {
+  position: relative;
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.3,.2,.2,1);
+}
+.player-card-shell.flipped .player-card-flip {
+  transform: rotateY(180deg);
+}
+.player-card-shell:not(.flipped):hover .player-card-flip {
+  transform: rotateX(4deg) rotateY(-5deg) translateZ(12px);
+}
+.player-card-shell.flipped:hover .player-card-flip {
+  transform: rotateY(180deg) rotateX(3deg) translateZ(10px);
+}
+
+.player-card-shell .face {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 14px 6px;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 80% at 50% -20%, rgba(46,107,255,.25) 0%, transparent 55%),
+    radial-gradient(85% 62% at 18% 12%, rgba(255,255,255,.105) 0%, transparent 43%),
+    linear-gradient(165deg, rgba(20,45,88,.74) 0%, rgba(8,20,46,.82) 58%, rgba(5,11,24,.88) 100%);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.46),
+    0 0 0 1px rgba(228,199,122,.07),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 0 0 1px rgba(46,107,255,.10),
+    inset 0 -48px 72px rgba(0,0,0,.26);
+  -webkit-backdrop-filter: blur(16px) saturate(138%);
+  backdrop-filter: blur(16px) saturate(138%);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  isolation: isolate;
+}
+.player-card-shell .face.back {
+  transform: rotateY(180deg);
+}
+.player-card-shell:hover .face {
+  border-color: rgba(228,199,122,.28);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.58),
+    0 0 22px rgba(228,199,122,.10),
+    0 0 34px rgba(46,107,255,.10),
+    inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+/* 卡面顶部 holographic 微光斜条（hover 时变亮） */
+.player-card-shell .face::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg,
+    transparent 0%, transparent 38%,
+    rgba(255,255,255,.032) 48%,
+    rgba(228,199,122,.048) 50%,
+    rgba(255,255,255,.03) 52%,
+    transparent 62%, transparent 100%);
+  opacity: .38;
+  pointer-events: none;
+  transition: opacity .3s var(--ease);
+  z-index: 0;
+}
+.player-card-shell:hover .face::before { opacity: .62; }
+.player-card-shell .face::after {
+  content: '';
+  position: absolute;
+  inset: -35% -55%;
+  background:
+    linear-gradient(105deg,
+      transparent 0%,
+      rgba(91,139,255,.05) 34%,
+      rgba(255,255,255,.105) 44%,
+      rgba(228,199,122,.095) 49%,
+      rgba(255,255,255,.05) 54%,
+      transparent 66%),
+    radial-gradient(circle at 70% 30%, rgba(228,199,122,.10), transparent 24%);
+  opacity: 0;
+  transform: translateX(-35%) rotate(8deg);
+  pointer-events: none;
+  transition: opacity .35s var(--ease), transform .9s var(--ease-out);
+  z-index: 2;
+}
+.player-card-shell:hover .face::after {
+  opacity: .42;
+  transform: translateX(28%) rotate(8deg);
+}
+
+/* === 顶部 4px 位置色条 === */
+.pcv-position-strip {
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, transparent 0%, var(--strip-color, var(--blue-400)) 20%, var(--strip-color, var(--blue-400)) 80%, transparent 100%);
+  box-shadow: 0 0 12px var(--strip-color, var(--blue-400));
+  z-index: 1;
+}
+.player-card-shell.pos-pitcher  { --strip-color: #5b8bff; }
+.player-card-shell.pos-infield  { --strip-color: #e4c77a; }
+.player-card-shell.pos-outfield { --strip-color: #6ee7b7; }
+.player-card-shell.pos-catcher  { --strip-color: #c084fc; }
+.player-card-shell.pos-utility  { --strip-color: #f59e0b; }
+.player-card-shell.pos-default  { --strip-color: #5b8bff; }
+
+/* === 顶部行：正式 chip === */
+/* backface-visibility 单独写一次：z-index 子元素在某些浏览器里会脱离父级 face 的 3D
+   stacking context，导致翻转后还能看到镜像。每个绝对定位子元素都自己声明一次更稳。 */
+.pcv-tl-row,
+.pcv-tl-row .pcv-verified-chip,
+.player-card-shell .pc-online-dot,
+.pcv-position-strip {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.pcv-tl-row {
+  position: absolute; top: 14px; left: 14px;
+  z-index: 2;
+}
+.pcv-verified-chip {
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(91,139,255,.26), rgba(255,255,255,.055));
+  border: 1px solid rgba(143,176,255,.42);
+  color: var(--blue-300);
+  letter-spacing: .12em;
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  backdrop-filter: blur(10px) saturate(135%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+  white-space: nowrap;
+}
+
+/* 在线状态点（已有 .pc-online-dot 全局样式，这里只保持位置） */
+.player-card-shell .pc-online-dot {
+  top: 16px; right: 14px;
+}
+
+/* === 头像 + 球衣号叠加 === */
+.pcv-avatar-wrap {
+  position: relative;
+  margin: 12px auto 6px;
+  width: 140px; height: 140px;
+}
+.pcv-avatar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 18deg,
+      rgba(228,199,122,.10),
+      color-mix(in srgb, var(--strip-color, var(--blue-400)) 45%, transparent),
+      rgba(255,255,255,.08),
+      rgba(228,199,122,.12));
+  filter: blur(12px);
+  opacity: .44;
+  transform: translateZ(-1px);
+  transition: opacity .3s var(--ease), filter .3s var(--ease);
+}
+.player-card-shell:hover .pcv-avatar-wrap::before {
+  opacity: .82;
+  filter: blur(16px);
+}
+.pcv-avatar-wrap .pc-photo {
+  width: 140px; height: 140px; border-radius: 50%;
+  object-fit: cover; object-position: center 20%;
+  border: 3px solid var(--strip-color, var(--blue-400));
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--strip-color, var(--blue-400)) 45%, transparent),
+    inset 0 0 0 1px rgba(255,255,255,.1);
+  background: var(--navy-900);
+  transition: all .3s var(--ease);
+}
+.player-card-shell:hover .pcv-avatar-wrap .pc-photo {
+  box-shadow:
+    0 0 36px color-mix(in srgb, var(--strip-color, var(--blue-400)) 70%, transparent),
+    inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.pcv-jersey {
+  position: absolute; bottom: -2px; right: -2px;
+  min-width: 36px; height: 36px;
+  padding: 0 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, rgba(8,18,40,.78), rgba(31,54,96,.56));
+  border: 2px solid rgba(228,199,122,.9);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 700;
+  color: var(--gold-bright);
+  letter-spacing: .02em;
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  backdrop-filter: blur(10px) saturate(130%);
+  box-shadow: 0 3px 8px rgba(0,0,0,.42), 0 0 14px rgba(228,199,122,.24), inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+/* === 名字 === */
+.player-card-shell .pc-name {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  margin: 0 0 4px;
+  letter-spacing: -.01em;
+  line-height: 1.1;
+}
+
+/* === Meta（位置 / B/T）=== */
+.player-card-shell .pc-meta {
+  font-size: 10.5px; letter-spacing: .12em;
+  color: var(--text-mute);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.player-card-shell .pc-meta .sep { margin: 0 5px; opacity: .4; }
+
+/* === Slogan（如有）=== */
+.pcv-slogan {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--gold-bright);
+  opacity: .88;
+  margin: 4px 0 2px;
+  letter-spacing: .04em;
+  text-align: center;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 0 12px rgba(228,199,122,.24);
+}
+
+/* === KEY STATS 分隔线 === */
+.pcv-divider {
+  width: 100%;
+  margin: 6px 0 6px;
+  text-align: center;
+  position: relative;
+}
+.pcv-divider::before,
+.pcv-divider::after {
+  content: ''; position: absolute; top: 50%;
+  width: calc(50% - 80px); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(228,199,122,.4), transparent);
+}
+.pcv-divider::before { left: 0; }
+.pcv-divider::after  { right: 0; }
+.pcv-divider span {
+  display: inline-block;
+  font-size: 9px; letter-spacing: .25em;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  background: transparent;
+  padding: 0 8px;
+}
+
+/* === Hero 双指标 === */
+.pcv-hero-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.pcv-hero {
+  text-align: center;
+  padding: 5px 4px 6px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, rgba(255,255,255,.072), rgba(255,255,255,.026));
+  border: 1px solid rgba(255,255,255,.12);
+  -webkit-backdrop-filter: blur(11px) saturate(135%);
+  backdrop-filter: blur(11px) saturate(135%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.13);
+}
+.pcv-hero-val {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  line-height: 1;
+  margin-bottom: 3px;
+  letter-spacing: -.01em;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+/* Emoji icon 单独控制大小 — 不被自身高度撑大文本视觉权重 */
+.pcv-hero-val .pcv-hero-ico {
+  font-size: .7em;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(1px);  /* 视觉对齐到文字基线附近 */
+}
+.pcv-hero-val .pcv-hero-text { font-size: inherit; }
+.pcv-hero-pts .pcv-hero-val { color: var(--gold-bright); }
+
+/* === Dynamic Hero badge — 按 kind 上色 === */
+/* 名人堂 — 最贵气的金 + 强光晕；文字类 val 字号比数字类小，视觉重量对齐 */
+.pcv-hero-dyn.kind-hof .pcv-hero-val {
+  color: #ffe28a;
+  font-size: 18px;
+  letter-spacing: .06em;
+}
+.pcv-hero-dyn.kind-hof.glow {
+  border-color: rgba(228,199,122,.65);
+  background: linear-gradient(180deg, rgba(228,199,122,.20), rgba(255,255,255,.035));
+  box-shadow: 0 0 18px rgba(228,199,122,.26), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.pcv-hero-dyn.kind-hof.glow .pcv-hero-val {
+  text-shadow: 0 0 14px rgba(255,210,120,.6);
+}
+
+/* 赛季 MVP / 场次 MVP — 金色 */
+.pcv-hero-dyn.kind-mvp .pcv-hero-val,
+.pcv-hero-dyn.kind-gameMvp .pcv-hero-val { color: #ffe28a; }
+.pcv-hero-dyn.kind-mvp.glow {
+  border-color: rgba(228,199,122,.55);
+  background: linear-gradient(180deg, rgba(228,199,122,.14), rgba(255,255,255,.026));
+  box-shadow: 0 0 15px rgba(228,199,122,.22), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.pcv-hero-dyn.kind-mvp.glow .pcv-hero-val {
+  text-shadow: 0 0 12px rgba(255,210,120,.5);
+}
+
+/* 银棒 — 银色 */
+.pcv-hero-dyn.kind-silver .pcv-hero-val { color: #d8e0ec; }
+.pcv-hero-dyn.kind-silver { border-color: rgba(200,212,232,.28); background: linear-gradient(180deg, rgba(200,212,232,.09), rgba(255,255,255,.024)); }
+
+/* 金手套 — 绿调 */
+.pcv-hero-dyn.kind-glove .pcv-hero-val { color: #6ee7b7; }
+.pcv-hero-dyn.kind-glove { border-color: rgba(110,231,183,.28); background: linear-gradient(180deg, rgba(110,231,183,.09), rgba(255,255,255,.024)); }
+
+/* 最佳投手 — 蓝调 */
+.pcv-hero-dyn.kind-pitcher .pcv-hero-val { color: #8bb0ff; }
+.pcv-hero-dyn.kind-pitcher { border-color: rgba(139,176,255,.28); background: linear-gradient(180deg, rgba(46,107,255,.10), rgba(255,255,255,.024)); }
+
+/* HR — 橙金（同之前）*/
+.pcv-hero-dyn.kind-hr .pcv-hero-val { color: #ffd86a; }
+.pcv-hero-dyn.kind-hr.glow {
+  border-color: rgba(255,180,80,.45);
+  background: linear-gradient(180deg, rgba(255,140,40,.12), rgba(255,255,255,.024));
+  box-shadow: 0 0 14px rgba(255,180,80,.18), inset 0 1px 0 rgba(255,255,255,.11);
+}
+.pcv-hero-dyn.kind-hr.glow .pcv-hero-val {
+  text-shadow: 0 0 12px rgba(255,200,100,.45);
+}
+
+/* 三围 fallback — 暖金 subtle */
+.pcv-hero-dyn.kind-avg .pcv-hero-val { color: var(--gold); font-size: 22px; }
+.pcv-hero-dyn.kind-avg { border-color: rgba(228,199,122,.18); background: linear-gradient(180deg, rgba(228,199,122,.075), rgba(255,255,255,.023)); }
+
+/* Rookie fallback — 青绿；"新 秀" 跟正常 val 一样字号，靠 hero-ico 把 emoji 缩小避免比例失衡 */
+.pcv-hero-dyn.kind-rookie .pcv-hero-val {
+  color: #6ee7b7;
+  font-size: 17px;
+  letter-spacing: .06em;
+  align-items: center;
+  gap: 3px;
+  line-height: 1;
+  margin: 0;
+}
+.pcv-hero-dyn.kind-rookie .pcv-hero-ico {
+  font-size: .56em;
+  transform: translateY(-.5px);
+}
+.pcv-hero-dyn.kind-rookie .pcv-hero-text {
+  letter-spacing: .12em;
+}
+.pcv-hero-dyn.kind-rookie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 47px;
+  padding: 0 4px;
+  border-color: rgba(110,231,183,.28);
+  background: linear-gradient(180deg, rgba(110,231,183,.10), rgba(255,255,255,.024));
+}
+.pcv-hero-label {
+  font-size: 9px;
+  letter-spacing: .22em;
+  color: var(--text-mute);
+  text-transform: uppercase;
+}
+.pcv-hero-label:empty { display: none; }
+
+/* === Slash line — AVG / OBP / SLG + OPS === */
+.pcv-slash {
+  width: 100%;
+  margin: 4px 0 4px;
+  padding: 5px 8px;
+  background: linear-gradient(180deg, rgba(228,199,122,.075), rgba(255,255,255,.025));
+  border: 1px solid rgba(228,199,122,.18);
+  border-radius: var(--r-sm);
+  display: flex; align-items: baseline; justify-content: center;
+  gap: 6px;
+  -webkit-backdrop-filter: blur(10px) saturate(132%);
+  backdrop-filter: blur(10px) saturate(132%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.11);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--gold-bright);
+  letter-spacing: .02em;
+}
+.pcv-slash .ps-sep { opacity: .35; font-weight: 400; margin: 0 1px; }
+.pcv-slash .ps-ops {
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(228,199,122,.25);
+  font-size: 12px;
+  color: var(--text);
+}
+.pcv-slash .ps-ops-label {
+  font-size: 9px; opacity: .6;
+  letter-spacing: .12em;
+  margin-right: 3px;
+}
+
+/* === 荣誉条 === */
+.pcv-awards-row {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  justify-content: center;
+  margin: 6px 0 8px;
+  max-width: 100%;
+}
+.pcv-award {
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(228,199,122,.035));
+  border: 1px solid rgba(228,199,122,.26);
+  color: var(--gold-bright);
+  letter-spacing: .06em;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 600;
+  -webkit-backdrop-filter: blur(9px) saturate(130%);
+  backdrop-filter: blur(9px) saturate(130%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+.pcv-award.hof {
+  background: linear-gradient(135deg, rgba(228,199,122,.18), rgba(255,255,255,.045));
+  border-color: rgba(228,199,122,.55);
+  box-shadow: 0 0 12px rgba(228,199,122,.18), inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+/* === 基础数据 6 列（H/2B/3B/HR/RBI/GP）— 计数统计紧凑展示 === */
+.player-card-shell .pc-stats {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 6px 0 4px;
+  border-top: 1px solid rgba(228,199,122,.18);
+}
+.player-card-shell .pc-stat-v {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--gold-bright);
+  text-align: center;
+  font-weight: 600;
+  line-height: 1;
+}
+.player-card-shell .pc-stat-v.hr-stat {
+  color: #ffd86a;
+  text-shadow: 0 0 8px rgba(255,200,100,.4);
+}
+.player-card-shell .pc-stat-k {
+  font-size: 9px;
+  line-height: 1.2;          /* 固定行高，避免被 face overflow:hidden 截 */
+  letter-spacing: .14em;
+  color: var(--text-mute);
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 3px;
+  padding-bottom: 0;
+}
+
+/* === 翻面图标按钮（替代底部 hint，省空间）=== */
+.pcv-flip-corner {
+  position: absolute;
+  top: 12px; right: 38px;   /* 紧贴 online dot 左边 */
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(228,199,122,.22);
+  color: var(--gold-bright);
+  font-size: 12px; line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+  opacity: .55;
+  transition: all .2s var(--ease);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  backdrop-filter: blur(10px) saturate(135%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.player-card-shell:hover .pcv-flip-corner {
+  opacity: 1;
+  background: rgba(228,199,122,.14);
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 9px rgba(228,199,122,.24), inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+/* === 翻面提示（仅背面用，保留底部位置）=== */
+.pcv-flip-hint {
+  font-size: 9px;
+  line-height: 1.2;
+  color: var(--text-mute);
+  opacity: .5;
+  letter-spacing: .14em;
+  margin-top: 3px;
+  text-align: center;
+  transition: opacity .25s var(--ease);
+}
+.player-card-shell:hover .pcv-flip-hint { opacity: .9; color: var(--gold-bright); }
+
+/* === 背面 === */
+.player-card-shell .face.back {
+  justify-content: flex-start;
+  padding-top: 16px;
+}
+.pcv-back-header {
+  text-align: center;
+  margin: 6px 0 12px;
+}
+.pcv-back-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: .01em;
+}
+.pcv-back-sub {
+  display: block;
+  font-size: 9px;
+  letter-spacing: .35em;
+  color: var(--gold-bright);
+  margin-top: 4px;
+  font-family: var(--font-display);
+}
+
+/* === 赛季数据表 === */
+.pcv-season-table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(9px) saturate(130%);
+  backdrop-filter: blur(9px) saturate(130%);
+}
+.pcv-season-table th {
+  font-family: var(--font-display);
+  color: var(--gold-bright);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: 4px 2px;
+  border-bottom: 1px solid rgba(228,199,122,.3);
+  text-align: center;
+}
+.pcv-season-table th:first-child { text-align: left; padding-left: 4px; }
+.pcv-season-table td {
+  text-align: center;
+  padding: 4px 2px;
+  border-bottom: 1px dashed rgba(255,255,255,.04);
+  color: var(--text);
+  font-size: 11px;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+.pcv-season-table td.ssn {
+  color: var(--blue-300);
+  text-align: left;
+  padding-left: 4px;
+  font-weight: 700;
+}
+.pcv-season-table td.hot-hr {
+  color: #ffd86a;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(255,200,100,.4);
+}
+.pcv-season-table tfoot .totals-row td {
+  border-top: 1px solid rgba(228,199,122,.4);
+  border-bottom: none;
+  color: var(--gold-bright);
+  font-weight: 700;
+  padding-top: 5px;
+  font-size: 11.5px;
+}
+.pcv-season-table tfoot .totals-row td:first-child {
+  letter-spacing: .15em;
+}
+.pcv-season-table .empty-row {
+  text-align: center;
+  color: var(--text-mute);
+  padding: 14px 0;
+  font-style: italic;
+}
+
+/* === 最近场次 === */
+.pcv-recent {
+  margin-top: 6px;
+}
+.pcv-back-subtitle {
+  font-size: 9px;
+  letter-spacing: .25em;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+.pcv-recent-row {
+  display: grid;
+  grid-template-columns: 38px 1fr auto auto;
+  gap: 6px;
+  align-items: baseline;
+  padding: 4px 6px;
+  margin-bottom: 2px;
+  font-size: 10.5px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-dim);
+  background: rgba(255,255,255,.032);
+  border: 1px solid rgba(255,255,255,.04);
+  -webkit-backdrop-filter: blur(8px) saturate(128%);
+  backdrop-filter: blur(8px) saturate(128%);
+  transition: background .2s var(--ease);
+}
+.pcv-recent-row:hover {
+  background: rgba(46,107,255,.10);
+  border-color: rgba(143,176,255,.16);
+  color: var(--text);
+}
+.pcv-r-date {
+  font-family: var(--font-display);
+  color: var(--text-mute);
+  font-size: 10px;
+}
+.pcv-r-opp { font-weight: 500; }
+.pcv-r-hl {
+  display: inline-block;
+  color: var(--gold-bright);
+  font-size: 9px;
+  margin-left: 2px;
+}
+.pcv-r-score {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  color: #ff8a8a;
+}
+.pcv-r-score.win { color: var(--gold-bright); }
+.pcv-r-line {
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  color: var(--text-mute);
+  letter-spacing: .04em;
+}
+
+/* === 背面 footer === */
+.pcv-back-footer {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(228,199,122,.18);
+  text-align: center;
+  width: 100%;
+}
+.pcv-nav-link {
+  display: inline-block;
+  padding: 5px 14px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--gold-bright);
+  border: 1px solid rgba(228,199,122,.4);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(228,199,122,.10), rgba(255,255,255,.03));
+  text-decoration: none;
+  letter-spacing: .06em;
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  backdrop-filter: blur(10px) saturate(135%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  transition: all .2s var(--ease);
+}
+.pcv-nav-link:hover {
+  background: rgba(228,199,122,.16);
+  color: #fff;
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 12px rgba(228,199,122,.24), inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .player-card-shell .face {
+    background:
+      radial-gradient(120% 80% at 50% -20%, rgba(46,107,255,.22) 0%, transparent 55%),
+      linear-gradient(165deg, rgba(18,39,78,.96) 0%, rgba(8,18,40,.98) 62%, rgba(5,11,24,.99) 100%);
+  }
+  .pcv-verified-chip,
+  .pcv-hero,
+  .pcv-slash,
+  .pcv-award,
+  .pcv-flip-corner,
+  .pcv-season-table,
+  .pcv-recent-row,
+  .pcv-nav-link {
+    background-color: rgba(12,26,48,.88);
+  }
+}
+
+@media (max-width: 480px) {
+  .player-card-shell { min-height: 440px; }
+  .pcv-avatar-wrap { width: 112px; height: 112px; margin: 24px auto 6px; }
+  .pcv-avatar-wrap .pc-photo { width: 112px; height: 112px; }
+  .pcv-jersey { min-width: 32px; height: 32px; font-size: 13px; }
+  .player-card-shell .pc-name { font-size: 20px; }
+  .pcv-hero-val { font-size: 19px; }
+  .pcv-slash { font-size: 12.5px; padding: 5px 6px; }
+  .player-card-shell .pc-stat-v { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-card-shell,
+  .player-card-flip,
+  .player-card-shell .face::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ============ 旧球员卡兼容（其他可能引用的页面）============ */
+.player-card { position: relative; }
+.pc-online-dot {
+  position: absolute; top: 12px; right: 12px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--navy-900);
+  background: var(--text-mute);
+  z-index: 2;
+  transition: all .25s var(--ease);
+}
+.pc-online-dot.online { background: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,.6); }
+.pc-online-dot.recent { background: #fbbf24; box-shadow: 0 0 8px rgba(251,191,36,.5); }
+.pc-online-dot.offline { background: #5e6e8c; }
+.pc-online-dot[data-status="online"]::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 2px solid #4ade80; opacity: 0;
+  animation: pulseOnline 2s ease-out infinite;
+}
+@keyframes pulseOnline {
+  0% { transform: scale(.85); opacity: .8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.pc-tl-stack {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px;
+  z-index: 2;
+}
+.pc-points-chip,
+.pc-hr-chip {
+  font-family: var(--font-display);
+  font-weight: 600;
+  border-radius: 999px;
+  letter-spacing: .04em;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  line-height: 1.15;
+}
+
+/* 全垒打 — Hero badge（最显眼那颗） */
+.pc-hr-chip {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 5px 12px 4px;
+  background: linear-gradient(135deg, rgba(255,150,30,.38), rgba(228,199,122,.16));
+  border: 1px solid rgba(255,190,90,.6);
+  color: #ffe28a;
+  letter-spacing: .06em;
+  box-shadow:
+    0 2px 8px rgba(255,170,50,.2),
+    0 0 16px rgba(255,180,80,.35),
+    inset 0 1px 0 rgba(255,255,255,.1);
+  animation: hrPulse 2.6s ease-in-out infinite;
+}
+.pc-hr-chip .hr-bolt {
+  margin-right: 5px; font-size: 14px;
+  display: inline-block; transform: translateY(-1px);
+  filter: drop-shadow(0 0 4px rgba(255,200,100,.7));
+}
+.pc-hr-chip .hr-label {
+  font-size: 10px; opacity: .8; margin-left: 3px;
+  letter-spacing: .14em; font-weight: 600;
+}
+@keyframes hrPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(255,170,50,.2), 0 0 16px rgba(255,180,80,.35), inset 0 1px 0 rgba(255,255,255,.1); }
+  50%      { box-shadow: 0 2px 8px rgba(255,170,50,.3), 0 0 24px rgba(255,180,80,.6),  inset 0 1px 0 rgba(255,255,255,.14); }
+}
+
+/* 积分 — 次级信息，比 HR 收一档 */
+.pc-points-chip {
+  font-size: 11.5px;
+  padding: 2.5px 9px;
+  background: linear-gradient(135deg, rgba(201,169,97,.16), rgba(228,199,122,.06));
+  border: 1px solid rgba(228,199,122,.32);
+  color: var(--gold-bright);
+}
+.pc-points-chip .pts-label {
+  font-size: 9.5px; opacity: .68;
+  margin-left: 2px; letter-spacing: .1em;
+}
+
+/* 正式 — 已移到 meta 行做小字后缀（避免 3 chip 拥挤）；样式留给其它页面（dashboard 等）继续用 */
+.pc-verified-chip {
+  font-family: var(--font-display); font-weight: 600; border-radius: 999px;
+  letter-spacing: .04em; backdrop-filter: blur(6px); white-space: nowrap;
+  font-size: 11px; padding: 3px 9px; line-height: 1.2;
+  background: linear-gradient(135deg, rgba(46,107,255,.22), rgba(91,139,255,.08));
+  border: 1px solid rgba(46,107,255,.4);
+  color: var(--blue-300);
+}
+.pc-verified-chip .vc-mark { color: var(--gold-bright); margin-right: 3px; }
+
+/* 球员卡 meta 行尾的 "✓ 正式" 后缀（轻量） */
+.pc-meta .pc-verified-inline {
+  color: var(--blue-300);
+  font-size: 11px;
+  letter-spacing: .04em;
+  opacity: .85;
+  white-space: nowrap;
+}
+.pc-meta .pc-verified-inline .vi-mark {
+  color: var(--gold-bright);
+  margin-right: 2px;
+}
+.pc-points-chip {
+  background: linear-gradient(135deg, rgba(201,169,97,.18), rgba(228,199,122,.08));
+  border: 1px solid rgba(228,199,122,.35);
+  color: var(--gold-bright);
+}
+.pc-points-chip .pts-label { font-size: 10px; opacity: .7; margin-left: 2px; }
+.pc-verified-chip {
+  background: linear-gradient(135deg, rgba(46,107,255,.22), rgba(91,139,255,.08));
+  border: 1px solid rgba(46,107,255,.4);
+  color: var(--blue-300);
+  font-size: 11px;
+}
+.pc-verified-chip .vc-mark { color: var(--gold-bright); margin-right: 3px; }
+
+/* 试训区 ----------------------------------------------------------- */
+.tryout-section {
+  background: linear-gradient(180deg, rgba(46,107,255,.06), rgba(46,107,255,.02));
+  border: 1px solid rgba(46,107,255,.2);
+  border-radius: var(--r-lg);
+  padding: 24px 24px 20px;
+  margin-bottom: 32px;
+}
+.tryout-head {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.tryout-icon {
+  font-size: 24px; line-height: 1;
+}
+.tryout-title {
+  font-family: var(--font-display); font-size: 22px;
+  color: var(--blue-300); margin: 0;
+}
+.tryout-sub {
+  color: var(--text-dim); font-size: 13px; flex: 1; min-width: 200px;
+}
+.tryout-count {
+  background: rgba(46,107,255,.15);
+  border: 1px solid rgba(46,107,255,.3);
+  padding: 3px 12px; border-radius: 999px;
+  color: var(--blue-300); font-size: 12px;
+}
+.tryout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.tryout-card {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px;
+  text-align: center;
+  transition: transform .2s var(--ease), border-color .2s ease;
+  text-decoration: none; color: inherit;
+  display: block;
+}
+.tryout-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(46,107,255,.4);
+}
+.tryout-card .tc-photo {
+  width: 56px; height: 56px; border-radius: 50%;
+  object-fit: cover; margin: 0 auto 8px;
+  border: 2px solid var(--line-strong);
+  display: block;
+}
+.tryout-card .tc-name {
+  color: var(--text); font-size: 14px; font-weight: 500;
+  margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.tryout-card .tc-progress-wrap {
+  background: rgba(255,255,255,.05);
+  height: 6px; border-radius: 3px;
+  overflow: hidden;
+  margin: 6px 0 4px;
+}
+.tryout-card .tc-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-500), var(--blue-400));
+  border-radius: 3px;
+  transition: width .4s var(--ease);
+}
+.tryout-card .tc-progress-label {
+  font-size: 11px; color: var(--text-dim);
+  font-family: var(--font-display);
+}
+.tryout-card .tc-points {
+  color: var(--gold-bright); font-family: var(--font-display);
+  font-size: 12px; margin-top: 4px;
+}
+.tryout-card .tc-online-dot {
+  display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--text-mute);
+  vertical-align: middle;
+}
+.tryout-card .tc-online-dot.online { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,.6); }
+.tryout-card .tc-online-dot.recent { background: #fbbf24; }
+
+/* ============ Starfield Roster Stage · 呼吸星空球员墙 ============ */
+.roster-experience {
+  position: relative;
+  min-height: calc(100vh - 73px);
+}
+.roster-arm-wrap {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+.orion-arm-stage {
+  --arm-gold: rgba(228,199,122,.92);
+  --arm-blue: rgba(91,139,255,.92);
+  --arm-emerald: rgba(110,231,183,.82);
+  --arm-float-duration: 12.8s;
+  --arm-breathe-duration: 10.8s;
+  --arm-path-duration: 13.6s;
+  --arm-path-step: .18s;
+  --arm-sway-x: .8px;
+  --arm-sway-y: 1.6px;
+  --arm-breathe-min: .992;
+  --arm-breathe-max: 1.018;
+  position: relative;
+  min-height: max(760px, calc(100vh - 73px));
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 30% 18%, rgba(91,139,255,.16), transparent 36%),
+    radial-gradient(ellipse at 74% 62%, rgba(228,199,122,.10), transparent 32%),
+    linear-gradient(180deg, rgba(5,11,24,.18), rgba(5,11,24,.82) 84%),
+    url('assets/img/backgrounds/orion-deep-space-panorama.png') center 38% / cover no-repeat;
+}
+.orion-arm-stage::before,
+.orion-arm-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.orion-arm-stage::before {
+  background:
+    radial-gradient(ellipse at 50% 44%, transparent 0 28%, rgba(5,11,24,.18) 54%, rgba(5,11,24,.72) 100%),
+    linear-gradient(90deg, rgba(5,11,24,.72), transparent 16% 84%, rgba(5,11,24,.72));
+}
+.orion-arm-stage::after {
+  background:
+    linear-gradient(180deg, rgba(5,11,24,.82), transparent 14% 72%, rgba(5,11,24,.92)),
+    radial-gradient(circle at 50% 48%, rgba(255,255,255,.05), transparent 22%);
+  mix-blend-mode: screen;
+  opacity: .72;
+}
+.orion-arm-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: block;
+}
+.orion-arm-stage.no-webgl .orion-arm-canvas { display: none; }
+.orion-arm-stage[data-particle-mode="css"] .orion-arm-canvas,
+.orion-arm-stage[data-particle-mode="off"] .orion-arm-canvas,
+.orion-arm-stage[data-particle-mode="webgl"] .arm-particle-field,
+.orion-arm-stage[data-particle-mode="off"] .arm-particle-field {
+  display: none;
+}
+.arm-particle-field {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout paint style;
+  mix-blend-mode: screen;
+}
+.arm-particle-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dot-size, 2px);
+  height: var(--dot-size, 2px);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.98) 0 18%, rgba(146,190,255,.82) 38%, rgba(46,107,255,.18) 72%, transparent 100%);
+  box-shadow: 0 0 var(--dot-glow, 10px) rgba(116,162,255,.7);
+  opacity: var(--dot-alpha, .58);
+  will-change: transform, opacity;
+}
+.arm-particle-dot.is-gold {
+  background:
+    radial-gradient(circle, rgba(255,244,195,.98) 0 18%, rgba(228,199,122,.78) 44%, rgba(201,169,97,.18) 74%, transparent 100%);
+  box-shadow: 0 0 var(--dot-glow, 12px) rgba(228,199,122,.62);
+}
+.arm-particle-dot.is-mist {
+  filter: blur(.2px);
+  opacity: var(--dot-alpha, .36);
+}
+.arm-node-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  perspective: 1100px;
+  transform-style: preserve-3d;
+  contain: layout paint style;
+}
+.orion-arm-stage[data-density="dense"] .arm-node-name {
+  opacity: .54;
+}
+.orion-arm-stage[data-density="overflow"] .arm-node-name {
+  opacity: 0;
+  transform: translate(-50%, -2px) scale(.92);
+}
+.orion-arm-stage[data-density="overflow"] .arm-node:hover .arm-node-name,
+.orion-arm-stage[data-density="overflow"] .arm-node:focus-visible .arm-node-name,
+.orion-arm-stage[data-density="overflow"] .arm-node.is-focused .arm-node-name {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.arm-stage-controls {
+  position: absolute;
+  z-index: 7;
+  top: clamp(22px, 4vh, 44px);
+  left: 50%;
+  width: min(720px, calc(100vw - 44px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.orion-arm-stage.has-arm-admin-panel .arm-stage-controls {
+  left: max(22px, calc((100vw - 720px) / 2));
+  width: min(720px, calc(100vw - 148px));
+  transform: none;
+}
+.arm-title-script {
+  font-family: "OrionQijiTitle", "Noto Serif SC", "STSong", serif;
+  font-size: clamp(38px, 6vw, 84px);
+  font-weight: 400;
+  line-height: .95;
+  color: rgba(248,241,215,.96);
+  text-align: center;
+  letter-spacing: 0;
+  text-shadow:
+    0 2px 10px rgba(0,0,0,.62),
+    0 0 20px rgba(228,199,122,.26),
+    0 0 34px rgba(91,139,255,.18);
+  filter: drop-shadow(0 10px 28px rgba(0,0,0,.36));
+  user-select: none;
+  white-space: nowrap;
+}
+.arm-title-script::after {
+  content: '';
+  display: block;
+  width: min(380px, 72vw);
+  height: 1px;
+  margin: 9px auto 0;
+  background: linear-gradient(90deg, transparent, rgba(228,199,122,.68), rgba(143,176,255,.36), transparent);
+  box-shadow: 0 0 18px rgba(228,199,122,.22);
+}
+.arm-stage-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--blue-300);
+  font-size: 10px;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px rgba(0,0,0,.72);
+}
+.arm-stage-mark::before,
+.arm-stage-mark::after {
+  content: '';
+  width: 44px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(228,199,122,.72));
+}
+.arm-stage-mark::after {
+  background: linear-gradient(90deg, rgba(228,199,122,.72), transparent);
+}
+.arm-search-console {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(5,11,24,.42);
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 20px 50px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+.arm-search-console input[type=search] {
+  flex: 1;
+  min-width: 160px;
+  height: 34px;
+  padding: 0 10px 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.arm-search-console input[type=search]::placeholder {
+  color: rgba(154,169,196,.72);
+}
+.arm-search-console .pos-chips {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+.arm-search-console .pos-chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(232,238,250,.70);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.arm-search-console .pos-chip:hover {
+  color: var(--text);
+  border-color: rgba(143,176,255,.42);
+}
+.arm-search-console .pos-chip.active {
+  background: rgba(46,107,255,.92);
+  border-color: rgba(143,176,255,.62);
+  box-shadow: 0 0 18px rgba(46,107,255,.28);
+}
+.arm-empty-state {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: rgba(5,11,24,.48);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--text-dim);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.arm-node {
+  --node-color: var(--arm-blue);
+  --status-glow: rgba(0,0,0,0);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 70px;
+  min-height: 72px;
+  padding: 0 2px 5px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  overflow: visible;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  scale: 1;
+  animation:
+    arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
+    arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite;
+  animation-delay:
+    calc(var(--arm-i, 0) * -0.21s),
+    calc(var(--arm-i, 0) * -0.13s);
+  transition:
+    opacity .24s var(--ease),
+    filter .24s var(--ease);
+}
+.arm-node::before {
+  content: '';
+  position: absolute;
+  inset: -18px -20px -8px;
+  border-radius: 999px;
+  background:
+	    radial-gradient(circle at 52% 36%, color-mix(in srgb, var(--node-color) 44%, transparent), transparent 24%),
+	    radial-gradient(circle at 58% 44%, var(--status-glow), transparent 28%),
+	    radial-gradient(circle at 42% 58%, rgba(255,255,255,.13), transparent 30%),
+	    radial-gradient(ellipse at 54% 52%, color-mix(in srgb, var(--node-color) 20%, transparent), transparent 62%);
+  filter: blur(14px);
+  opacity: .26;
+  pointer-events: none;
+  transform: translateZ(-18px) scale(.94);
+  animation: arm-node-aura-breathe var(--arm-breathe-duration) ease-in-out infinite;
+  animation-delay: calc(var(--arm-i, 0) * -0.13s);
+  transition: opacity .28s var(--ease), transform .28s var(--ease), filter .28s var(--ease);
+}
+.arm-node::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--node-color) 28%, transparent), transparent 60%);
+  opacity: .46;
+  filter: blur(10px);
+  z-index: -1;
+  animation: none;
+}
+.arm-node.pos-infield { --node-color: var(--arm-gold); }
+.arm-node.pos-outfield { --node-color: var(--arm-emerald); }
+.arm-node.pos-catcher { --node-color: rgba(192,132,252,.9); }
+.arm-node.pos-utility { --node-color: rgba(245,158,11,.9); }
+.arm-node.status-online {
+  --status-glow: rgba(74,222,128,.36);
+}
+.arm-node.status-recent {
+  --status-glow: rgba(251,191,36,.24);
+}
+.arm-node.is-or-path {
+  --or-delay: calc(var(--or-step, 0) * var(--arm-path-step));
+}
+.arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) {
+  animation:
+    arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
+    arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite,
+    arm-or-path-node var(--arm-path-duration) ease-in-out infinite;
+  animation-delay:
+    calc(var(--arm-i, 0) * -0.21s),
+    calc(var(--arm-i, 0) * -0.13s),
+    var(--or-delay);
+}
+.arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) .arm-node-photo-wrap {
+  animation: arm-or-path-bulb var(--arm-path-duration) ease-in-out infinite;
+  animation-delay: var(--or-delay);
+}
+.arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused)::before {
+  animation:
+    arm-node-aura-breathe var(--arm-breathe-duration) ease-in-out infinite,
+    arm-or-path-aura var(--arm-path-duration) ease-in-out infinite;
+  animation-delay:
+    calc(var(--arm-i, 0) * -0.13s),
+    var(--or-delay);
+}
+.arm-node:hover,
+.arm-node:focus-visible,
+.arm-node.is-focused {
+  outline: none;
+  background: transparent;
+  filter:
+    drop-shadow(0 24px 28px rgba(0,0,0,.54))
+    drop-shadow(0 0 24px color-mix(in srgb, var(--node-color) 58%, transparent));
+}
+.arm-node:hover::before,
+.arm-node:focus-visible::before,
+.arm-node.is-focused::before {
+  opacity: .78;
+  filter: blur(18px);
+  transform: translateZ(-30px) scale(1.42);
+}
+.arm-node:hover::after,
+.arm-node:focus-visible::after,
+.arm-node.is-focused::after {
+  opacity: .78;
+  transform: translate(-50%, -50%) scale(1.16);
+  animation: arm-node-halo-breathe 7.2s ease-in-out infinite;
+}
+.arm-node-photo-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+	  width: 40px;
+	  height: 40px;
+  border-radius: 50%;
+  margin: 3px auto 4px;
+	  background: conic-gradient(from 10deg, color-mix(in srgb, var(--node-color) 82%, transparent), rgba(255,255,255,.18), color-mix(in srgb, var(--node-color) 64%, transparent));
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--node-color) 42%, transparent),
+    0 8px 24px rgba(0,0,0,.36);
+  transform-style: preserve-3d;
+  isolation: isolate;
+  overflow: visible;
+	  transition: transform .28s var(--ease), box-shadow .28s var(--ease);
+}
+.arm-node.status-online .arm-node-photo-wrap {
+  background:
+    conic-gradient(from 20deg,
+      rgba(74,222,128,.96),
+      rgba(255,255,255,.26) 18%,
+      color-mix(in srgb, var(--node-color) 44%, rgba(74,222,128,.62)) 48%,
+      rgba(74,222,128,.92) 78%,
+      rgba(185,255,216,.84));
+  box-shadow:
+    0 0 24px rgba(74,222,128,.54),
+    0 8px 24px rgba(0,0,0,.36);
+}
+.arm-node.status-recent .arm-node-photo-wrap {
+  box-shadow:
+    0 0 22px rgba(251,191,36,.34),
+    0 8px 24px rgba(0,0,0,.36);
+}
+.arm-node-particles {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 66px;
+  height: 66px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2.18);
+  transform-origin: center;
+  transition: opacity .24s var(--ease), transform .42s cubic-bezier(.16, 1, .3, 1);
+  mix-blend-mode: screen;
+  z-index: 2;
+}
+.arm-node-particles::before,
+.arm-node-particles::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+	  width: 3px;
+	  height: 3px;
+  border-radius: 50%;
+  background: transparent;
+	  box-shadow:
+	    0 -25px 0 rgba(255,225,142,.88),
+	    7px -24px 0 rgba(255,246,202,.78),
+	    13px -21px 0 rgba(228,199,122,.74),
+	    19px -16px 0 rgba(255,246,202,.72),
+	    23px -9px 0 rgba(174,203,255,.58),
+	    25px 0 0 rgba(255,246,202,.84),
+	    23px 9px 0 rgba(228,199,122,.70),
+	    19px 16px 0 rgba(174,203,255,.66),
+	    13px 21px 0 rgba(255,225,142,.78),
+	    7px 24px 0 rgba(255,246,202,.70),
+	    0 25px 0 rgba(228,199,122,.80),
+	    -7px 24px 0 rgba(255,246,202,.66),
+	    -13px 21px 0 rgba(174,203,255,.56),
+	    -19px 16px 0 rgba(255,246,202,.72),
+	    -23px 9px 0 rgba(174,203,255,.58),
+	    -25px 0 0 rgba(174,203,255,.64),
+	    -23px -9px 0 rgba(228,199,122,.66),
+	    -19px -16px 0 rgba(255,246,202,.68),
+	    -13px -21px 0 rgba(228,199,122,.74),
+	    -7px -24px 0 rgba(255,225,142,.78);
+	  filter:
+	    drop-shadow(0 0 7px color-mix(in srgb, var(--node-color) 72%, transparent))
+	    drop-shadow(0 0 7px var(--status-glow));
+  transform: translate(-50%, -50%) rotate(0deg);
+  transition: opacity .24s var(--ease);
+}
+.arm-node-particles::after {
+	  width: 2px;
+	  height: 2px;
+	  opacity: .68;
+	  box-shadow:
+	    3px -29px 0 rgba(255,246,202,.62),
+	    12px -27px 0 rgba(228,199,122,.56),
+	    21px -21px 0 rgba(255,246,202,.56),
+	    28px -10px 0 rgba(228,199,122,.60),
+	    30px 2px 0 rgba(255,246,202,.52),
+	    27px 13px 0 rgba(174,203,255,.48),
+	    20px 23px 0 rgba(228,199,122,.58),
+	    9px 29px 0 rgba(255,246,202,.58),
+	    -3px 30px 0 rgba(174,203,255,.46),
+	    -14px 27px 0 rgba(228,199,122,.52),
+	    -23px 20px 0 rgba(255,246,202,.54),
+	    -29px 8px 0 rgba(174,203,255,.48),
+	    -29px -4px 0 rgba(228,199,122,.52),
+	    -24px -17px 0 rgba(255,246,202,.50),
+	    -14px -26px 0 rgba(174,203,255,.44),
+	    -3px -30px 0 rgba(228,199,122,.56);
+  transform: translate(-50%, -50%) rotate(18deg);
+}
+.arm-node:hover .arm-node-particles,
+.arm-node:focus-visible .arm-node-particles,
+.arm-node.is-focused .arm-node-particles {
+  opacity: .96;
+  transform: translate(-50%, -50%) scale(.88);
+}
+.arm-node:hover .arm-node-particles::before,
+.arm-node:focus-visible .arm-node-particles::before,
+.arm-node.is-focused .arm-node-particles::before {
+  opacity: 1;
+  animation: arm-node-particle-orbit 5.8s ease-in-out infinite;
+}
+.arm-node:hover .arm-node-particles::after,
+.arm-node:focus-visible .arm-node-particles::after,
+.arm-node.is-focused .arm-node-particles::after {
+  opacity: .9;
+  animation: arm-node-particle-orbit 6.6s ease-in-out infinite reverse;
+}
+.arm-node-photo-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--node-color) 34%, transparent), transparent 66%);
+  filter: blur(12px);
+  opacity: .32;
+  z-index: 0;
+  animation: none;
+}
+.arm-node-photo {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 20%;
+  background: var(--navy-900);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  z-index: 3;
+}
+.arm-node-photo-wrap,
+.arm-node-name,
+.arm-node-meta {
+  position: relative;
+  z-index: 2;
+}
+.arm-node:hover .arm-node-photo-wrap,
+.arm-node:focus-visible .arm-node-photo-wrap {
+  transform: translate3d(0, -5px, 34px) scale(1.15) rotateX(14deg) rotateY(-7deg);
+  box-shadow:
+    0 0 34px color-mix(in srgb, var(--node-color) 68%, transparent),
+    0 18px 34px rgba(0,0,0,.46),
+    0 28px 60px rgba(0,0,0,.30);
+}
+.arm-node:hover .arm-node-photo-wrap::before,
+.arm-node:focus-visible .arm-node-photo-wrap::before,
+.arm-node.is-focused .arm-node-photo-wrap::before {
+  opacity: .86;
+  animation: arm-node-ring-breathe 7.8s ease-in-out infinite;
+}
+.arm-node.is-focused .arm-node-photo-wrap {
+  transform: translate3d(0, -8px, 52px) scale(1.22) rotateX(16deg) rotateY(-10deg);
+  box-shadow:
+    0 0 42px color-mix(in srgb, var(--node-color) 72%, transparent),
+    0 22px 44px rgba(0,0,0,.50),
+    0 36px 72px rgba(0,0,0,.34);
+}
+.arm-node.is-launching .arm-node-photo-wrap {
+  animation: arm-node-launch-glow .58s cubic-bezier(.16, 1, .3, 1);
+}
+.arm-node.is-launching::after {
+  animation: arm-node-burst .56s cubic-bezier(.16, 1, .3, 1);
+}
+.arm-node-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  line-height: 1.1;
+  color: rgba(232,238,250,.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 12px rgba(0,0,0,.72);
+  transition: opacity .2s var(--ease), transform .2s var(--ease);
+	}
+	@keyframes arm-node-soft-float {
+	  0%, 100% { translate: 0 0; }
+	  34% { translate: var(--arm-sway-x) calc(var(--arm-sway-y) * -1); }
+	  68% { translate: calc(var(--arm-sway-x) * -.875) calc(var(--arm-sway-y) * .5625); }
+	}
+	@keyframes arm-node-breathe {
+	  0%, 100% { scale: var(--arm-breathe-min); }
+	  48% { scale: var(--arm-breathe-max); }
+	}
+	@keyframes arm-node-aura-breathe {
+	  0%, 100% {
+	    opacity: .22;
+	    filter: blur(13px) brightness(1);
+	    transform: translateZ(-18px) scale(.94);
+	  }
+	  48% {
+	    opacity: .34;
+	    filter: blur(14px) brightness(1.12);
+	    transform: translateZ(-19px) scale(1.03);
+	  }
+	}
+	@keyframes arm-or-path-node {
+	  0%, 100% { filter: none; }
+	  6% {
+	    filter:
+	      drop-shadow(0 16px 20px rgba(0,0,0,.30))
+	      drop-shadow(0 0 20px color-mix(in srgb, var(--node-color) 58%, transparent));
+	  }
+	  14%, 84% { filter: none; }
+	}
+	@keyframes arm-or-path-bulb {
+	  0%, 100% {
+	    filter: brightness(1) saturate(1);
+	  }
+	  6% {
+	    filter:
+	      brightness(1.24)
+	      saturate(1.14)
+	      drop-shadow(0 0 9px color-mix(in srgb, var(--node-color) 64%, transparent));
+	  }
+	  14%, 84% {
+	    filter: brightness(1) saturate(1);
+	  }
+	}
+	@keyframes arm-or-path-aura {
+	  0%, 100% { opacity: .24; }
+	  6% {
+	    opacity: .56;
+	    filter: blur(16px) brightness(1.20);
+	    transform: translateZ(-24px) scale(1.18);
+	  }
+	  14%, 84% { opacity: .24; }
+	}
+	@keyframes arm-node-halo-breathe {
+  0%, 100% { opacity: .24; transform: translate(-50%, -50%) scale(.76); }
+  46% { opacity: .86; transform: translate(-50%, -50%) scale(1.24); }
+}
+@keyframes arm-node-ring-breathe {
+  0%, 100% { opacity: .34; transform: scale(.78); }
+  50% { opacity: .96; transform: scale(1.2); }
+}
+@keyframes arm-node-launch-glow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  38% { filter: brightness(1.35) saturate(1.22); }
+}
+@keyframes arm-node-particle-orbit {
+  0%, 100% { opacity: .82; }
+  50% { opacity: 1; }
+}
+@keyframes arm-node-burst {
+  0% { opacity: .42; transform: translate(-50%, -50%) scale(.82); }
+  42% { opacity: .92; transform: translate(-50%, -50%) scale(1.52); }
+  100% { opacity: .34; transform: translate(-50%, -50%) scale(1.02); }
+}
+.arm-node-meta {
+  display: none;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.arm-node-dot {
+  position: absolute;
+  right: -8px;
+  bottom: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-mute);
+  box-shadow:
+    0 0 0 1px rgba(5,11,24,.72),
+    0 0 0 2px rgba(255,255,255,.12);
+  opacity: .72;
+  z-index: 4;
+}
+.arm-node-dot.online { opacity: 0; }
+.arm-node-dot.recent {
+  background: #fbbf24;
+  opacity: .88;
+  box-shadow:
+    0 0 0 1px rgba(5,11,24,.72),
+    0 0 0 2px rgba(255,255,255,.14),
+    0 0 8px rgba(251,191,36,.55);
+}
+.arm-node-dot.offline { background: #5e6e8c; opacity: 0; }
+.arm-node:hover .arm-node-dot.offline,
+.arm-node:focus-visible .arm-node-dot.offline,
+.arm-node.is-focused .arm-node-dot.offline {
+  opacity: 0;
+}
+.arm-node.is-muted {
+  pointer-events: none;
+}
+.arm-focus-panel {
+  display: none;
+}
+body.arm-card-open {
+  overflow: hidden;
+}
+.arm-card-modal {
+  --origin-x: 50vw;
+  --origin-y: 50vh;
+  --origin-dx: 0px;
+  --origin-dy: 0px;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(74px, 9vh, 104px) 20px 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .32s var(--ease);
+}
+.arm-card-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at var(--origin-x) var(--origin-y), rgba(111,166,255,.30), transparent 19%),
+    radial-gradient(circle at 50% 46%, rgba(228,199,122,.12), transparent 34%),
+    rgba(1, 5, 14, .76);
+  -webkit-backdrop-filter: blur(6px) saturate(85%);
+  backdrop-filter: blur(6px) saturate(85%);
+}
+.arm-card-modal.is-open {
+  pointer-events: auto;
+  opacity: 1;
+}
+.arm-card-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.arm-card-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(352px, calc(100vw - 36px));
+  max-height: min(720px, calc(100vh - 112px));
+  display: grid;
+  place-items: center;
+  perspective: 1400px;
+  opacity: 0;
+  transform:
+    translate3d(var(--origin-dx), var(--origin-dy), 0)
+    scale(.34)
+    rotateX(18deg)
+    rotateY(-10deg);
+  filter: blur(8px);
+  transition:
+    opacity .42s var(--ease),
+    transform .52s cubic-bezier(.16, 1, .3, 1),
+    filter .42s var(--ease);
+}
+.arm-card-modal.is-open .arm-card-dialog {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1) rotateX(0deg) rotateY(0deg);
+  filter: blur(0);
+}
+.arm-card-dialog::before {
+  content: '';
+  position: absolute;
+  inset: 5% -18% -5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(111,166,255,.20), transparent 62%);
+  filter: blur(24px);
+  z-index: -1;
+}
+.arm-card-close {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  right: -58px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(5,11,24,.64);
+  color: rgba(241,246,255,.92);
+  font-size: 24px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0,0,0,.34);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.arm-card-close:hover,
+.arm-card-close:focus-visible {
+  outline: none;
+  color: var(--gold-bright);
+  border-color: rgba(228,199,122,.42);
+}
+.arm-card-mount {
+  width: 100%;
+}
+.arm-card-mount .player-card-shell {
+  width: 100%;
+  min-height: 492px;
+  filter:
+    drop-shadow(0 28px 54px rgba(0,0,0,.55))
+    drop-shadow(0 0 32px rgba(111,166,255,.18));
+}
+.arm-hud {
+  position: absolute;
+  z-index: 5;
+  left: max(22px, calc((100vw - 1280px) / 2 + 24px));
+  bottom: 34px;
+  top: auto;
+  max-width: min(360px, 34vw);
+  pointer-events: none;
+}
+.arm-hud-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  letter-spacing: .32em;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+}
+.arm-hud-label::before {
+  content: '';
+  width: 38px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.arm-hud-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.arm-hud-chip {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(5,11,24,.34);
+  border: 1px solid rgba(255,255,255,.13);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+.arm-motion-toggle {
+  position: absolute;
+  z-index: 7;
+  left: max(22px, calc((100vw - 1280px) / 2 + 24px));
+  right: max(22px, calc((100vw - 1280px) / 2 + 24px));
+  left: auto;
+  bottom: 34px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(5,11,24,.38);
+  color: var(--text);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+}
+.arm-motion-toggle:hover,
+.arm-motion-toggle:focus-visible {
+  outline: none;
+  color: var(--gold-bright);
+  border-color: rgba(228,199,122,.38);
+}
+.orion-arm-stage.is-empty .arm-hud,
+.orion-arm-stage.is-empty .arm-motion-toggle,
+.orion-arm-stage.is-empty .arm-focus-panel,
+.orion-arm-stage.is-empty .arm-particle-field {
+  display: none;
+}
+.orion-arm-stage.is-low-motion .orion-arm-canvas,
+.orion-arm-stage.is-low-motion .arm-particle-field {
+  display: none;
+}
+.orion-arm-stage.is-low-motion .arm-node,
+.orion-arm-stage.is-low-motion .arm-node::before,
+.orion-arm-stage.is-low-motion .arm-node::after,
+.orion-arm-stage.is-low-motion .arm-node-photo-wrap,
+.orion-arm-stage.is-low-motion .arm-node-photo-wrap::before,
+.orion-arm-stage.is-low-motion .arm-card-modal,
+.orion-arm-stage.is-low-motion .arm-card-dialog {
+  transition: none !important;
+  animation: none !important;
+}
+.orion-arm-stage.is-low-motion .arm-node-particles,
+.orion-arm-stage.is-low-motion .arm-node-particles::before,
+.orion-arm-stage.is-low-motion .arm-node-particles::after {
+  display: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+.orion-arm-stage.is-low-motion .arm-node.is-or-path,
+.orion-arm-stage.is-low-motion .arm-node.is-or-path .arm-node-photo-wrap,
+.orion-arm-stage.is-low-motion .arm-node.is-or-path::before {
+  animation: none !important;
+}
+.arm-motion-toggle.is-low-motion {
+  color: var(--gold-bright);
+  border-color: rgba(228,199,122,.48);
+  background: rgba(41,32,15,.58);
+}
+.arm-admin-panel[hidden] {
+  display: none;
+}
+.arm-admin-panel {
+  position: absolute;
+  z-index: 9;
+  top: clamp(154px, 20vh, 204px);
+  right: 0;
+  width: min(344px, calc(100vw - 18px));
+  max-height: min(620px, calc(100vh - 126px));
+  transform: translateX(0);
+  transition: transform .34s var(--ease), opacity .24s var(--ease);
+}
+.arm-admin-panel.is-collapsed {
+  transform: translateX(calc(100% - 50px));
+}
+.arm-admin-toggle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50px;
+  min-height: 170px;
+  border: 1px solid rgba(228,199,122,.30);
+  border-right: 0;
+  border-radius: 18px 0 0 18px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(228,199,122,.16), transparent 36%),
+    linear-gradient(180deg, rgba(10,22,40,.82), rgba(5,11,24,.68));
+  color: var(--gold-bright);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(16px) saturate(128%);
+  backdrop-filter: blur(16px) saturate(128%);
+  box-shadow: -8px 14px 28px rgba(0,0,0,.28), inset 1px 0 0 rgba(255,255,255,.10);
+}
+.arm-admin-toggle:focus-visible,
+.arm-admin-toggle:hover {
+  outline: none;
+  border-color: rgba(228,199,122,.58);
+  color: #fff4c8;
+}
+.arm-admin-toggle span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 12px;
+  letter-spacing: .16em;
+}
+.arm-admin-shell {
+  margin-left: 50px;
+  max-height: min(620px, calc(100vh - 126px));
+  overflow: auto;
+  padding: 15px;
+  border-radius: 18px 0 0 18px;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(91,139,255,.18), transparent 34%),
+    linear-gradient(160deg, rgba(10,22,40,.82), rgba(5,11,24,.74));
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 24px 60px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.12);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  backdrop-filter: blur(20px) saturate(130%);
+}
+.arm-admin-panel.is-collapsed .arm-admin-shell {
+  pointer-events: none;
+}
+.arm-admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+.arm-admin-kicker {
+  color: var(--blue-300);
+  font-size: 9px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+.arm-admin-title {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.1;
+}
+.arm-admin-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.arm-admin-random,
+.arm-admin-publish {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(228,199,122,.38);
+  background: rgba(228,199,122,.12);
+  color: var(--gold-bright);
+  font-size: 12px;
+  cursor: pointer;
+}
+.arm-admin-publish {
+  border-color: rgba(143,176,255,.34);
+  background: rgba(46,107,255,.18);
+  color: var(--blue-200);
+}
+.arm-admin-publish.is-saving {
+  cursor: wait;
+  opacity: .72;
+}
+.arm-admin-status {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.045);
+  color: var(--text-mute);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.arm-admin-status.is-live {
+  color: rgba(191,211,255,.92);
+  border-color: rgba(143,176,255,.22);
+}
+.arm-admin-status.is-dirty {
+  color: var(--gold-bright);
+  border-color: rgba(228,199,122,.30);
+}
+.arm-admin-status.is-error {
+  color: rgba(255,186,186,.95);
+  border-color: rgba(255,138,138,.28);
+}
+.arm-render-status {
+  margin-top: 12px;
+  color: rgba(191,211,255,.88);
+  border-color: rgba(143,176,255,.20);
+}
+.arm-render-status[data-mode="webgl"] {
+  color: rgba(191,211,255,.96);
+  border-color: rgba(90,142,255,.36);
+}
+.arm-render-status[data-mode="css"] {
+  color: rgba(228,199,122,.96);
+  border-color: rgba(228,199,122,.34);
+}
+.arm-render-status[data-mode="off"],
+.arm-render-status[data-mode="blocked"],
+.arm-render-status[data-mode="error"] {
+  color: rgba(255,186,186,.94);
+  border-color: rgba(255,138,138,.26);
+}
+.arm-admin-section {
+  padding: 13px 0 0;
+}
+.arm-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 9px;
+}
+.arm-admin-chip,
+.arm-admin-custom-btn {
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.055);
+  color: rgba(232,238,250,.82);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.arm-admin-chip:hover,
+.arm-admin-chip.is-active,
+.arm-admin-custom-btn:hover {
+  color: var(--text);
+  border-color: rgba(228,199,122,.42);
+  background: rgba(228,199,122,.12);
+}
+.arm-admin-row {
+  display: grid;
+  grid-template-columns: 82px 1fr 58px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.arm-admin-row select,
+.arm-admin-row input[type="text"],
+.arm-admin-row input[type="number"],
+.arm-admin-save input {
+  width: 100%;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(5,11,24,.42);
+  color: var(--text);
+  padding: 0 10px;
+  outline: none;
+}
+.arm-admin-row input[type="text"],
+.arm-admin-row input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+.arm-admin-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--gold-bright);
+}
+.arm-admin-row output {
+  color: var(--gold-bright);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.arm-admin-save {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+.arm-admin-save button,
+.arm-admin-delete {
+  border-radius: 10px;
+  border: 1px solid rgba(143,176,255,.30);
+  background: rgba(46,107,255,.16);
+  color: var(--blue-300);
+  padding: 0 11px;
+  cursor: pointer;
+}
+.arm-admin-custom-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+}
+.arm-admin-custom-item {
+  display: grid;
+  grid-template-columns: 1fr 34px;
+  gap: 6px;
+}
+.arm-admin-delete {
+  color: rgba(255,182,182,.92);
+  border-color: rgba(255,138,138,.28);
+  background: rgba(255,138,138,.10);
+}
+.arm-admin-empty {
+  margin-top: 9px;
+  color: var(--text-mute);
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .orion-arm-stage {
+    min-height: max(780px, calc(100vh - 73px));
+    background-position: center 30%;
+  }
+  .arm-hud {
+    left: 18px;
+    right: 76px;
+    bottom: 22px;
+    max-width: none;
+  }
+  .arm-hud-meta {
+    max-width: 100%;
+  }
+  .arm-focus-panel {
+    top: auto;
+    right: 18px;
+    bottom: 78px;
+    width: min(330px, calc(100vw - 36px));
+    min-width: 0;
+  }
+  .arm-node {
+    width: 60px;
+    min-height: 58px;
+    border-radius: 15px;
+  }
+  .arm-node-photo-wrap {
+    width: 36px;
+    height: 36px;
+  }
+  .arm-node-photo {
+    width: 30px;
+    height: 30px;
+  }
+  .arm-node-name { font-size: 11px; }
+  .arm-motion-toggle {
+    left: auto;
+    right: 18px;
+    bottom: 20px;
+  }
+}
+@media (max-width: 640px) {
+  .orion-arm-stage {
+    min-height: max(900px, calc(100svh - 73px));
+  }
+  .arm-stage-controls {
+    top: 16px;
+    width: calc(100vw - 28px);
+  }
+  .arm-title-script {
+    font-size: clamp(34px, 13vw, 54px);
+  }
+  .arm-search-console {
+    border-radius: 22px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .arm-search-console .pos-chips {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .orion-arm-stage.has-arm-admin-panel .arm-stage-controls {
+    left: 14px;
+    right: 76px;
+    width: auto;
+    transform: none;
+  }
+  .arm-hud {
+    left: 14px;
+    right: 76px;
+    bottom: max(18px, env(safe-area-inset-bottom));
+  }
+  .arm-hud-label {
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: .28em;
+  }
+  .arm-hud-label::before {
+    width: clamp(28px, 12vw, 44px);
+  }
+  .arm-hud-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    max-width: 100%;
+    margin-top: 12px;
+  }
+  .arm-hud-chip {
+    max-width: 100%;
+    min-width: 0;
+    padding: 7px clamp(8px, 2.5vw, 10px);
+    font-size: clamp(10px, 2.72vw, 11px);
+    letter-spacing: .055em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .arm-focus-panel {
+    display: none;
+  }
+  .arm-card-modal {
+    padding: 86px 14px 18px;
+  }
+  .arm-card-dialog {
+    width: min(326px, calc(100vw - 28px));
+    max-height: calc(100vh - 96px);
+  }
+  .arm-card-close {
+    top: -56px;
+    right: 0;
+  }
+  .arm-card-mount .player-card-shell {
+    min-height: 456px;
+  }
+  .arm-admin-panel {
+    top: 184px;
+    max-height: calc(100vh - 204px);
+  }
+  .arm-admin-shell {
+    max-height: calc(100vh - 204px);
+  }
+  .arm-admin-row {
+    grid-template-columns: 74px 1fr 44px;
+  }
+}
+@media (max-width: 360px) {
+  .arm-hud {
+    right: 66px;
+  }
+  .arm-hud-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arm-node,
+  .orion-arm-canvas,
+  .arm-card-modal,
+  .arm-card-dialog {
+    transition: none !important;
+    animation: none !important;
+  }
+  .arm-node::after,
+  .arm-node-particles,
+  .arm-node-particles::before,
+  .arm-node-particles::after,
+  .arm-node-photo-wrap::before,
+  .arm-node.is-launching .arm-node-photo-wrap,
+  .arm-node.is-launching::after {
+    animation: none !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('players') --></nav>
+
+<main class="roster-experience">
+    <div class="roster-arm-wrap">
+      <div id="playersGrid" class="orion-arm-stage" role="list" aria-label="正式队员星空名录">
+        <canvas id="orionArmCanvas" class="orion-arm-canvas" aria-hidden="true"></canvas>
+        <div id="armParticleField" class="arm-particle-field" aria-hidden="true"></div>
+        <div class="arm-stage-controls">
+          <div class="arm-title-script">猎户群星闪耀时</div>
+          <div class="arm-stage-mark">ROSTER · 球员名录</div>
+          <div class="arm-search-console">
+            <input type="search" id="searchInput" placeholder="搜索姓名 / 球衣号 / 位置..." autocomplete="off">
+            <div class="pos-chips" id="posChips"></div>
+          </div>
+        </div>
+        <div class="arm-hud" aria-hidden="true">
+          <div class="arm-hud-label">ORION FIELD</div>
+          <div class="arm-hud-meta">
+            <span class="arm-hud-chip" id="armCountLabel">0 ACTIVE</span>
+            <span class="arm-hud-chip" id="armModeLabel">ALL POSITIONS</span>
+          </div>
+        </div>
+        <div id="armNodeLayer" class="arm-node-layer"></div>
+        <aside id="armFocusPanel" class="arm-focus-panel" aria-live="polite"></aside>
+        <div id="armCardModal" class="arm-card-modal" aria-hidden="true">
+          <button class="arm-card-backdrop" type="button" data-arm-card-close aria-label="关闭球员卡"></button>
+          <div class="arm-card-dialog" role="dialog" aria-modal="true" aria-label="球员卡">
+            <button class="arm-card-close" type="button" data-arm-card-close aria-label="关闭球员卡">×</button>
+            <div id="armCardMount" class="arm-card-mount"></div>
+          </div>
+        </div>
+        <button id="armMotionToggle" class="arm-motion-toggle" type="button" aria-label="关闭动效" title="关闭动效（本访客）" aria-pressed="false">Ⅱ</button>
+        <aside id="armAdminPanel" class="arm-admin-panel is-collapsed" hidden aria-label="星点管理员面板">
+          <button id="armAdminToggle" class="arm-admin-toggle" type="button" aria-expanded="false" aria-controls="armAdminShell"><span>星阵控制</span></button>
+          <div id="armAdminShell" class="arm-admin-shell">
+            <div class="arm-admin-head">
+              <div>
+                <div class="arm-admin-kicker">DRONE CONTROL</div>
+                <div class="arm-admin-title">群星编队台</div>
+              </div>
+              <div class="arm-admin-actions">
+                <button class="arm-admin-random" type="button" data-arm-action="randomize">全部随机</button>
+                <button id="armGlobalPublish" class="arm-admin-publish" type="button" data-arm-action="publish">发布全站</button>
+              </div>
+            </div>
+            <div id="armGlobalStatus" class="arm-admin-status" aria-live="polite">读取全站星阵配置...</div>
+            <div class="arm-admin-section">
+              <div class="arm-admin-kicker">TEMPLATES</div>
+              <div id="armPresetTemplates" class="arm-admin-grid"></div>
+            </div>
+            <div class="arm-admin-section">
+              <div class="arm-admin-kicker">FORMATION</div>
+              <label class="arm-admin-row">
+                <span>星点排列</span>
+                <select data-arm-setting="formation">
+                  <option value="scatter">星河散列</option>
+                  <option value="orion">OR 字阵</option>
+                  <option value="spiral">螺旋升空</option>
+                  <option value="orbit">环形巡航</option>
+                  <option value="vline">斜翼队列</option>
+                  <option value="year">年份字阵</option>
+                  <option value="random">随机编队</option>
+                </select>
+                <output data-arm-output="formation">散列</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>年份</span>
+                <input type="text" inputmode="numeric" maxlength="6" pattern="[0-9]*" data-arm-setting="year" placeholder="2026">
+                <output data-arm-output="year">2026</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>字阵人数</span>
+                <input type="range" min="24" max="160" step="1" data-arm-setting="yearLimit">
+                <output data-arm-output="yearLimit">84</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>闪耀路径</span>
+                <select data-arm-setting="path">
+                  <option value="or">OR 递进</option>
+                  <option value="wave">横向波束</option>
+                  <option value="orbit">环形巡航</option>
+                  <option value="spiral">螺旋点火</option>
+                  <option value="random">随机闪耀</option>
+                  <option value="none">关闭</option>
+                </select>
+                <output data-arm-output="path">OR</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>星尘渲染</span>
+                <select data-arm-setting="particleMode">
+                  <option value="auto">自动兜底</option>
+                  <option value="webgl">强制 WebGL</option>
+                  <option value="css">轻量粒子</option>
+                  <option value="off">关闭星尘</option>
+                </select>
+                <output data-arm-output="particleMode">自动</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>排列张力</span>
+                <input type="range" min="0.82" max="1.28" step="0.005" data-arm-setting="spread">
+                <output data-arm-output="spread">1.00</output>
+              </label>
+            </div>
+            <div class="arm-admin-section">
+              <div class="arm-admin-kicker">MOTION</div>
+              <label class="arm-admin-row">
+                <span>闪耀周期</span>
+                <input type="range" min="5.6" max="24" step="0.05" data-arm-setting="pathDuration">
+                <output data-arm-output="pathDuration">13.6s</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>呼吸周期</span>
+                <input type="range" min="5.8" max="18" step="0.05" data-arm-setting="breatheDuration">
+                <output data-arm-output="breatheDuration">10.8s</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>晃动幅度</span>
+                <input type="range" min="0.2" max="2.6" step="0.01" data-arm-setting="sway">
+                <output data-arm-output="sway">1.0x</output>
+              </label>
+            </div>
+            <div class="arm-admin-section">
+              <div class="arm-admin-kicker">STARDUST</div>
+              <label class="arm-admin-row">
+                <span>粒子密度</span>
+                <input type="range" min="0.35" max="1.8" step="0.05" data-arm-setting="particleDensity">
+                <output data-arm-output="particleDensity">1.00x</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>粒子亮度</span>
+                <input type="range" min="0.35" max="1.8" step="0.05" data-arm-setting="particleBrightness">
+                <output data-arm-output="particleBrightness">1.00x</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>排斥半径</span>
+                <input type="range" min="0.55" max="1.8" step="0.025" data-arm-setting="particleRadius">
+                <output data-arm-output="particleRadius">1.00x</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>排斥力度</span>
+                <input type="range" min="0.4" max="2.2" step="0.025" data-arm-setting="particleStrength">
+                <output data-arm-output="particleStrength">1.00x</output>
+              </label>
+              <label class="arm-admin-row">
+                <span>回弹速度</span>
+                <input type="range" min="0.35" max="2.5" step="0.025" data-arm-setting="particleReturn">
+                <output data-arm-output="particleReturn">1.00x</output>
+              </label>
+              <div id="armParticleStatus" class="arm-admin-status arm-render-status" aria-live="polite">星尘状态：等待渲染</div>
+            </div>
+            <div class="arm-admin-section">
+              <div class="arm-admin-kicker">CUSTOM</div>
+              <div class="arm-admin-save">
+                <input id="armTemplateName" type="text" maxlength="16" placeholder="自定义模板名">
+                <button type="button" data-arm-action="save-template">保存</button>
+              </div>
+              <div id="armCustomTemplates" class="arm-admin-custom-list"></div>
+            </div>
+          </div>
+        </aside>
+        <div id="emptyState" class="arm-empty-state">未找到匹配的球员</div>
+      </div>
+    </div>
+</main>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('players');
+// 主球员墙只显示 verified（正式）；casual（试训）走顶部独立 section
+const allPlayers = DB.allPlayers();
+const players = allPlayers.filter(p => DB.getPlayerLevel(p) === 'verified');
+const tryoutPlayers = allPlayers.filter(p => DB.getPlayerLevel(p) === 'casual');
+const allGames = DB.allGames();
+const allGamesWithAggregate = DB.allGames({includeAggregate:true});
+const gameById = new Map(allGames.map(g => [g.id, g]));
+const totalGamesCount = allGames.length;
+const playerCategoryCache = new Map();
+const playerStatsCache = new Map();
+const playerPointsCache = new Map();
+const playerRuntimeCache = new Map();
+
+// Classify a single position string into one of: 内野/外野/投手/捕手/其他
+// 注意 ① 用 /i 标志 case-insensitive，覆盖 SEED 用大写 "CF" 跟比赛数据用小写 "cf" 两种风格
+//      ② 单字母 C/P 必须 \b 单词边界，避免 "CF"/"3B" 里的字母被误中
+function classifyPos(pos){
+  if (!pos) return null;
+  if (/外野|LF|CF|RF|SF|OF/i.test(pos)) return '外野';
+  if (/投手|\bP\b/i.test(pos)) return '投手';
+  if (/捕手|\bC\b/i.test(pos)) return '捕手';
+  if (/一垒|二垒|三垒|游击|内野|1B|2B|3B|SS/i.test(pos)) return '内野';
+  return '其他';
+}
+
+// 注册位置（admin 维护）转出的类别——可能多个（"中外野 CF · 投手 P" → 外野 + 投手）
+function registeredCategories(p){
+  const cats = new Set();
+  for (const part of String(p.position||'').split(/[^\w一-鿿]+/).filter(Boolean)) {
+    const c = classifyPos(part); if (c) cats.add(c);
+  }
+  return cats;
+}
+
+// 实战出场位置（来自 g.batting[i].pos）转出的类别。
+// GameChanger 用 "cf-p" / "lf-p" 这种"位置切换"语义（中外野→投手 / 左外野→投手），
+// 表示同场切了 2 个位置——按非字母数字字符拆分，两边都算
+function gameplayCategories(p){
+  const cats = new Set();
+  const myKey = DB.canonicalNameKey(p.name);
+  for (const g of allGamesWithAggregate) {
+    for (const b of (g.batting||[])) {
+      if (DB.playerCanonicalKey(b.name) !== myKey) continue;
+      for (const part of String(b.pos||'').split(/[^\w一-鿿]+/).filter(Boolean)) {
+        const c = classifyPos(part); if (c) cats.add(c);
+      }
+    }
+  }
+  return cats;
+}
+
+// 一个球员的所有位置类别 = 注册类别 ∪ 实战类别。
+// 两类来源都重要：
+//   ① 注册位置（admin 维护的"主位"）—— 球员个人意愿/教练安排
+//   ② 实战位置（g.batting[i].pos）—— 数据驱动，"他实际打过这个位置"
+// 二者 union：versatility 球员会出现在多个 tag；SEED 挂错也会被实战补上 ✓
+function playerCategories(p){
+  if (playerCategoryCache.has(p.id)) return playerCategoryCache.get(p.id);
+  const cats = new Set();
+  for (const c of registeredCategories(p)) cats.add(c);
+  for (const c of gameplayCategories(p)) cats.add(c);
+  playerCategoryCache.set(p.id, cats);
+  return cats;
+}
+
+// Build the union of categories that any player is in
+const positionCats = (() => {
+  const set = new Set();
+  players.forEach(p => {
+    for (const c of playerCategories(p)) set.add(c);
+  });
+  return ['全部', '内野', '投手', '外野', '捕手', '其他'].filter(c => c === '全部' || set.has(c));
+})();
+
+// Render position chips
+const posHost = document.getElementById('posChips');
+posHost.innerHTML = positionCats.map((c,i)=>`<button class="pos-chip ${i===0?'active':''}" data-pos="${c}">${c}</button>`).join('');
+
+let activeFilter = { pos: '全部', search: '' };
+
+const armStage = document.getElementById('playersGrid');
+const armCanvas = document.getElementById('orionArmCanvas');
+const armParticleField = document.getElementById('armParticleField');
+const armNodeLayer = document.getElementById('armNodeLayer');
+const armFocusPanel = document.getElementById('armFocusPanel');
+const armCardModal = document.getElementById('armCardModal');
+const armCardMount = document.getElementById('armCardMount');
+const armCountLabel = document.getElementById('armCountLabel');
+const armModeLabel = document.getElementById('armModeLabel');
+const armMotionToggle = document.getElementById('armMotionToggle');
+const armAdminPanel = document.getElementById('armAdminPanel');
+const armAdminToggle = document.getElementById('armAdminToggle');
+const armAdminShell = document.getElementById('armAdminShell');
+const armPresetTemplates = document.getElementById('armPresetTemplates');
+const armCustomTemplates = document.getElementById('armCustomTemplates');
+const armTemplateName = document.getElementById('armTemplateName');
+const armGlobalStatus = document.getElementById('armGlobalStatus');
+const armGlobalPublish = document.getElementById('armGlobalPublish');
+const armParticleStatus = document.getElementById('armParticleStatus');
+const armReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ARM_LOW_MOTION_KEY = 'orion.players.lowMotion.v1';
+function loadArmLowMotionPreference() {
+  try {
+    return window.localStorage?.getItem(ARM_LOW_MOTION_KEY) === '1';
+  } catch (_) {
+    return false;
+  }
+}
+function saveArmLowMotionPreference(enabled) {
+  try {
+    if (enabled) window.localStorage?.setItem(ARM_LOW_MOTION_KEY, '1');
+    else window.localStorage?.removeItem(ARM_LOW_MOTION_KEY);
+  } catch (_) {}
+}
+const armStoredLowMotion = loadArmLowMotionPreference();
+const currentUser = DB.currentUser();
+const isAdminUser = currentUser && currentUser.role === 'admin';
+const armState = {
+  filtered: [],
+  focusedId: null,
+  lockedFocus: false,
+  phase: 0,
+  lastTs: 0,
+  lastPaintTs: 0,
+  frameId: 0,
+  lowMotion: !!armReducedMotion || armStoredLowMotion,
+  paused: !!armReducedMotion || armStoredLowMotion,
+  pageHidden: false,
+  pointerX: 0,
+  pointerY: 0,
+  three: null,
+  renderer: null,
+  scene: null,
+  camera: null,
+  armGroup: null,
+  dust: null,
+  stars: null,
+  hoverId: null,
+  totalGames: 0,
+  tryoutCount: 0,
+  resizeObserver: null,
+  sceneLoading: false,
+  sceneInitQueued: false,
+  staticRendered: false,
+  nodesDirty: true,
+  pointerRaf: 0,
+  pointerClientX: 0,
+  pointerClientY: 0,
+  pointerActive: false,
+  nodeEls: [],
+  layoutKey: '',
+  layoutPoints: [],
+  pathAssignmentKey: '',
+  appliedSettingsSignature: '',
+  appliedLayoutSignature: '',
+  stageSizeW: 0,
+  stageSizeH: 0,
+  stageSizeDirty: true,
+  particleMode: 'auto',
+  particleActualMode: 'pending',
+  particleLastError: '',
+  particleDensity: 1,
+  particleBrightness: 1,
+  particleRadius: 1,
+  particleStrength: 1,
+  particleReturn: 1,
+  dustBasePositions: null,
+  starBasePositions: null,
+  cssParticles: [],
+  cssParticleStageW: 0,
+  cssParticleStageH: 0,
+  cssParticleVisibleCount: 0,
+  cssParticleSettling: false,
+  webglParticlesSettling: false,
+  particleRenderKey: '',
+  particleRenderParams: null,
+  particleMaterialBrightness: 0,
+};
+
+function shouldUseStaticArmScene() {
+  const particleMode = armState.particleMode || 'auto';
+  const compactPointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (armReducedMotion || armState.lowMotion) return true;
+  if (particleMode === 'off' || particleMode === 'css') return true;
+  if (particleMode === 'webgl') return false;
+  return compactPointer && window.innerWidth < 760;
+}
+
+function markArmStageSizeDirty() {
+  armState.stageSizeDirty = true;
+  armState.particleRenderKey = '';
+}
+
+function getArmStageSize() {
+  if (!armState.stageSizeDirty && armState.stageSizeW > 0 && armState.stageSizeH > 0) {
+    return { width: armState.stageSizeW, height: armState.stageSizeH };
+  }
+  const rect = armStage.getBoundingClientRect();
+  armState.stageSizeW = Math.max(1, rect.width || window.innerWidth);
+  armState.stageSizeH = Math.max(1, rect.height || 760);
+  armState.stageSizeDirty = false;
+  return { width: armState.stageSizeW, height: armState.stageSizeH };
+}
+
+function stopArmAnimation() {
+  if (armState.frameId) cancelAnimationFrame(armState.frameId);
+  armState.frameId = 0;
+  armState.lastTs = 0;
+}
+
+function disposeArmMaterial(material) {
+  if (!material) return;
+  if (Array.isArray(material)) material.forEach(disposeArmMaterial);
+  else material.dispose?.();
+}
+
+function disposeArmScene() {
+  if (armState.resizeObserver) {
+    armState.resizeObserver.disconnect();
+    armState.resizeObserver = null;
+  }
+  window.removeEventListener('resize', resizeArmScene);
+  if (armState.scene) {
+    armState.scene.traverse(obj => {
+      obj.geometry?.dispose?.();
+      disposeArmMaterial(obj.material);
+    });
+  }
+  if (armState.renderer) {
+    armState.renderer.clear?.();
+    armState.renderer.dispose?.();
+  }
+  if (armCanvas) armCanvas.width = armCanvas.width;
+  Object.assign(armState, {
+    three: null,
+    renderer: null,
+    scene: null,
+    camera: null,
+    armGroup: null,
+    dust: null,
+    stars: null,
+    dustBasePositions: null,
+    starBasePositions: null,
+    resizeObserver: null,
+    sceneLoading: false,
+    sceneInitQueued: false,
+    staticRendered: true,
+    particleActualMode: 'pending',
+    particleLastError: '',
+    webglParticlesSettling: false,
+    particleMaterialBrightness: 0,
+  });
+  markArmStageSizeDirty();
+  updateArmParticleStatus();
+}
+
+const ARM_ADMIN_SETTINGS_KEY = 'orion.players.starfieldAdmin.settings.v1';
+const ARM_ADMIN_TEMPLATES_KEY = 'orion.players.starfieldAdmin.templates.v1';
+const ARM_GLOBAL_SETTING_KEY = 'players-starfield';
+const ARM_GLOBAL_POLL_MS = 45_000;
+const ARM_ADMIN_DEFAULTS = {
+  formation: 'scatter',
+  path: 'or',
+  year: '2026',
+  yearLimit: 84,
+  particleMode: 'auto',
+  particleDensity: 1,
+  particleBrightness: 1,
+  particleRadius: 1,
+  particleStrength: 1,
+  particleReturn: 1,
+  pathDuration: 13.6,
+  breatheDuration: 10.8,
+  sway: 1,
+  spread: 1,
+  randomSeed: 17,
+};
+const ARM_FORMATION_LABELS = {
+  scatter: '散列',
+  orion: 'OR',
+  spiral: '螺旋',
+  orbit: '环形',
+  vline: '斜翼',
+  year: '年份',
+  random: '随机',
+};
+const ARM_PATH_LABELS = {
+  or: 'OR',
+  wave: '波束',
+  orbit: '环形',
+  spiral: '螺旋',
+  random: '随机',
+  none: '关闭',
+};
+const ARM_PARTICLE_MODE_LABELS = {
+  auto: '自动',
+  webgl: 'WebGL',
+  css: '轻量',
+  off: '关闭',
+};
+const ARM_PRESETS = [
+  { id: 'slow-or', name: 'OR 灯阵', settings: { formation: 'scatter', path: 'or', pathDuration: 13.6, breatheDuration: 10.8, sway: 1, spread: 1, randomSeed: 17 } },
+  { id: 'nebula', name: '星河散列', settings: { formation: 'scatter', path: 'wave', pathDuration: 16.2, breatheDuration: 12.6, sway: .7, spread: 1.08, randomSeed: 31 } },
+  { id: 'spiral', name: '螺旋升空', settings: { formation: 'spiral', path: 'spiral', pathDuration: 9.4, breatheDuration: 8.6, sway: 1.35, spread: 1, randomSeed: 43 } },
+  { id: 'orbit', name: '环形巡航', settings: { formation: 'orbit', path: 'orbit', pathDuration: 11.2, breatheDuration: 12, sway: .9, spread: .96, randomSeed: 59 } },
+  { id: 'wing', name: '斜翼队列', settings: { formation: 'vline', path: 'wave', pathDuration: 7.8, breatheDuration: 9.2, sway: 1.18, spread: 1.02, randomSeed: 71 } },
+  { id: 'year-2026', name: '年份 2026', settings: { formation: 'year', year: '2026', yearLimit: 84, path: 'wave', pathDuration: 12.4, breatheDuration: 11.2, sway: .82, spread: .98, randomSeed: 86 } },
+];
+let armAdminState = loadArmAdminSettings();
+let armCustomTemplateState = loadArmCustomTemplates();
+let armGlobalPollTimer = 0;
+let armAdminOutputEls = null;
+const armGlobalState = {
+  dirty: false,
+  saving: false,
+  saveTimer: 0,
+  updatedAt: null,
+  updatedByName: '',
+  lastPublishedSignature: '',
+};
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function clampSettingNumber(value, fallback, min, max) {
+  const n = Number(value);
+  return Number.isFinite(n) ? clamp(n, min, max) : fallback;
+}
+
+function normalizeArmYear(value) {
+  return String(value || ARM_ADMIN_DEFAULTS.year).replace(/[^\d]/g, '').slice(0, 6) || ARM_ADMIN_DEFAULTS.year;
+}
+
+function normalizeArmAdminSettings(raw = {}) {
+  const next = { ...ARM_ADMIN_DEFAULTS, ...(raw || {}) };
+  if (!ARM_FORMATION_LABELS[next.formation]) next.formation = ARM_ADMIN_DEFAULTS.formation;
+  if (!ARM_PATH_LABELS[next.path]) next.path = ARM_ADMIN_DEFAULTS.path;
+  if (!ARM_PARTICLE_MODE_LABELS[next.particleMode]) next.particleMode = ARM_ADMIN_DEFAULTS.particleMode;
+  next.year = normalizeArmYear(next.year);
+  next.yearLimit = Math.round(clampSettingNumber(next.yearLimit, ARM_ADMIN_DEFAULTS.yearLimit, 24, 160));
+  next.particleDensity = clampSettingNumber(next.particleDensity, ARM_ADMIN_DEFAULTS.particleDensity, .35, 1.8);
+  next.particleBrightness = clampSettingNumber(next.particleBrightness, ARM_ADMIN_DEFAULTS.particleBrightness, .35, 1.8);
+  next.particleRadius = clampSettingNumber(next.particleRadius, ARM_ADMIN_DEFAULTS.particleRadius, .55, 1.8);
+  next.particleStrength = clampSettingNumber(next.particleStrength, ARM_ADMIN_DEFAULTS.particleStrength, .4, 2.2);
+  next.particleReturn = clampSettingNumber(next.particleReturn, ARM_ADMIN_DEFAULTS.particleReturn, .35, 2.5);
+  next.pathDuration = clampSettingNumber(next.pathDuration, ARM_ADMIN_DEFAULTS.pathDuration, 5.6, 24);
+  next.breatheDuration = clampSettingNumber(next.breatheDuration, ARM_ADMIN_DEFAULTS.breatheDuration, 5.8, 18);
+  next.sway = clampSettingNumber(next.sway, ARM_ADMIN_DEFAULTS.sway, .2, 2.6);
+  next.spread = clampSettingNumber(next.spread, ARM_ADMIN_DEFAULTS.spread, .82, 1.28);
+  next.randomSeed = Math.round(clampSettingNumber(next.randomSeed, ARM_ADMIN_DEFAULTS.randomSeed, 1, 999999));
+  return next;
+}
+
+function armSettingsSignature(settings) {
+  const s = normalizeArmAdminSettings(settings);
+  return JSON.stringify({
+    formation: s.formation,
+    path: s.path,
+    year: s.year,
+    yearLimit: s.yearLimit,
+    particleMode: s.particleMode,
+    particleDensity: Number(s.particleDensity.toFixed(2)),
+    particleBrightness: Number(s.particleBrightness.toFixed(2)),
+    particleRadius: Number(s.particleRadius.toFixed(3)),
+    particleStrength: Number(s.particleStrength.toFixed(3)),
+    particleReturn: Number(s.particleReturn.toFixed(3)),
+    pathDuration: Number(s.pathDuration.toFixed(2)),
+    breatheDuration: Number(s.breatheDuration.toFixed(2)),
+    sway: Number(s.sway.toFixed(2)),
+    spread: Number(s.spread.toFixed(3)),
+    randomSeed: s.randomSeed,
+  });
+}
+
+function armLayoutSettingsSignature(settings) {
+  const s = normalizeArmAdminSettings(settings);
+  return JSON.stringify({
+    formation: s.formation,
+    year: s.year,
+    yearLimit: s.yearLimit,
+    spread: Number(s.spread.toFixed(3)),
+    randomSeed: s.randomSeed,
+  });
+}
+
+function formatArmGlobalTime(value) {
+  if (!value) return '默认配置';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '已发布';
+  return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function updateArmGlobalStatus(state = 'live', text = '') {
+  if (!armGlobalStatus) return;
+  armGlobalStatus.classList.toggle('is-live', state === 'live' || state === 'saving');
+  armGlobalStatus.classList.toggle('is-dirty', state === 'dirty');
+  armGlobalStatus.classList.toggle('is-error', state === 'error');
+  armGlobalStatus.textContent = text || (
+    state === 'saving'
+      ? '正在发布到全站...'
+      : state === 'dirty'
+        ? '星阵已调整，正在自动发布全站...'
+        : `全站星阵已同步 · ${formatArmGlobalTime(armGlobalState.updatedAt)}`
+  );
+  if (armGlobalPublish) {
+    armGlobalPublish.classList.toggle('is-saving', state === 'saving');
+    armGlobalPublish.disabled = state === 'saving';
+  }
+}
+
+function updateArmParticleStatus() {
+  if (!armParticleStatus) return;
+  const requested = armState.particleMode || 'auto';
+  const requestedLabel = ARM_PARTICLE_MODE_LABELS[requested] || requested;
+  const density = (armState.particleDensity || 1).toFixed(2);
+  let mode = armState.particleActualMode || 'pending';
+  let text = '';
+  if (requested === 'off') {
+    mode = 'off';
+    text = '星尘状态：已关闭';
+  } else if (armReducedMotion) {
+    mode = 'blocked';
+    text = '星尘状态：系统减动效已开启，星尘暂停';
+  } else if (armState.lowMotion) {
+    mode = 'blocked';
+    text = '星尘状态：本访客已关闭动效，星尘暂停';
+  } else if (armState.renderer) {
+    mode = 'webgl';
+    text = `星尘状态：WebGL 运行中 · 密度 ${density}x`;
+  } else if (requested === 'webgl' && armState.particleLastError) {
+    mode = 'error';
+    text = `星尘状态：WebGL 启动失败 · ${armState.particleLastError}`;
+  } else if (requested === 'webgl' && (armState.sceneLoading || armState.sceneInitQueued)) {
+    mode = 'webgl';
+    text = '星尘状态：WebGL 正在启动';
+  } else if (mode === 'css') {
+    text = `星尘状态：轻量粒子运行中 · 密度 ${density}x`;
+  } else if (requested === 'auto' && shouldUseStaticArmScene()) {
+    mode = 'css';
+    text = `星尘状态：自动兜底为轻量粒子 · 密度 ${density}x`;
+  } else {
+    mode = requested === 'webgl' ? 'webgl' : 'pending';
+    text = `星尘状态：等待渲染 · 当前模式 ${requestedLabel}`;
+  }
+  armParticleStatus.dataset.mode = mode;
+  armParticleStatus.textContent = text;
+}
+
+function setArmParticleActualMode(mode, error = '') {
+  const safeError = String(error || '').replace(/\s+/g, ' ').slice(0, 54);
+  if (armState.particleActualMode === mode && armState.particleLastError === safeError) return;
+  armState.particleActualMode = mode;
+  armState.particleLastError = safeError;
+  updateArmParticleStatus();
+}
+
+function loadArmAdminSettings() {
+  try {
+    return normalizeArmAdminSettings(JSON.parse(localStorage.getItem(ARM_ADMIN_SETTINGS_KEY) || '{}'));
+  } catch {
+    return normalizeArmAdminSettings();
+  }
+}
+
+function loadArmCustomTemplates() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ARM_ADMIN_TEMPLATES_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(item => item && item.name && item.settings)
+      .map(item => ({ ...item, settings: normalizeArmAdminSettings(item.settings) }))
+      .slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+function saveArmAdminSettings() {
+  localStorage.setItem(ARM_ADMIN_SETTINGS_KEY, JSON.stringify(armAdminState));
+}
+
+function saveArmCustomTemplates() {
+  localStorage.setItem(ARM_ADMIN_TEMPLATES_KEY, JSON.stringify(armCustomTemplateState));
+}
+
+async function loadArmGlobalSettings({ apply = false, silent = false, skipIfDirty = false } = {}) {
+  if (skipIfDirty && isAdminUser && armGlobalState.dirty) return false;
+  try {
+    const setting = await DB.getSiteSetting(ARM_GLOBAL_SETTING_KEY);
+    if (!setting?.value) return false;
+    const next = normalizeArmAdminSettings(setting.value);
+    const before = armSettingsSignature(armAdminState);
+    armAdminState = next;
+    armGlobalState.updatedAt = setting.updatedAt || null;
+    armGlobalState.updatedByName = setting.updatedByName || '';
+    armGlobalState.lastPublishedSignature = armSettingsSignature(next);
+    armGlobalState.dirty = false;
+    saveArmAdminSettings();
+    if (apply && before !== armGlobalState.lastPublishedSignature) {
+      applyArmAdminSettings({ persist: false, rerenderControls: isAdminUser });
+    } else if (isAdminUser) {
+      updateArmGlobalStatus('live');
+    }
+    return before !== armGlobalState.lastPublishedSignature;
+  } catch (err) {
+    console.warn('[orion-arm] failed to load global starfield settings:', err);
+    if (!silent && isAdminUser) updateArmGlobalStatus('error', `读取全站配置失败：${err.message || err}`);
+    return false;
+  }
+}
+
+async function publishArmGlobalSettings({ quiet = false } = {}) {
+  if (!isAdminUser) return false;
+  clearTimeout(armGlobalState.saveTimer);
+  armGlobalState.saveTimer = 0;
+  if (armGlobalState.saving) return false;
+  const settings = normalizeArmAdminSettings(armAdminState);
+  const signature = armSettingsSignature(settings);
+  armGlobalState.saving = true;
+  updateArmGlobalStatus('saving');
+  try {
+    const setting = await DB.updateSiteSetting(ARM_GLOBAL_SETTING_KEY, settings);
+    armGlobalState.updatedAt = setting?.updatedAt || new Date().toISOString();
+    armGlobalState.updatedByName = setting?.updatedByName || '';
+    armGlobalState.lastPublishedSignature = signature;
+    armGlobalState.dirty = false;
+    updateArmGlobalStatus('live');
+    if (!quiet && window.toast) toast('星阵配置已发布到全站', 'success');
+    return true;
+  } catch (err) {
+    armGlobalState.dirty = true;
+    updateArmGlobalStatus('error', `发布失败：${err.message || err}`);
+    if (!quiet && window.toast) toast(`星阵发布失败：${err.message || err}`, 'error');
+    return false;
+  } finally {
+    armGlobalState.saving = false;
+    if (armSettingsSignature(armAdminState) !== signature) scheduleArmGlobalPublish();
+  }
+}
+
+function scheduleArmGlobalPublish({ immediate = false } = {}) {
+  if (!isAdminUser) return;
+  armGlobalState.dirty = true;
+  updateArmGlobalStatus('dirty');
+  clearTimeout(armGlobalState.saveTimer);
+  armGlobalState.saveTimer = window.setTimeout(
+    () => publishArmGlobalSettings({ quiet: true }),
+    immediate ? 120 : 900
+  );
+}
+
+function startArmGlobalSettingsPolling() {
+  if (armGlobalPollTimer) return;
+  armGlobalPollTimer = window.setInterval(() => {
+    loadArmGlobalSettings({ apply: true, silent: true, skipIfDirty: true });
+  }, ARM_GLOBAL_POLL_MS);
+}
+
+function invalidateArmLayout() {
+  armState.layoutKey = '';
+  armState.layoutPoints = [];
+  armState.pathAssignmentKey = '';
+  armState.nodesDirty = true;
+  armState.staticRendered = false;
+  markArmStageSizeDirty();
+}
+
+function applyArmAdminSettings({ persist = true, rerenderControls = true } = {}) {
+  armAdminState = normalizeArmAdminSettings(armAdminState);
+  const previousSettingsSignature = armState.appliedSettingsSignature || '';
+  const previousLayoutSignature = armState.appliedLayoutSignature || '';
+  const previousParticleMode = armState.particleMode || 'auto';
+  const previousParticleDensity = armState.particleDensity || 1;
+  const settingsSignature = armSettingsSignature(armAdminState);
+  const layoutSignature = armLayoutSettingsSignature(armAdminState);
+  const previousPath = armStage.dataset.path || '';
+  const previousSway = Number(armStage.dataset.sway || NaN);
+  if (isAdminUser && armAdminState.particleMode === 'webgl' && armState.lowMotion && !armReducedMotion) {
+    armState.lowMotion = false;
+    armState.paused = false;
+    saveArmLowMotionPreference(false);
+    syncArmMotionButton();
+  }
+  const pathStep = clamp(armAdminState.pathDuration / 76, .08, .32);
+  const swayX = (.8 * armAdminState.sway).toFixed(2);
+  const swayY = (1.6 * armAdminState.sway).toFixed(2);
+  const minScale = (1 - .008 * armAdminState.sway).toFixed(3);
+  const maxScale = (1 + .018 * armAdminState.sway).toFixed(3);
+  armStage.style.setProperty('--arm-path-duration', `${armAdminState.pathDuration.toFixed(2)}s`);
+  armStage.style.setProperty('--arm-path-step', `${pathStep.toFixed(3)}s`);
+  armStage.style.setProperty('--arm-breathe-duration', `${armAdminState.breatheDuration.toFixed(2)}s`);
+  armStage.style.setProperty('--arm-float-duration', `${(armAdminState.breatheDuration * 1.18).toFixed(2)}s`);
+  armStage.style.setProperty('--arm-sway-x', `${swayX}px`);
+  armStage.style.setProperty('--arm-sway-y', `${swayY}px`);
+  armStage.style.setProperty('--arm-breathe-min', minScale);
+  armStage.style.setProperty('--arm-breathe-max', maxScale);
+  armStage.dataset.formation = armAdminState.formation;
+  armStage.dataset.path = armAdminState.path;
+  armStage.dataset.particleMode = armAdminState.particleMode;
+  armStage.dataset.sway = armAdminState.sway.toFixed(3);
+  armState.particleMode = armAdminState.particleMode;
+  armState.particleDensity = armAdminState.particleDensity;
+  armState.particleBrightness = armAdminState.particleBrightness;
+  armState.particleRadius = armAdminState.particleRadius;
+  armState.particleStrength = armAdminState.particleStrength;
+  armState.particleReturn = armAdminState.particleReturn;
+  if (persist) saveArmAdminSettings();
+  const layoutChanged = previousLayoutSignature !== layoutSignature;
+  const pathChanged = previousPath !== armAdminState.path;
+  const swayChanged = !Number.isFinite(previousSway) || Math.abs(previousSway - armAdminState.sway) > .001;
+  if (!previousSettingsSignature || layoutChanged) {
+    invalidateArmLayout();
+  } else if (pathChanged || swayChanged) {
+    armState.pathAssignmentKey = '';
+    armState.nodesDirty = true;
+    armState.staticRendered = false;
+  }
+  const densityChanged = Math.abs(previousParticleDensity - armState.particleDensity) > .001;
+  if (previousParticleMode !== armState.particleMode || densityChanged) {
+    resetArmParticleField();
+    disposeArmScene();
+    armState.staticRendered = false;
+    if (shouldUseStaticArmScene()) armStage.classList.add('no-webgl');
+    else armStage.classList.remove('no-webgl');
+    scheduleArmScene();
+  } else {
+    updateArmParticleStatus();
+  }
+  armState.appliedSettingsSignature = settingsSignature;
+  armState.appliedLayoutSignature = layoutSignature;
+  if (rerenderControls) renderArmAdminControls();
+  else updateArmAdminOutputs();
+  if (armState.nodesDirty && armState.nodeEls.length) positionArmNodes(performance.now());
+}
+
+function armHash01(n) {
+  const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function armColorClass(p) {
+  return positionClass(p.position);
+}
+
+function playerStats(p) {
+  if (!playerStatsCache.has(p.id)) playerStatsCache.set(p.id, DB.getPlayerStats(p.name));
+  return playerStatsCache.get(p.id);
+}
+
+function playerPoints(p) {
+  if (!playerPointsCache.has(p.id)) playerPointsCache.set(p.id, DB.getPlayerPoints(p.id));
+  return playerPointsCache.get(p.id);
+}
+
+function playerRuntime(p) {
+  if (!playerRuntimeCache.has(p.id)) {
+    const stats = playerStats(p);
+    const points = playerPoints(p);
+    playerRuntimeCache.set(p.id, {
+      stats,
+      points,
+      totalPoints: points.total || 0,
+      online: DB.getPlayerOnlineStatus(p.id),
+      photoUrl: DB.playerPhotoUrl(p),
+      categories: playerCategories(p),
+      posClass: positionClass(p.position),
+      verified: DB.getPlayerLevel(p) === 'verified',
+    });
+  }
+  return playerRuntimeCache.get(p.id);
+}
+
+function armPlayerSortScore(p) {
+  const runtime = playerRuntime(p);
+  const pts = runtime.totalPoints;
+  const stats = runtime.stats;
+  return pts * 6 + (stats.HR || 0) * 18 + (stats.games || 0);
+}
+
+function syncArmMotionButton() {
+  const lowMotion = !!armState.lowMotion;
+  armState.paused = lowMotion;
+  armStage.classList.toggle('is-low-motion', lowMotion);
+  armMotionToggle.textContent = lowMotion ? '▶' : 'Ⅱ';
+  armMotionToggle.classList.toggle('is-low-motion', lowMotion);
+  armMotionToggle.setAttribute('aria-pressed', lowMotion ? 'true' : 'false');
+  armMotionToggle.setAttribute('aria-label', lowMotion ? '恢复动画' : '关闭动效');
+  armMotionToggle.title = lowMotion ? '低动效已开启，点击恢复动画' : '关闭动效（本访客）';
+  updateArmParticleStatus();
+}
+
+function setArmLowMotion(enabled, opts = {}) {
+  const next = !!enabled || !!armReducedMotion;
+  armState.lowMotion = next;
+  armState.paused = next;
+  if (opts.persist) saveArmLowMotionPreference(!!enabled && !armReducedMotion);
+  syncArmMotionButton();
+  armState.pointerX = 0;
+  armState.pointerY = 0;
+  armState.pointerActive = false;
+  armState.staticRendered = false;
+  armState.nodesDirty = true;
+  if (next) {
+    resetArmParticleField();
+    stopArmAnimation();
+    disposeArmScene();
+    positionArmNodes(0);
+    return;
+  }
+  if (!shouldUseStaticArmScene()) armStage.classList.remove('no-webgl');
+  positionArmNodes(performance.now());
+  startArmAnimation();
+  scheduleArmScene();
+}
+
+function getArmAdminOutputEls() {
+  if (!armAdminOutputEls || !armAdminOutputEls.length) {
+    armAdminOutputEls = Array.from(armAdminPanel.querySelectorAll('[data-arm-output]'));
+  }
+  return armAdminOutputEls;
+}
+
+function updateArmAdminOutputs() {
+  if (!isAdminUser || !armAdminPanel) return;
+  getArmAdminOutputEls().forEach(out => {
+    const key = out.dataset.armOutput;
+    if (key === 'formation') out.textContent = ARM_FORMATION_LABELS[armAdminState.formation] || '';
+    else if (key === 'path') out.textContent = ARM_PATH_LABELS[armAdminState.path] || '';
+    else if (key === 'particleMode') out.textContent = ARM_PARTICLE_MODE_LABELS[armAdminState.particleMode] || '';
+    else if (key === 'year') out.textContent = normalizeArmYear(armAdminState.year);
+    else if (key === 'yearLimit') out.textContent = `${armAdminState.yearLimit}`;
+    else if (key === 'spread') out.textContent = armAdminState.spread.toFixed(3);
+    else if (key === 'particleDensity') out.textContent = `${armAdminState.particleDensity.toFixed(2)}x`;
+    else if (key === 'particleBrightness') out.textContent = `${armAdminState.particleBrightness.toFixed(2)}x`;
+    else if (key === 'particleRadius') out.textContent = `${armAdminState.particleRadius.toFixed(2)}x`;
+    else if (key === 'particleStrength') out.textContent = `${armAdminState.particleStrength.toFixed(2)}x`;
+    else if (key === 'particleReturn') out.textContent = `${armAdminState.particleReturn.toFixed(2)}x`;
+    else if (key === 'pathDuration') out.textContent = `${armAdminState.pathDuration.toFixed(2)}s`;
+    else if (key === 'breatheDuration') out.textContent = `${armAdminState.breatheDuration.toFixed(2)}s`;
+    else if (key === 'sway') out.textContent = `${armAdminState.sway.toFixed(2)}x`;
+  });
+  updateArmParticleStatus();
+}
+
+function renderArmAdminControls() {
+  if (!isAdminUser || !armAdminPanel) return;
+  if (armPresetTemplates) {
+    armPresetTemplates.innerHTML = ARM_PRESETS.map(preset => {
+      const active = armSettingsSignature(preset.settings) === armSettingsSignature(armAdminState);
+      return `<button class="arm-admin-chip${active ? ' is-active' : ''}" type="button" data-arm-preset="${escapeAttr(preset.id)}">${escapeAttr(preset.name)}</button>`;
+    }).join('');
+  }
+  armAdminPanel.querySelectorAll('[data-arm-setting]').forEach(input => {
+    const key = input.dataset.armSetting;
+    if (!(key in armAdminState)) return;
+    input.value = armAdminState[key];
+  });
+  updateArmAdminOutputs();
+  if (!armCustomTemplates) return;
+  if (!armCustomTemplateState.length) {
+    armCustomTemplates.innerHTML = '<div class="arm-admin-empty">暂无自定义模板</div>';
+    return;
+  }
+  armCustomTemplates.innerHTML = armCustomTemplateState.map(item => `
+    <div class="arm-admin-custom-item">
+      <button class="arm-admin-custom-btn" type="button" data-arm-custom="${escapeAttr(item.id)}">${escapeAttr(item.name)}</button>
+      <button class="arm-admin-delete" type="button" data-arm-delete-custom="${escapeAttr(item.id)}" aria-label="删除 ${escapeAttr(item.name)}">×</button>
+    </div>
+  `).join('');
+}
+
+function applyArmTemplate(settings, { publish = true } = {}) {
+  armAdminState = normalizeArmAdminSettings(settings);
+  applyArmAdminSettings();
+  if (publish) scheduleArmGlobalPublish({ immediate: true });
+}
+
+function randomizeArmAdminSettings() {
+  const formations = Object.keys(ARM_FORMATION_LABELS);
+  const paths = Object.keys(ARM_PATH_LABELS).filter(p => p !== 'none');
+  const particleModes = Object.keys(ARM_PARTICLE_MODE_LABELS).filter(p => p !== 'off');
+  const randomYear = String(2024 + Math.floor(Math.random() * 7));
+  armAdminState = normalizeArmAdminSettings({
+    formation: formations[Math.floor(Math.random() * formations.length)],
+    path: paths[Math.floor(Math.random() * paths.length)],
+    particleMode: particleModes[Math.floor(Math.random() * particleModes.length)],
+    year: randomYear,
+    yearLimit: Math.floor(54 + Math.random() * 78),
+    particleDensity: Math.round((.5 + Math.random() * 1.1) * 20) / 20,
+    particleBrightness: Math.round((.65 + Math.random() * .85) * 20) / 20,
+    particleRadius: Math.round((.72 + Math.random() * .74) * 40) / 40,
+    particleStrength: Math.round((.72 + Math.random() * 1.08) * 40) / 40,
+    particleReturn: Math.round((.55 + Math.random() * 1.45) * 40) / 40,
+    pathDuration: Math.round((6.4 + Math.random() * 12.4) * 20) / 20,
+    breatheDuration: Math.round((7.2 + Math.random() * 7.8) * 20) / 20,
+    sway: Math.round((.45 + Math.random() * 1.75) * 100) / 100,
+    spread: Math.round((.88 + Math.random() * .34) * 200) / 200,
+    randomSeed: Math.floor(Math.random() * 999999) + 1,
+  });
+  applyArmAdminSettings();
+  scheduleArmGlobalPublish({ immediate: true });
+}
+
+function saveCurrentArmTemplate() {
+  const name = (armTemplateName?.value || '').trim() || `星阵 ${armCustomTemplateState.length + 1}`;
+  const item = {
+    id: `custom-${Date.now().toString(36)}-${Math.floor(Math.random() * 999).toString(36)}`,
+    name: name.slice(0, 16),
+    settings: normalizeArmAdminSettings(armAdminState),
+  };
+  armCustomTemplateState = [item, ...armCustomTemplateState].slice(0, 12);
+  saveArmCustomTemplates();
+  if (armTemplateName) armTemplateName.value = '';
+  renderArmAdminControls();
+  if (window.toast) toast('已保存星阵模板', 'success');
+}
+
+function initArmAdminPanel() {
+  if (!armAdminPanel) return;
+  armStage.classList.toggle('has-arm-admin-panel', !!isAdminUser);
+  applyArmAdminSettings({ persist: false, rerenderControls: false });
+  if (!isAdminUser) return;
+  armAdminPanel.hidden = false;
+  updateArmGlobalStatus('live');
+  const syncPanelCollapsedState = () => {
+    const collapsed = armAdminPanel.classList.contains('is-collapsed');
+    armAdminToggle?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    if (armAdminShell) {
+      armAdminShell.toggleAttribute('inert', collapsed);
+      armAdminShell.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    }
+  };
+  syncPanelCollapsedState();
+  renderArmAdminControls();
+  armAdminToggle?.addEventListener('click', () => {
+    armAdminPanel.classList.toggle('is-collapsed');
+    syncPanelCollapsedState();
+  });
+  armAdminPanel.addEventListener('input', e => {
+    const input = e.target.closest('[data-arm-setting]');
+    if (!input) return;
+    const key = input.dataset.armSetting;
+    armAdminState[key] = input.type === 'range' ? Number(input.value) : input.value;
+    applyArmAdminSettings({ rerenderControls: false });
+    scheduleArmGlobalPublish();
+  });
+  armAdminPanel.addEventListener('change', e => {
+    const input = e.target.closest('[data-arm-setting]');
+    if (!input) return;
+    const key = input.dataset.armSetting;
+    armAdminState[key] = input.type === 'range' ? Number(input.value) : input.value;
+    applyArmAdminSettings({ rerenderControls: true });
+    scheduleArmGlobalPublish({ immediate: true });
+  });
+  armAdminPanel.addEventListener('click', e => {
+    const presetBtn = e.target.closest('[data-arm-preset]');
+    if (presetBtn) {
+      const preset = ARM_PRESETS.find(item => item.id === presetBtn.dataset.armPreset);
+      if (preset) applyArmTemplate(preset.settings);
+      return;
+    }
+    const customBtn = e.target.closest('[data-arm-custom]');
+    if (customBtn) {
+      const item = armCustomTemplateState.find(t => t.id === customBtn.dataset.armCustom);
+      if (item) applyArmTemplate(item.settings);
+      return;
+    }
+    const deleteBtn = e.target.closest('[data-arm-delete-custom]');
+    if (deleteBtn) {
+      armCustomTemplateState = armCustomTemplateState.filter(t => t.id !== deleteBtn.dataset.armDeleteCustom);
+      saveArmCustomTemplates();
+      renderArmAdminControls();
+      return;
+    }
+    const action = e.target.closest('[data-arm-action]')?.dataset.armAction;
+    if (action === 'randomize') randomizeArmAdminSettings();
+    if (action === 'publish') publishArmGlobalSettings();
+    if (action === 'save-template') saveCurrentArmTemplate();
+  });
+}
+
+function renderArmNodes(filtered) {
+  armNodeLayer.innerHTML = filtered.map((p, i) => {
+    const runtime = playerRuntime(p);
+    const stats = runtime.stats;
+    const points = runtime.totalPoints;
+    const onlineSt = runtime.online;
+    const jersey = p.number ? `#${escapeAttr(p.number)}` : '#--';
+    const metric = points ? `★ ${points}` : `${stats.games || 0} GP`;
+    return `<button class="arm-node ${runtime.posClass} status-${escapeAttr(onlineSt.status || 'offline')}" type="button" role="listitem"
+        data-player-id="${escapeAttr(p.id)}" data-arm-index="${i}"
+        style="--arm-i:${i}"
+        aria-label="${escapeAttr(p.name)} ${jersey}">
+        <span class="arm-node-photo-wrap">
+          <span class="arm-node-particles" aria-hidden="true"></span>
+          <img class="arm-node-photo" src="${runtime.photoUrl}" alt="" loading="lazy" decoding="async" onerror="this.src='assets/img/logo.jpg'">
+          <span class="arm-node-dot ${onlineSt.status}" aria-hidden="true"></span>
+        </span>
+        <span class="arm-node-name">${escapeAttr(p.name)}</span>
+        <span class="arm-node-meta"><span>${jersey}</span><span>${metric}</span></span>
+      </button>`;
+  }).join('');
+  armState.nodeEls = Array.from(armNodeLayer.querySelectorAll('.arm-node'));
+  armState.pathAssignmentKey = '';
+  armState.nodesDirty = true;
+}
+
+function setArmFocus(playerId, opts = {}) {
+  if (!playerId) return;
+  if (opts.soft && armState.lockedFocus) return;
+  const exists = armState.filtered.some(p => p.id === playerId);
+  if (!exists) return;
+  armState.focusedId = playerId;
+  if (opts.locked) armState.lockedFocus = true;
+  updateArmFocusPanel();
+  armState.nodesDirty = true;
+  positionArmNodes(performance.now());
+}
+
+function updateArmFocusPanel() {
+  armFocusPanel.innerHTML = '';
+}
+
+function getArmAvatarOrigin(sourceNode, event) {
+  const avatar = event?.target?.closest?.('.arm-node-photo-wrap') ||
+    sourceNode?.querySelector?.('.arm-node-photo-wrap') ||
+    sourceNode;
+  const rect = avatar?.getBoundingClientRect?.();
+  if (rect && rect.width && rect.height) {
+    return { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
+  }
+  if (event && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+    return { cx: event.clientX, cy: event.clientY };
+  }
+  return { cx: window.innerWidth / 2, cy: window.innerHeight / 2 };
+}
+
+function openArmCardModal(player, origin) {
+  if (!player || !armCardModal || !armCardMount) return;
+  const cx = Number.isFinite(origin?.cx) ? origin.cx : window.innerWidth / 2;
+  const cy = Number.isFinite(origin?.cy) ? origin.cy : window.innerHeight / 2;
+  armCardModal.style.setProperty('--origin-x', `${cx}px`);
+  armCardModal.style.setProperty('--origin-y', `${cy}px`);
+  armCardModal.style.setProperty('--origin-dx', `${cx - window.innerWidth / 2}px`);
+  armCardModal.style.setProperty('--origin-dy', `${cy - window.innerHeight / 2}px`);
+  armCardMount.innerHTML = renderPlayerCardV2(player);
+  armCardModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('arm-card-open');
+  requestAnimationFrame(() => armCardModal.classList.add('is-open'));
+}
+
+function closeArmCardModal() {
+  if (!armCardModal || !armCardModal.classList.contains('is-open')) return;
+  armCardModal.classList.remove('is-open');
+  armCardModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('arm-card-open');
+  armState.lockedFocus = false;
+  armState.focusedId = null;
+  armState.nodesDirty = true;
+  positionArmNodes(performance.now());
+  window.setTimeout(() => {
+    if (!armCardModal.classList.contains('is-open')) armCardMount.innerHTML = '';
+  }, 340);
+}
+
+function renderArm(filtered) {
+  armState.filtered = filtered.slice();
+  armState.staticRendered = false;
+  armState.nodesDirty = true;
+  armState.layoutKey = '';
+  armState.layoutPoints = [];
+  armStage.classList.toggle('is-empty', filtered.length === 0);
+  armStage.dataset.density = filtered.length > 120 ? 'overflow' : filtered.length > 84 ? 'dense' : 'normal';
+  armCountLabel.textContent = `${filtered.length} / ${players.length} PLAYERS`;
+  armModeLabel.textContent = `${activeFilter.pos === '全部' ? 'ALL POSITIONS' : activeFilter.pos} · ${armState.totalGames} GAMES`;
+  if (!filtered.length) {
+    armNodeLayer.innerHTML = '';
+    armState.nodeEls = [];
+    armFocusPanel.innerHTML = '';
+    return;
+  }
+  renderArmNodes(filtered);
+  const currentStillVisible = filtered.some(p => p.id === armState.focusedId);
+  if (!currentStillVisible) {
+    armState.focusedId = null;
+    armState.lockedFocus = false;
+  }
+  updateArmFocusPanel();
+  startArmAnimation();
+  positionArmNodes(performance.now());
+  scheduleArmScene();
+}
+
+function getArmStageBounds(rect) {
+  const w = rect.width || window.innerWidth;
+  const h = rect.height || 760;
+  const mobile = w < 720;
+  const sidePad = mobile ? 42 : 76;
+  const topPad = mobile ? 304 : 238;
+  const bottomPad = mobile ? clamp(h * .22, 176, 232) : 112;
+  const areaW = Math.max(1, w - sidePad * 2);
+  const areaH = Math.max(1, h - topPad - bottomPad);
+  const centerX = sidePad + areaW * .5;
+  const centerY = topPad + areaH * .5;
+  return { w, h, mobile, sidePad, topPad, bottomPad, areaW, areaH, centerX, centerY };
+}
+
+function buildArmYearSegments(value) {
+  const digits = normalizeArmYear(value).split('');
+  const gap = .62;
+  const segmentLines = {
+    a: [[.18, 0], [.82, 0]],
+    b: [[1, .12], [1, .88]],
+    c: [[1, 1.12], [1, 1.88]],
+    d: [[.18, 2], [.82, 2]],
+    e: [[0, 1.12], [0, 1.88]],
+    f: [[0, .12], [0, .88]],
+    g: [[.18, 1], [.82, 1]],
+  };
+  const digitMap = {
+    0: ['a', 'b', 'c', 'd', 'e', 'f'],
+    1: ['b', 'c'],
+    2: ['a', 'b', 'g', 'e', 'd'],
+    3: ['a', 'b', 'g', 'c', 'd'],
+    4: ['f', 'g', 'b', 'c'],
+    5: ['a', 'f', 'g', 'c', 'd'],
+    6: ['a', 'f', 'g', 'e', 'c', 'd'],
+    7: ['a', 'b', 'c'],
+    8: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+    9: ['a', 'b', 'c', 'd', 'f', 'g'],
+  };
+  const segments = [];
+  digits.forEach((digit, digitIndex) => {
+    const offsetX = digitIndex * (1 + gap);
+    (digitMap[digit] || digitMap[0]).forEach(key => {
+      const line = segmentLines[key];
+      const x1 = line[0][0] + offsetX;
+      const y1 = line[0][1];
+      const x2 = line[1][0] + offsetX;
+      const y2 = line[1][1];
+      segments.push({ x1, y1, x2, y2, length: Math.hypot(x2 - x1, y2 - y1) });
+    });
+  });
+  return {
+    segments,
+    width: Math.max(1, digits.length + Math.max(0, digits.length - 1) * gap),
+  };
+}
+
+function buildArmLayout(count, rect) {
+  const bounds = getArmStageBounds(rect);
+  const { w, h, mobile, sidePad, topPad, bottomPad, areaW, areaH, centerX, centerY } = bounds;
+  const golden = 2.399963229728653;
+  const spread = armAdminState.spread || 1;
+  const seedBase = Number(armAdminState.randomSeed || 1);
+  const mode = armAdminState.formation || 'scatter';
+  const densityDist = Math.sqrt((areaW * areaH) / Math.max(count, 1)) * .72 * spread;
+  const minDist = mode === 'year'
+    ? clamp(densityDist * .58, mobile ? 34 : 44, mobile ? 50 : 62)
+    : clamp(densityDist, mobile ? 54 : 76, mobile ? 68 : 92);
+  const points = [];
+
+  function jitter(seed, axis, amount) {
+    return (armHash01((seed + seedBase) * axis) - .5) * amount;
+  }
+  function pushPoint(index, x, y, theta, ring) {
+    const seed = index + 1 + seedBase * .013;
+    points[index] = {
+      x: clamp(x, sidePad, Math.max(sidePad, w - sidePad)),
+      y: clamp(y, topPad, Math.max(topPad, h - bottomPad)),
+      seed,
+      theta,
+      ring,
+    };
+  }
+
+  if (mode === 'year') {
+    const yearShape = buildArmYearSegments(armAdminState.year);
+    const totalLen = yearShape.segments.reduce((sum, segment) => sum + segment.length, 0) || 1;
+    const glyphLimit = Math.min(count, armAdminState.yearLimit || ARM_ADMIN_DEFAULTS.yearLimit);
+    const glyphIndices = armState.filtered
+      .map((player, index) => ({ index, score: armPlayerSortScore(player) }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .slice(0, glyphLimit)
+      .map(item => item.index);
+    const glyphSet = new Set(glyphIndices);
+    const scale = Math.min(
+      areaW * (mobile ? .86 : .80) / yearShape.width,
+      areaH * (mobile ? .46 : .58) / 2
+    ) * spread;
+    const originX = centerX - yearShape.width * scale * .5;
+    const originY = centerY - scale;
+    glyphIndices.forEach((index, order) => {
+      const seed = index + 1;
+      let cursor = ((order + .5) / Math.max(glyphIndices.length, 1)) * totalLen;
+      let segment = yearShape.segments[yearShape.segments.length - 1];
+      for (const candidate of yearShape.segments) {
+        if (cursor <= candidate.length) {
+          segment = candidate;
+          break;
+        }
+        cursor -= candidate.length;
+      }
+      const p = clamp(cursor / Math.max(segment.length, .001), 0, 1);
+      const localX = segment.x1 + (segment.x2 - segment.x1) * p;
+      const localY = segment.y1 + (segment.y2 - segment.y1) * p;
+      const theta = Math.atan2(segment.y2 - segment.y1, segment.x2 - segment.x1);
+      pushPoint(
+        index,
+        originX + localX * scale + jitter(seed, 31, mobile ? 4 : 7),
+        originY + localY * scale + jitter(seed, 47, mobile ? 4 : 7),
+        theta,
+        p
+      );
+    });
+    const outer = [];
+    for (let index = 0; index < count; index++) {
+      if (!glyphSet.has(index)) outer.push(index);
+    }
+    outer.forEach((index, order) => {
+      const seed = index + 1;
+      const p = outer.length <= 1 ? .5 : order / (outer.length - 1);
+      const ringIndex = order % (mobile ? 2 : 3);
+      const ring = .72 + ringIndex * .12 + armHash01((seed + seedBase) * 19) * .05;
+      const theta = p * Math.PI * 2 + ringIndex * .72 + armHash01((seed + seedBase) * 23) * .22;
+      pushPoint(
+        index,
+        centerX + Math.cos(theta) * areaW * .48 * ring * spread + jitter(seed, 31, mobile ? 7 : 12),
+        centerY + Math.sin(theta) * areaH * .42 * ring * spread + jitter(seed, 47, mobile ? 7 : 12),
+        theta,
+        ring
+      );
+    });
+  } else if (mode === 'orion') {
+    const samples = buildOrPathSamples(rect);
+    for (let index = 0; index < count; index++) {
+      const sample = samples[index % samples.length];
+      const lap = Math.floor(index / Math.max(samples.length, 1));
+      const seed = index + 1;
+      const theta = (index / Math.max(count, 1)) * Math.PI * 2;
+      pushPoint(
+        index,
+        sample.x + jitter(seed, 19, (mobile ? 18 : 30) * (lap + .8)),
+        sample.y + jitter(seed, 23, (mobile ? 14 : 24) * (lap + .8)),
+        theta,
+        .45 + lap * .08
+      );
+    }
+  } else if (mode === 'spiral') {
+    for (let index = 0; index < count; index++) {
+      const seed = index + 1;
+      const p = count <= 1 ? 0 : index / (count - 1);
+      const theta = seed * .72 + p * Math.PI * 5.2;
+      const ring = Math.sqrt(p);
+      pushPoint(
+        index,
+        centerX + Math.cos(theta) * areaW * .43 * ring * spread + jitter(seed, 31, mobile ? 10 : 18),
+        centerY + Math.sin(theta) * areaH * .39 * ring * spread + jitter(seed, 47, mobile ? 9 : 15),
+        theta,
+        ring
+      );
+    }
+  } else if (mode === 'orbit') {
+    const rings = mobile ? 2 : 3;
+    for (let index = 0; index < count; index++) {
+      const seed = index + 1;
+      const ringIndex = index % rings;
+      const ring = (ringIndex + 1) / rings;
+      const theta = (Math.PI * 2 * Math.floor(index / rings)) / Math.max(Math.ceil(count / rings), 1) + ringIndex * .58;
+      pushPoint(
+        index,
+        centerX + Math.cos(theta) * areaW * (.17 + ring * .29) * spread + jitter(seed, 31, mobile ? 8 : 16),
+        centerY + Math.sin(theta) * areaH * (.15 + ring * .28) * spread + jitter(seed, 47, mobile ? 8 : 14),
+        theta,
+        ring
+      );
+    }
+  } else if (mode === 'vline') {
+    const rows = Math.ceil(count / 2);
+    for (let index = 0; index < count; index++) {
+      const seed = index + 1;
+      const side = index % 2 === 0 ? -1 : 1;
+      const row = Math.floor(index / 2);
+      const p = rows <= 1 ? .5 : row / (rows - 1);
+      const theta = Math.atan2(p - .5, side * .45);
+      const wing = Math.abs(p - .5);
+      pushPoint(
+        index,
+        centerX + side * areaW * (.08 + wing * .62) * spread + jitter(seed, 31, mobile ? 8 : 18),
+        topPad + areaH * (.08 + p * .84) + jitter(seed, 47, mobile ? 8 : 16),
+        theta,
+        p
+      );
+    }
+  } else {
+    const randomMode = mode === 'random';
+    for (let index = 0; index < count; index++) {
+      const seed = index + 1;
+      const ring = randomMode
+        ? Math.sqrt(armHash01((seed + seedBase) * 7))
+        : Math.sqrt((index + .5) / Math.max(count, 1));
+      const theta = randomMode
+        ? armHash01((seed + seedBase) * 13) * Math.PI * 2
+        : seed * golden + (armHash01((seed + seedBase) * 11) - .5) * .78;
+      const jitterX = jitter(seed, 31, mobile ? 18 : 42);
+      const jitterY = jitter(seed, 47, mobile ? 16 : 34);
+      let x = centerX + Math.cos(theta) * areaW * .47 * ring * spread + jitterX;
+      let y = centerY + Math.sin(theta) * areaH * .47 * ring * spread + jitterY;
+      pushPoint(index, x, y, theta, ring);
+    }
+  }
+
+  const manyNodes = points.length > 120;
+  const iterations = manyNodes
+    ? (mode === 'year' ? (mobile ? 6 : 8) : (mobile ? 10 : 14))
+    : mode === 'orion'
+    ? (mobile ? 38 : 54)
+    : mode === 'year'
+      ? (mobile ? 22 : 30)
+      : (mobile ? 72 : 96);
+  for (let iter = 0; iter < iterations; iter++) {
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const a = points[i];
+        const b = points[j];
+        let dx = a.x - b.x;
+        let dy = a.y - b.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < .001) {
+          const angle = (armHash01((i + 1) * (j + 3)) * Math.PI * 2);
+          dx = Math.cos(angle);
+          dy = Math.sin(angle);
+          dist = 1;
+        }
+        if (dist >= minDist) continue;
+        const push = (minDist - dist) * (mode === 'orion' ? .28 : mode === 'year' ? .16 : .52);
+        const nx = dx / dist;
+        const ny = dy / dist;
+        a.x += nx * push;
+        a.y += ny * push;
+        b.x -= nx * push;
+        b.y -= ny * push;
+      }
+    }
+    for (const point of points) {
+      point.x = clamp(point.x, sidePad, Math.max(sidePad, w - sidePad));
+      point.y = clamp(point.y, topPad, Math.max(topPad, h - bottomPad));
+    }
+  }
+
+  return points.map(point => {
+    const norm = Math.hypot(
+      (point.x - centerX) / Math.max(areaW * .52, 1),
+      (point.y - centerY) / Math.max(areaH * .52, 1)
+    );
+    const depth = clamp(.44 + (1 - norm) * .30 + (armHash01(point.seed * 73) - .5) * .22, .26, .96);
+    return { ...point, depth };
+  });
+}
+
+function getArmLayout(count, rect) {
+  const w = Math.round(rect.width || window.innerWidth);
+  const h = Math.round(rect.height || 760);
+  const ids = armState.filtered.map(p => p.id).join('|');
+  const key = `${w}x${h}:${ids}:${armAdminState.formation}:${normalizeArmYear(armAdminState.year)}:${armAdminState.spread.toFixed(3)}:${armAdminState.randomSeed}`;
+  if (armState.layoutKey !== key || armState.layoutPoints.length !== count) {
+    armState.layoutKey = key;
+    armState.layoutPoints = buildArmLayout(count, rect);
+  }
+  return armState.layoutPoints;
+}
+
+function getArmNodePoint(index, count, rect, layout, bounds) {
+  const w = rect.width || window.innerWidth;
+  const h = rect.height || 760;
+  const { mobile, sidePad, topPad, bottomPad } = bounds;
+  const base = layout[index];
+  if (!base) return { x: w / 2, y: h / 2, depth: .5, u: 0, theta: 0 };
+  const seed = base.seed;
+  const drift = armState.phase * Math.PI * 2;
+  const animateNodeField = false;
+  const breatheX = animateNodeField ? Math.sin(drift * .92 + seed * 1.73) * (mobile ? 6 : 13) : 0;
+  const breatheY = animateNodeField ? Math.cos(drift * .78 + seed * 1.37) * (mobile ? 5 : 10) : 0;
+  const depthWave = animateNodeField ? Math.sin(base.theta + drift * .42) * .06 : 0;
+  let x = base.x + breatheX;
+  let y = base.y + breatheY;
+  const depth = clamp(base.depth + depthWave, 0, 1);
+  const u = ((index + .5) / Math.max(count, 1) + armState.phase * .05) % 1;
+  x = clamp(x, sidePad, Math.max(sidePad, w - sidePad));
+  y = clamp(y, topPad, Math.max(topPad, h - bottomPad));
+  return { x, y, depth, u, theta: base.theta };
+}
+
+function buildOrPathSamples(rect) {
+  const bounds = getArmStageBounds(rect);
+  const { mobile, areaW, areaH, centerX } = bounds;
+  const centerY = bounds.topPad + areaH * .54;
+  const letterH = Math.min(areaH * (mobile ? .54 : .68), mobile ? 320 : 430);
+  const oRx = letterH * .20;
+  const oRy = letterH * .34;
+  const oCx = centerX - areaW * (mobile ? .18 : .15);
+  const oCy = centerY;
+  const rCx = centerX + areaW * (mobile ? .13 : .13);
+  const rStemX = rCx - letterH * .18;
+  const rTop = centerY - letterH * .34;
+  const rMid = centerY - letterH * .02;
+  const rBottom = centerY + letterH * .34;
+  const rBowlRx = letterH * .22;
+  const rBowlRy = letterH * .16;
+  const samples = [];
+
+  for (let i = 0; i < 18; i++) {
+    const t = -Math.PI / 2 + (Math.PI * 2 * i) / 18;
+    samples.push({ x: oCx + Math.cos(t) * oRx, y: oCy + Math.sin(t) * oRy });
+  }
+  for (let i = 0; i < 6; i++) {
+    const p = i / 5;
+    samples.push({ x: rStemX, y: rTop + (rBottom - rTop) * p });
+  }
+  for (let i = 0; i < 9; i++) {
+    const t = -Math.PI / 2 + Math.PI * i / 8;
+    samples.push({ x: rStemX + rBowlRx + Math.cos(t) * rBowlRx, y: rTop + rBowlRy + Math.sin(t) * rBowlRy });
+  }
+  for (let i = 0; i < 7; i++) {
+    const p = i / 6;
+    samples.push({ x: rStemX + rBowlRx * .18 + rBowlRx * 1.3 * p, y: rMid + (rBottom - rMid) * p });
+  }
+  return samples;
+}
+
+function buildArmPathSamples(rect, records) {
+  const mode = armAdminState.path || 'or';
+  if (mode === 'none') return [];
+  if (mode === 'or') return buildOrPathSamples(rect);
+  const bounds = getArmStageBounds(rect);
+  const { mobile, areaW, areaH, centerX, centerY, sidePad, topPad } = bounds;
+  const count = Math.max(28, Math.min(48, records.length));
+  const samples = [];
+  if (mode === 'wave') {
+    for (let i = 0; i < count; i++) {
+      const p = count <= 1 ? 0 : i / (count - 1);
+      samples.push({
+        x: sidePad + areaW * p,
+        y: centerY + Math.sin(p * Math.PI * 2.2) * areaH * (mobile ? .18 : .22),
+      });
+    }
+  } else if (mode === 'orbit') {
+    for (let i = 0; i < count; i++) {
+      const t = -Math.PI / 2 + (Math.PI * 2 * i) / count;
+      samples.push({
+        x: centerX + Math.cos(t) * areaW * (mobile ? .35 : .40),
+        y: centerY + Math.sin(t) * areaH * (mobile ? .28 : .34),
+      });
+    }
+  } else if (mode === 'spiral') {
+    for (let i = 0; i < count; i++) {
+      const p = count <= 1 ? 0 : i / (count - 1);
+      const t = -Math.PI / 2 + p * Math.PI * 5.2;
+      const r = Math.sqrt(p);
+      samples.push({
+        x: centerX + Math.cos(t) * areaW * .39 * r,
+        y: centerY + Math.sin(t) * areaH * .33 * r,
+      });
+    }
+  } else if (mode === 'random') {
+    const sorted = records.slice().sort((a, b) => armHash01((a.index + 1 + armAdminState.randomSeed) * 97) - armHash01((b.index + 1 + armAdminState.randomSeed) * 97));
+    return sorted.map(record => record.pt);
+  } else {
+    for (let i = 0; i < count; i++) {
+      const p = count <= 1 ? 0 : i / (count - 1);
+      samples.push({ x: sidePad + areaW * p, y: topPad + areaH * .5 });
+    }
+  }
+  return samples;
+}
+
+function assignOrPathNodes(records, rect) {
+  const key = `${armState.layoutKey}:${armAdminState.path}:${Math.round(rect.width || 0)}x${Math.round(rect.height || 0)}:${records.length}`;
+  if (armState.pathAssignmentKey === key) return;
+  armState.pathAssignmentKey = key;
+  records.forEach(({ node }) => {
+    node.classList.remove('is-or-path');
+    node.style.removeProperty('--or-step');
+  });
+  const samples = buildArmPathSamples(rect, records);
+  const used = new Set();
+  samples.forEach((sample, step) => {
+    let best = null;
+    let bestDist = Infinity;
+    for (const record of records) {
+      if (used.has(record.node)) continue;
+      const dist = Math.hypot(record.pt.x - sample.x, record.pt.y - sample.y);
+      if (dist < bestDist) {
+        best = record;
+        bestDist = dist;
+      }
+    }
+    if (!best) return;
+    used.add(best.node);
+    best.node.classList.add('is-or-path');
+    best.node.style.setProperty('--or-step', step);
+  });
+}
+
+function positionArmNodes(ts) {
+  if (!armState.nodesDirty) return;
+  const rect = getArmStageSize();
+  const nodes = armState.nodeEls.length ? armState.nodeEls : Array.from(armNodeLayer.querySelectorAll('.arm-node'));
+  const count = Math.max(nodes.length, 1);
+  const layout = getArmLayout(count, rect);
+  const bounds = getArmStageBounds(rect);
+  const globalBreath = Math.sin(ts * 0.00062);
+  const records = [];
+  nodes.forEach(node => {
+    const index = Number(node.dataset.armIndex || 0);
+    const p = armState.filtered[index];
+    if (!p) return;
+    const pt = getArmNodePoint(index, count, rect, layout, bounds);
+    records.push({ node, p, pt, index });
+  });
+  assignOrPathNodes(records, rect);
+  records.forEach(({ node, p, pt }) => {
+    const focused = p.id === armState.focusedId;
+    const focusLift = focused ? .14 : 0;
+    const breath = 1 + globalBreath * (focused ? .006 : .014) * armAdminState.sway;
+    const scale = clamp((.68 + pt.depth * .27 + focusLift) * breath, .66, 1.12);
+    const opacity = focused ? 1 : clamp(.60 + pt.depth * .30 + globalBreath * .018, .58, .90);
+    const rotateX = Math.cos(pt.theta + armState.phase * 2) * (focused ? 8 : 3);
+    const rotateY = Math.sin(pt.theta + armState.phase * 1.6) * (focused ? 9 : 5);
+    const rotateZ = Math.cos(pt.theta) * (focused ? 1.2 : 1.5);
+    node.style.transform = `translate3d(${pt.x}px, ${pt.y}px, ${focused ? 56 : pt.depth * 30}px) translate(-50%, -50%) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+    node.style.opacity = opacity.toFixed(3);
+    node.style.zIndex = String(focused ? 860 : Math.round(120 + pt.depth * 520));
+    node.classList.toggle('is-focused', focused);
+    node.classList.toggle('is-muted', opacity < .28);
+  });
+  armState.nodesDirty = false;
+}
+
+const ARM_CSS_PARTICLE_BASE_COUNT = 126;
+const ARM_CSS_PARTICLE_COUNT = Math.ceil(ARM_CSS_PARTICLE_BASE_COUNT * 1.8);
+function armParticleRand(i, salt) {
+  const x = Math.sin((i + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+function ensureArmParticleField() {
+  if (!armParticleField || armState.cssParticles.length) return;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < ARM_CSS_PARTICLE_COUNT; i++) {
+    const dot = document.createElement('i');
+    dot.className = 'arm-particle-dot';
+    if (i % 11 === 0) dot.classList.add('is-gold');
+    if (i % 5 === 0) dot.classList.add('is-mist');
+    const size = 1.2 + armParticleRand(i, 2) * 2.8;
+    const glow = 7 + armParticleRand(i, 3) * 15;
+    const alpha = 0.24 + armParticleRand(i, 4) * 0.5;
+    dot.style.setProperty('--dot-size', `${size.toFixed(2)}px`);
+    dot.style.setProperty('--dot-glow', `${glow.toFixed(1)}px`);
+    dot.style.setProperty('--dot-alpha', alpha.toFixed(2));
+    frag.appendChild(dot);
+    armState.cssParticles.push({
+      el: dot,
+      u: 0.035 + armParticleRand(i, 5) * 0.93,
+      v: 0.11 + armParticleRand(i, 6) * 0.76,
+      depth: armParticleRand(i, 7),
+      alpha,
+      seed: armParticleRand(i, 8) * Math.PI * 2,
+      drift: 2 + armParticleRand(i, 9) * 8,
+      driftRate: 0.35 + armParticleRand(i, 10) * 0.9,
+      scatter: 0.7 + armParticleRand(i, 11) * 0.85,
+      x: 0,
+      y: 0,
+      z: 0,
+      ready: false,
+    });
+  }
+  armParticleField.appendChild(frag);
+}
+function resetArmParticleField() {
+  armState.cssParticleSettling = false;
+  armState.cssParticleStageW = 0;
+  armState.cssParticleStageH = 0;
+  armState.cssParticleVisibleCount = 0;
+  armState.particleRenderKey = '';
+  armState.cssParticles.forEach(p => {
+    p.ready = false;
+    if (p.el) p.el.style.transform = 'translate3d(-20px,-20px,0)';
+  });
+}
+
+function getArmParticleRenderParams(width, height) {
+  const density = clampSettingNumber(armState.particleDensity, 1, .35, 1.8);
+  const brightness = clampSettingNumber(armState.particleBrightness, 1, .35, 1.8);
+  const radiusScale = clampSettingNumber(armState.particleRadius, 1, .55, 1.8);
+  const strengthScale = clampSettingNumber(armState.particleStrength, 1, .4, 2.2);
+  const returnScale = clampSettingNumber(armState.particleReturn, 1, .35, 2.5);
+  const key = [
+    Math.round(width),
+    Math.round(height),
+    density.toFixed(2),
+    brightness.toFixed(2),
+    radiusScale.toFixed(3),
+    strengthScale.toFixed(3),
+    returnScale.toFixed(3),
+  ].join(':');
+  if (armState.particleRenderKey === key && armState.particleRenderParams) return armState.particleRenderParams;
+  const strengthSqrt = Math.sqrt(strengthScale);
+  armState.particleRenderKey = key;
+  armState.particleRenderParams = {
+    density,
+    brightness,
+    radiusScale,
+    strengthScale,
+    returnScale,
+    strengthSqrt,
+    visibleCount: Math.max(42, Math.round(ARM_CSS_PARTICLE_BASE_COUNT * density)),
+    cssRadius: clamp(Math.min(width, height) * 0.19 * radiusScale, 72, 284),
+    cssScatterEase: clamp(.32 * strengthSqrt, .18, .48),
+    cssReturnEase: clamp(.13 * returnScale, .05, .34),
+    dust: {
+      xSpan: 29,
+      ySpan: 15.5,
+      radius: 7.2 * radiusScale,
+      strength: 4.2 * strengthScale,
+      zLift: 1.15 * strengthSqrt,
+      swirl: .42 * strengthSqrt,
+      scatterEase: clamp(.28 * strengthSqrt, .16, .44),
+      returnEase: clamp(.12 * returnScale, .045, .32),
+    },
+    stars: {
+      xSpan: 33,
+      ySpan: 17,
+      radius: 8.4 * radiusScale,
+      strength: 2.7 * strengthScale,
+      zLift: .72 * strengthSqrt,
+      swirl: .28 * strengthSqrt,
+      scatterEase: clamp(.2 * strengthSqrt, .12, .34),
+      returnEase: clamp(.08 * returnScale, .035, .24),
+    },
+  };
+  return armState.particleRenderParams;
+}
+
+function syncArmCssParticleVisibility(visibleCount) {
+  if (armState.cssParticleVisibleCount === visibleCount) return false;
+  armState.cssParticleVisibleCount = visibleCount;
+  let changed = false;
+  for (let i = 0; i < armState.cssParticles.length; i++) {
+    const p = armState.cssParticles[i];
+    const hidden = i >= visibleCount;
+    const display = hidden ? 'none' : '';
+    if (p.el.style.display !== display) {
+      p.el.style.display = display;
+      p.ready = false;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function renderArmParticleField(ts = performance.now()) {
+  const particleMode = armState.particleMode || 'auto';
+  if (!armParticleField || armState.lowMotion || !armState.filtered.length || particleMode === 'off' || particleMode === 'webgl') return false;
+  ensureArmParticleField();
+  setArmParticleActualMode('css');
+  const rect = getArmStageSize();
+  const width = Math.max(1, rect.width || window.innerWidth);
+  const height = Math.max(1, rect.height || 760);
+  const resized = Math.abs(width - armState.cssParticleStageW) > 2 || Math.abs(height - armState.cssParticleStageH) > 2;
+  if (resized) {
+    armState.cssParticleStageW = width;
+    armState.cssParticleStageH = height;
+  }
+
+  const active = armState.pointerActive && !armState.lowMotion;
+  const cursorX = ((armState.pointerX + 1) / 2) * width;
+  const cursorY = ((armState.pointerY + 1) / 2) * height;
+  const params = getArmParticleRenderParams(width, height);
+  const { brightness, strengthScale, strengthSqrt } = params;
+  const visibleCount = params.visibleCount;
+  const radius = params.cssRadius;
+  const scatterEase = params.cssScatterEase;
+  const returnEase = params.cssReturnEase;
+  const phase = armState.phase * Math.PI * 2;
+  const timePhase = ts * 0.00012;
+  let changed = syncArmCssParticleVisibility(visibleCount);
+  let settling = active;
+
+  for (let index = 0; index < visibleCount; index++) {
+    const p = armState.cssParticles[index];
+    let particleChanged = false;
+    const depthDrift = 0.55 + p.depth * 0.8;
+    const baseX = p.u * width + Math.sin(phase * p.driftRate + p.seed + timePhase) * p.drift * depthDrift;
+    const baseY = p.v * height + Math.cos(phase * (p.driftRate + .23) + p.seed * 1.37 + timePhase) * p.drift * depthDrift;
+    let targetX = baseX;
+    let targetY = baseY;
+    let targetZ = 0;
+    let nearBoost = 0;
+
+    if (active) {
+      const dx = baseX - cursorX;
+      const dy = baseY - cursorY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < radius) {
+        const falloff = (1 - dist / radius) ** 2;
+        const angle = dist > 0.001 ? Math.atan2(dy, dx) : p.seed;
+        const scatter = (44 + p.depth * 68) * p.scatter * falloff * strengthScale;
+        const swirl = Math.sin(p.seed + phase * 9) * 18 * falloff * strengthSqrt;
+        targetX = baseX + Math.cos(angle) * scatter - Math.sin(angle) * swirl;
+        targetY = baseY + Math.sin(angle) * scatter + Math.cos(angle) * swirl;
+        targetZ = 1 + 14 * falloff * strengthSqrt;
+        nearBoost = falloff;
+      }
+    }
+
+    if (!p.ready || resized) {
+      p.x = baseX;
+      p.y = baseY;
+      p.z = 0;
+      p.ready = true;
+      particleChanged = true;
+      changed = true;
+    }
+
+    const ease = active ? scatterEase : returnEase;
+    const nextX = p.x + (targetX - p.x) * ease;
+    const nextY = p.y + (targetY - p.y) * ease;
+    const nextZ = p.z + (targetZ - p.z) * (active ? 0.3 : 0.16);
+    if (
+      Math.abs(nextX - p.x) > 0.08 ||
+      Math.abs(nextY - p.y) > 0.08 ||
+      Math.abs(nextZ - p.z) > 0.08
+    ) {
+      p.x = nextX;
+      p.y = nextY;
+      p.z = nextZ;
+      particleChanged = true;
+      changed = true;
+    }
+    if (Math.abs(p.x - baseX) > 0.8 || Math.abs(p.y - baseY) > 0.8 || Math.abs(p.z) > 0.4) settling = true;
+    if (particleChanged) {
+      p.el.style.transform = `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0) scale(${(1 + p.z * .018 + nearBoost * .35).toFixed(3)})`;
+      const baseOpacity = nearBoost > 0 ? 0.44 + nearBoost * .56 : p.alpha;
+      p.el.style.opacity = clamp(baseOpacity * brightness, .08, 1).toFixed(2);
+    }
+  }
+
+  armState.cssParticleSettling = settling;
+  return changed;
+}
+
+async function ensureArmScene() {
+  if (armState.renderer || armState.sceneLoading || !armCanvas) return;
+  if (shouldUseStaticArmScene()) {
+    armStage.classList.add('no-webgl');
+    armState.staticRendered = true;
+    setArmParticleActualMode(armState.lowMotion || armReducedMotion ? 'blocked' : 'css');
+    return;
+  }
+  armState.sceneLoading = true;
+  setArmParticleActualMode('pending');
+  try {
+    const THREE = await import('/node_modules/three/build/three.module.js');
+    if (shouldUseStaticArmScene()) {
+      armStage.classList.add('no-webgl');
+      armState.staticRendered = true;
+      setArmParticleActualMode(armState.lowMotion || armReducedMotion ? 'blocked' : 'css');
+      return;
+    }
+    armStage.classList.remove('no-webgl');
+    armState.three = THREE;
+    const renderer = new THREE.WebGLRenderer({
+      canvas: armCanvas,
+      alpha: true,
+      antialias: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 120);
+    camera.position.set(0, 0, 36);
+    const armGroup = new THREE.Group();
+    scene.add(armGroup);
+
+    const density = clampSettingNumber(armState.particleDensity, 1, .35, 1.8);
+    const brightness = clampSettingNumber(armState.particleBrightness, 1, .35, 1.8);
+    const dustCount = Math.max(150, Math.round(420 * density));
+    const dustPositions = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+      dustPositions[i * 3] = (Math.random() - .5) * 58;
+      dustPositions[i * 3 + 1] = (Math.random() - .5) * 31 + Math.sin(i * .37) * .8;
+      dustPositions[i * 3 + 2] = (Math.random() - .5) * 28;
+    }
+    const dustBasePositions = dustPositions.slice();
+    const dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dustMat = new THREE.PointsMaterial({
+      color: 0xbfd3ff,
+      size: .052 * clamp(Math.sqrt(brightness), .75, 1.35),
+      transparent: true,
+      opacity: clamp(.74 * brightness, .24, .98),
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    dustMat.userData = { baseSize: .052, baseOpacity: .74 };
+    const dust = new THREE.Points(dustGeo, dustMat);
+    armGroup.add(dust);
+
+    const starCount = Math.max(64, Math.round(180 * density));
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      starPositions[i * 3] = (Math.random() - .5) * 66;
+      starPositions[i * 3 + 1] = (Math.random() - .5) * 34;
+      starPositions[i * 3 + 2] = -18 - Math.random() * 36;
+    }
+    const starBasePositions = starPositions.slice();
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: .045 * clamp(Math.sqrt(brightness), .75, 1.35),
+      transparent: true,
+      opacity: clamp(.48 * brightness, .18, .9),
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    starMat.userData = { baseSize: .045, baseOpacity: .48 };
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    Object.assign(armState, {
+      renderer,
+      scene,
+      camera,
+      armGroup,
+      dust,
+      stars,
+      dustBasePositions,
+      starBasePositions,
+      particleMaterialBrightness: brightness,
+      webglParticlesSettling: false,
+    });
+    resizeArmScene();
+    armState.staticRendered = false;
+    startArmAnimation();
+    if ('ResizeObserver' in window) {
+      armState.resizeObserver = new ResizeObserver(resizeArmScene);
+      armState.resizeObserver.observe(armStage);
+    } else {
+      window.addEventListener('resize', resizeArmScene);
+    }
+    setArmParticleActualMode('webgl');
+  } catch (err) {
+    console.warn('[orion-arm] WebGL scene disabled:', err);
+    armStage.classList.add('no-webgl');
+    setArmParticleActualMode('error', err?.message || err);
+  } finally {
+    armState.sceneLoading = false;
+    updateArmParticleStatus();
+  }
+}
+
+function resizeArmScene() {
+  markArmStageSizeDirty();
+  armState.layoutKey = '';
+  armState.staticRendered = false;
+  armState.nodesDirty = true;
+  armState.pathAssignmentKey = '';
+  resetArmParticleField();
+  if (!armState.renderer || !armState.camera) return;
+  const rect = getArmStageSize();
+  const width = Math.max(1, Math.floor(rect.width));
+  const height = Math.max(1, Math.floor(rect.height));
+  armState.renderer.setSize(width, height, false);
+  armState.camera.aspect = width / height;
+  armState.camera.updateProjectionMatrix();
+}
+
+function disperseArmParticles(points, basePositions, opts) {
+  const attr = points?.geometry?.attributes?.position;
+  if (!attr || !basePositions) return false;
+  const positions = attr.array;
+  const active = armState.pointerActive && !armState.lowMotion;
+  const cursorX = armState.pointerX * opts.xSpan;
+  const cursorY = -armState.pointerY * opts.ySpan;
+  const radius = opts.radius;
+  const radiusSq = radius * radius;
+  const ease = active ? opts.scatterEase : opts.returnEase;
+  let changed = false;
+
+  for (let i = 0; i < positions.length; i += 3) {
+    const baseX = basePositions[i];
+    const baseY = basePositions[i + 1];
+    const baseZ = basePositions[i + 2];
+    let targetX = baseX;
+    let targetY = baseY;
+    let targetZ = baseZ;
+
+    if (active) {
+      const dx = baseX - cursorX;
+      const dy = baseY - cursorY;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < radiusSq) {
+        const dist = Math.sqrt(distSq);
+        const falloff = (1 - dist / radius) ** 2;
+        const invDist = dist > 0.001 ? 1 / dist : 1;
+        const seed = i * 0.173 + armState.phase * Math.PI * 18;
+        const swirlX = Math.sin(seed) * opts.swirl * falloff;
+        const swirlY = Math.cos(seed * 1.31) * opts.swirl * falloff;
+        targetX = baseX + dx * invDist * opts.strength * falloff + swirlX;
+        targetY = baseY + dy * invDist * opts.strength * falloff + swirlY;
+        targetZ = baseZ + opts.zLift * falloff;
+      }
+    }
+
+    const nextX = positions[i] + (targetX - positions[i]) * ease;
+    const nextY = positions[i + 1] + (targetY - positions[i + 1]) * ease;
+    const nextZ = positions[i + 2] + (targetZ - positions[i + 2]) * ease;
+    if (
+      Math.abs(nextX - positions[i]) > 0.0005 ||
+      Math.abs(nextY - positions[i + 1]) > 0.0005 ||
+      Math.abs(nextZ - positions[i + 2]) > 0.0005
+    ) {
+      positions[i] = nextX;
+      positions[i + 1] = nextY;
+      positions[i + 2] = nextZ;
+      changed = true;
+    }
+  }
+
+  if (changed) attr.needsUpdate = true;
+  return changed;
+}
+
+function tuneArmParticleMaterial(points, brightness) {
+  const material = points?.material;
+  if (!material) return;
+  const baseSize = material.userData?.baseSize || material.size || .05;
+  const baseOpacity = material.userData?.baseOpacity || material.opacity || .5;
+  const nextSize = baseSize * clamp(Math.sqrt(brightness), .75, 1.35);
+  const nextOpacity = clamp(baseOpacity * brightness, .12, baseOpacity > .6 ? .98 : .9);
+  if (Math.abs(material.size - nextSize) > .0005) material.size = nextSize;
+  if (Math.abs(material.opacity - nextOpacity) > .005) material.opacity = nextOpacity;
+}
+
+function renderArmScene() {
+  if (armState.lowMotion) return;
+  renderArmParticleField();
+  if (!armState.renderer || !armState.scene || !armState.camera) return;
+  setArmParticleActualMode('webgl');
+  const size = getArmStageSize();
+  const params = getArmParticleRenderParams(size.width, size.height);
+  if (Math.abs(armState.particleMaterialBrightness - params.brightness) > .001) {
+    tuneArmParticleMaterial(armState.dust, params.brightness);
+    tuneArmParticleMaterial(armState.stars, params.brightness);
+    armState.particleMaterialBrightness = params.brightness;
+  }
+  const particlesActive = armState.pointerActive && !armState.lowMotion;
+  if (particlesActive || armState.webglParticlesSettling) {
+    const dustChanged = disperseArmParticles(armState.dust, armState.dustBasePositions, params.dust);
+    const starsChanged = disperseArmParticles(armState.stars, armState.starBasePositions, params.stars);
+    armState.webglParticlesSettling = particlesActive || dustChanged || starsChanged;
+  }
+  armState.camera.position.x += (0 - armState.camera.position.x) * .08;
+  armState.camera.position.y += (0 - armState.camera.position.y) * .08;
+  armState.camera.lookAt(0, 0, 0);
+  if (armState.armGroup) {
+    armState.armGroup.rotation.z = armState.phase * Math.PI * 2 * .08;
+    armState.armGroup.rotation.y = Math.sin(armState.phase * Math.PI * 2) * .035;
+  }
+  if (armState.stars) armState.stars.rotation.z = armState.phase * Math.PI * .04;
+  armState.renderer.render(armState.scene, armState.camera);
+}
+
+function startArmAnimation() {
+  syncArmMotionButton();
+  if (armState.lowMotion) {
+    stopArmAnimation();
+    if (armState.nodesDirty) positionArmNodes(0);
+    return;
+  }
+  if (armState.frameId) return;
+  const tick = (ts) => {
+    const dt = armState.lastTs ? Math.min(48, ts - armState.lastTs) : 16;
+    armState.lastTs = ts;
+    if (!armState.paused && !armState.pageHidden) {
+      armState.phase = (armState.phase + dt * 0.000016) % 1;
+    }
+    const shouldPaint = (ts - armState.lastPaintTs) >= 48;
+    if (armState.nodesDirty) positionArmNodes(ts);
+    if (!armState.paused && !armState.pageHidden && shouldPaint) {
+      renderArmScene();
+      armState.staticRendered = true;
+      armState.lastPaintTs = ts;
+    } else if (!armState.staticRendered) {
+      renderArmScene();
+      armState.staticRendered = true;
+      armState.lastPaintTs = ts;
+    }
+    armState.frameId = requestAnimationFrame(tick);
+  };
+  armState.frameId = requestAnimationFrame(tick);
+}
+
+function scheduleArmScene() {
+  if (shouldUseStaticArmScene()) {
+    armStage.classList.add('no-webgl');
+    setArmParticleActualMode(armState.lowMotion || armReducedMotion ? 'blocked' : 'css');
+    return;
+  }
+  if (armState.renderer || armState.sceneLoading || armState.sceneInitQueued || !armCanvas) return;
+  armState.sceneInitQueued = true;
+  updateArmParticleStatus();
+  const run = () => {
+    armState.sceneInitQueued = false;
+    ensureArmScene();
+  };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 900 });
+  } else {
+    window.setTimeout(run, 180);
+  }
+}
+
+function posMatches(p, cat){
+  if (cat === '全部') return true;
+  return playerRuntime(p).categories.has(cat);
+}
+
+function renderTryout(){
+  const host = document.getElementById('tryoutSection');
+  const grid = document.getElementById('tryoutGrid');
+  if (!host || !grid) return;
+  host.style.display = '';
+  const countEl = document.getElementById('tryoutCount');
+  if (countEl) countEl.textContent = tryoutPlayers.length + ' 人';
+  if (!tryoutPlayers.length) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;padding:24px 16px;text-align:center;background:rgba(255,255,255,.02);border:1px dashed var(--line-strong);border-radius:var(--r-md);color:var(--text-dim);font-size:13px;line-height:1.7">
+        <div style="font-size:28px;margin-bottom:8px">🪐</div>
+        暂无试训队员<br>
+        <span style="font-size:12px;color:var(--text-mute)">点击 nav 右上角「加入我们」注册即成为试训队员 · 参加 8 次训练自动升正式</span>
+      </div>
+    `;
+    return;
+  }
+  // 按训练次数倒序（接近升级的排前）
+  const sorted = tryoutPlayers.map(p => ({
+    p, trainings: DB.getTrainingCount(p.id), points: playerPoints(p).total
+  })).sort((a,b) => b.trainings - a.trainings);
+  grid.innerHTML = sorted.map(({p, trainings, points}) => {
+    const pct = Math.min(100, (trainings/8) * 100);
+    const runtime = playerRuntime(p);
+    const onlineSt = runtime.online;
+    return `<a class="tryout-card" href="dashboard.html?player=${encodeURIComponent(p.name)}" title="点击查看试训进度">
+      <img class="tc-photo" src="${runtime.photoUrl}" alt="${p.name}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+      <div class="tc-name"><span class="tc-online-dot ${onlineSt.status}"></span>${p.name}</div>
+      <div class="tc-progress-wrap"><div class="tc-progress-bar" style="width:${pct}%"></div></div>
+      <div class="tc-progress-label">${trainings} / 8 次训练</div>
+      ${points ? `<div class="tc-points">★ ${points} 积分</div>` : ''}
+    </a>`;
+  }).join('');
+}
+
+function render(){
+  renderTryout();
+  const filtered = players.filter(p => {
+    if (!posMatches(p, activeFilter.pos)) return false;
+    return DB.fuzzyMatch(activeFilter.search, p.name, p.number, p.position, ...(p.titles||[]));
+  });
+
+  const totalGames = totalGamesCount;
+
+  if (!filtered.length) {
+    renderArm([]);
+    document.getElementById('emptyState').style.display = '';
+    return;
+  }
+  document.getElementById('emptyState').style.display = 'none';
+
+  armState.totalGames = totalGames;
+  armState.tryoutCount = tryoutPlayers.length;
+  renderArm(filtered);
+}
+
+// =============== Player Card v2 · 球星卡 ===============
+//   - flip card：点卡身翻面（desktop click / mobile tap），内嵌链接 stopPropagation
+//   - 正面：位置色条 / 正式 chip / 头像 + 球衣号悬浮 / 名字 / Hero 双指标（积分+HR）
+//          / 荣誉条（仅非零）/ 4 列基础数据 / 翻面提示
+//   - 背面：赛季数据表（每赛季 AVG/OPS/H/2B/3B/HR/RBI + 总和高亮）
+//          / 最近场次区（≤3 张，含日期/对手/批次/▶ 高亮标记）/ 查看面板链接
+// =====================================================
+
+// 位置 → 色条 class
+function positionClass(pos) {
+  const s = String(pos || '');
+  if (/投手|\bP\b/i.test(s))             return 'pos-pitcher';
+  if (/捕手|\bC\b/.test(s))              return 'pos-catcher';
+  if (/外野|OF|LF|CF|RF|短外野|SF/i.test(s)) return 'pos-outfield';
+  if (/内野|1B|2B|3B|SS|游击/.test(s))    return 'pos-infield';
+  if (/工具人/.test(s))                  return 'pos-utility';
+  return 'pos-default';
+}
+
+// 把 perGame 数据按赛季桶聚合
+function aggregateBySeason(perGame, gameById) {
+  const buckets = {};
+  for (const pg of perGame) {
+    if (pg.isAggregate) continue;
+    const g = gameById.get(pg.gameId);
+    const season = g?.season || (pg.date || '').slice(0, 4) || '?';
+    if (!buckets[season]) {
+      buckets[season] = { season, AB:0, R:0, H:0, RBI:0, BB:0, SO:0, _1B:0, _2B:0, _3B:0, HR:0, games:0 };
+    }
+    const b = buckets[season];
+    b.AB+=pg.AB||0; b.R+=pg.R||0; b.H+=pg.H||0; b.RBI+=pg.RBI||0;
+    b.BB+=pg.BB||0; b.SO+=pg.SO||0;
+    b._1B+=pg._1B||0; b._2B+=pg._2B||0; b._3B+=pg._3B||0; b.HR+=pg.HR||0;
+    b.games+=1;
+  }
+  return Object.values(buckets).map(s => {
+    const AVG = s.AB ? s.H/s.AB : 0;
+    const OBP = (s.AB+s.BB) ? (s.H+s.BB)/(s.AB+s.BB) : 0;
+    const hasExtra = (s._1B+s._2B+s._3B+s.HR) > 0;
+    const tb = hasExtra ? (s._1B+2*s._2B+3*s._3B+4*s.HR) : (s.H * 1.5);
+    const SLG = s.AB ? tb/s.AB : 0;
+    return { ...s, AVG, OBP, SLG, OPS: OBP+SLG };
+  }).sort((a,b) => String(b.season).localeCompare(String(a.season)));
+}
+
+// 荣誉：从 player.titles[] 解析 MVP / 银棒 / 金手套 / 最佳投手 数量 + HOF 标记
+function parseAwards(player, hofSet) {
+  const out = { mvp:0, silverBat:0, goldGlove:0, bestPitcher:0, hof: hofSet.has(player.id) };
+  for (const t of (player.titles||[])) {
+    if (/赛季\s*MVP|赛季最佳/i.test(t)) out.mvp++;
+    else if (/银棒/i.test(t))           out.silverBat++;
+    else if (/金手套/i.test(t))         out.goldGlove++;
+    else if (/最佳投手/i.test(t))       out.bestPitcher++;
+  }
+  return out;
+}
+
+function formatAvg(n) {
+  if (!Number.isFinite(n) || n === 0) return '—';
+  // OPS 可能 ≥ 1，正常显示 N.XXX；AVG/OBP/SLG < 1，显示 .XXX
+  if (n >= 1) return n.toFixed(3);
+  return '.' + (n*1000|0).toString().padStart(3,'0');
+}
+
+// 根据球员实际数据/荣誉，动态挑出最 impressive 的一项作为右边 Hero badge
+// 优先级（高→低）：名人堂 > 赛季 MVP > 银棒 > 金手套 > 最佳投手 > 单场 MVP > HR > 三围 fallback > Rookie
+function pickHeroBadge(p, stats, awards, mvpCount) {
+  if (awards.hof)          return { icon: '🏆', val: '名 人 堂',     label: 'HALL OF FAME', kind: 'hof'     };
+  if (awards.mvp)          return { icon: '⭐', val: awards.mvp,    label: '赛 季 MVP',    kind: 'mvp'     };
+  if (awards.silverBat)    return { icon: '🥇', val: awards.silverBat, label: '银 棒 奖',  kind: 'silver'  };
+  if (awards.goldGlove)    return { icon: '🧤', val: awards.goldGlove, label: '金 手 套',  kind: 'glove'   };
+  if (awards.bestPitcher)  return { icon: '🏅', val: awards.bestPitcher, label: '最 佳 投 手', kind: 'pitcher' };
+  if (mvpCount > 0)        return { icon: '⭐', val: mvpCount,      label: '场 次 MVP',    kind: 'gameMvp' };
+  if ((stats.HR||0) > 0)   return { icon: '⚡', val: stats.HR,      label: '全 垒 打',     kind: 'hr'      };
+  if ((stats.AB||0) > 0)   return { icon: '🎯', val: formatAvg(stats.AVG), label: '打 击 率', kind: 'avg'  };
+  return { icon: '🌱', val: '新 秀', label: '', kind: 'rookie' };
+}
+
+function renderPlayerCardV2(p) {
+  const runtime = playerRuntime(p);
+  const stats   = runtime.stats;
+  const num     = p.number || '--';
+  const playerPts = runtime.totalPoints;
+  const onlineSt = runtime.online;
+  const isVerified = runtime.verified;
+  const posCls  = runtime.posClass;
+  const posDisplay = [...runtime.categories].join(' · ') || '—';
+  const handed  = (p.bats || p.throws) ? ` <span class="sep">·</span> B/T: ${(p.bats||'—')}/${(p.throws||'—')}` : '';
+
+  // 赛季聚合
+  const seasonStats = aggregateBySeason(stats.perGame || [], gameById);
+
+  // 最近场次（按日期 desc 取 3 场）
+  const recent = (stats.perGame || [])
+    .filter(pg => !pg.isAggregate && pg.date)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))
+    .slice(0, 3)
+    .map(pg => {
+      const g = gameById.get(pg.gameId);
+      const hasHL = _highlightsByGameId.has(pg.gameId);
+      return { ...pg, game: g, hasHighlight: hasHL };
+    });
+
+  // 荣誉
+  const awards = parseAwards(p, _hofPlayerIdSet);
+  const playerKey = DB.canonicalNameKey(p.name);
+  const gameMvpCount = _gameMvpCountByPlayerKey.get(playerKey) || 0;
+
+  // ==== 正面 ====
+  const verifiedChip = isVerified
+    ? `<span class="pcv-verified-chip" title="正式队员">★ 正式</span>`
+    : '';
+  const onlineDot = `<span class="pc-online-dot ${onlineSt.status}" data-status="${onlineSt.status}"
+                          title="${onlineSt.status==='online'?'在线':onlineSt.status==='recent'?'最近活跃':'离线'}"></span>`;
+
+  // Hero 双指标：积分（固定）+ 动态荣誉/数据 badge
+  const heroPoints = `
+    <div class="pcv-hero pcv-hero-pts">
+      <div class="pcv-hero-val">★ ${playerPts || 0}</div>
+      <div class="pcv-hero-label">积 分</div>
+    </div>`;
+  const dyn = pickHeroBadge(p, stats, awards, gameMvpCount);
+  // 名人堂、赛季 MVP、HR 用 .glow 强化（最 impressive 的几种）
+  const dynGlowClass = ['hof', 'mvp', 'hr'].includes(dyn.kind) ? ' glow' : '';
+  // Icon 独立 span 让 CSS 单独控制大小（彩色 emoji 自带高度，否则会比文字大很多导致比例失衡）
+  const heroDyn = `
+    <div class="pcv-hero pcv-hero-dyn kind-${dyn.kind}${dynGlowClass}">
+      <div class="pcv-hero-val"><span class="pcv-hero-ico">${dyn.icon}</span><span class="pcv-hero-text">${dyn.val}</span></div>
+      <div class="pcv-hero-label">${dyn.label}</div>
+    </div>`;
+
+  // 荣誉条（仅非零）
+  const awardItems = [];
+  if (awards.hof)         awardItems.push(`<span class="pcv-award hof">🏆 名 人 堂</span>`);
+  if (awards.mvp)         awardItems.push(`<span class="pcv-award mvp">⭐ ${awards.mvp} MVP</span>`);
+  if (awards.silverBat)   awardItems.push(`<span class="pcv-award silver">🥇 ${awards.silverBat} 银 棒</span>`);
+  if (awards.goldGlove)   awardItems.push(`<span class="pcv-award glove">🧤 ${awards.goldGlove} 金 手 套</span>`);
+  if (awards.bestPitcher) awardItems.push(`<span class="pcv-award pitcher">🏅 ${awards.bestPitcher} 最 佳 投 手</span>`);
+  const awardsRow = awardItems.length
+    ? `<div class="pcv-awards-row">${awardItems.join('')}</div>`
+    : '';
+
+  // Slogan（如果有）
+  const sloganRow = p.slogan
+    ? `<div class="pcv-slogan">"${escapeAttr(p.slogan)}"</div>`
+    : '';
+
+  // 数据：三围 slash + OPS + 6 项计数
+  const avg = formatAvg(stats.AVG);
+  const obp = formatAvg(stats.OBP);
+  const slg = formatAvg(stats.SLG);
+  const ops = formatAvg(stats.OBP + stats.SLG);  // OPS
+
+  const slashRow = stats.AB > 0
+    ? `<div class="pcv-slash">
+        <span>${avg}</span><span class="ps-sep">/</span>
+        <span>${obp}</span><span class="ps-sep">/</span>
+        <span>${slg}</span>
+        <span class="ps-ops"><span class="ps-ops-label">OPS</span>${ops}</span>
+      </div>`
+    : `<div class="pcv-slash" style="opacity:.5"><span>— 暂无打席数据 —</span></div>`;
+
+  const frontHTML = `
+    <div class="face front">
+      <div class="pcv-position-strip"></div>
+      <div class="pcv-tl-row">
+        ${verifiedChip}
+      </div>
+      ${onlineDot}
+      <span class="pcv-flip-corner" title="点击翻面看赛季数据" aria-label="翻面">↻</span>
+      <div class="pcv-avatar-wrap">
+        <img class="pc-photo" src="${runtime.photoUrl}" alt="${escapeAttr(p.name)}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+        <span class="pcv-jersey">#${escapeAttr(num)}</span>
+      </div>
+      <div class="pc-name">${escapeAttr(p.name)}</div>
+      <div class="pc-meta">${posDisplay}${handed}</div>
+      ${sloganRow}
+      <div class="pcv-divider"><span>KEY STATS · 赛 季 亮 点</span></div>
+      <div class="pcv-hero-row">
+        ${heroPoints}
+        ${heroDyn}
+      </div>
+      ${slashRow}
+      ${awardsRow}
+      <div class="pc-stats">
+        <div><div class="pc-stat-v">${stats.games||0}</div><div class="pc-stat-k">GP</div></div>
+        <div><div class="pc-stat-v">${stats.H||0}</div><div class="pc-stat-k">H</div></div>
+        <div><div class="pc-stat-v">${stats._2B||0}</div><div class="pc-stat-k">2B</div></div>
+        <div><div class="pc-stat-v">${stats._3B||0}</div><div class="pc-stat-k">3B</div></div>
+        <div><div class="pc-stat-v ${(stats.HR||0)>0?'hr-stat':''}">${stats.HR||0}</div><div class="pc-stat-k">HR</div></div>
+        <div><div class="pc-stat-v">${stats.RBI||0}</div><div class="pc-stat-k">RBI</div></div>
+      </div>
+    </div>`;
+
+  // ==== 背面 ====
+  const seasonRows = seasonStats.length
+    ? seasonStats.map(s => `<tr>
+        <td class="ssn">${s.season}</td>
+        <td>${formatAvg(s.AVG)}</td>
+        <td>${formatAvg(s.OPS)}</td>
+        <td>${s.H}</td>
+        <td>${s._2B||0}</td>
+        <td>${s._3B||0}</td>
+        <td class="${s.HR>0?'hot-hr':''}">${s.HR||0}</td>
+        <td>${s.RBI}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="8" class="empty-row">暂无比赛数据</td></tr>`;
+  const totalsRow = seasonStats.length
+    ? `<tr class="totals-row">
+        <td>总 和</td>
+        <td>${formatAvg(stats.AVG)}</td>
+        <td>${formatAvg(stats.OBP + stats.SLG)}</td>
+        <td>${stats.H||0}</td>
+        <td>${stats._2B||0}</td>
+        <td>${stats._3B||0}</td>
+        <td class="${(stats.HR||0)>0?'hot-hr':''}">${stats.HR||0}</td>
+        <td>${stats.RBI||0}</td>
+      </tr>`
+    : '';
+
+  const recentHTML = recent.length
+    ? `<div class="pcv-recent">
+        <div class="pcv-back-subtitle">📌 最 近 场 次</div>
+        ${recent.map(r => {
+          const g = r.game;
+          const isHome = g ? DB.isOrionTeam(g.home) : true;
+          const opp = g ? (isHome ? g.away : g.home) : '—';
+          const score = g ? (isHome ? `${g.homeScore}-${g.awayScore}` : `${g.awayScore}-${g.homeScore}`) : '';
+          const win = g && (isHome ? g.homeScore>g.awayScore : g.awayScore>g.homeScore);
+          const lineParts = [];
+          if (r.AB) lineParts.push(`${r.H||0}-${r.AB}`);
+          if ((r.HR||0)>0) lineParts.push(`⚡${r.HR}`);
+          if ((r.RBI||0)>0) lineParts.push(`${r.RBI} RBI`);
+          return `<a class="pcv-recent-row" href="game-detail.html?id=${encodeURIComponent(r.gameId)}" onclick="event.stopPropagation()">
+            <div class="pcv-r-date">${(r.date||'').slice(5)}</div>
+            <div class="pcv-r-opp">vs ${escapeAttr(opp.slice(0,8))}${r.hasHighlight?' <span class="pcv-r-hl">▶</span>':''}</div>
+            <div class="pcv-r-score ${win?'win':''}">${score}</div>
+            <div class="pcv-r-line">${lineParts.join(' · ')||'—'}</div>
+          </a>`;
+        }).join('')}
+      </div>`
+    : '';
+
+  const backHTML = `
+    <div class="face back">
+      <div class="pcv-position-strip"></div>
+      <div class="pcv-back-header">
+        <span class="pcv-back-name">${escapeAttr(p.name)}</span>
+        <span class="pcv-back-sub">SEASON STATS</span>
+      </div>
+      <table class="pcv-season-table">
+        <thead><tr>
+          <th>赛季</th><th>AVG</th><th>OPS</th><th>H</th><th>2B</th><th>3B</th><th>HR</th><th>RBI</th>
+        </tr></thead>
+        <tbody>${seasonRows}</tbody>
+        ${totalsRow ? `<tfoot>${totalsRow}</tfoot>` : ''}
+      </table>
+      ${recentHTML}
+      <div class="pcv-back-footer">
+        <a class="pcv-nav-link" href="dashboard.html?player=${encodeURIComponent(p.name)}" onclick="event.stopPropagation()">查看完整面板 →</a>
+        <div class="pcv-flip-hint">↺ 翻回正面</div>
+      </div>
+    </div>`;
+
+  return `<div class="player-card-shell ${posCls}" onclick="window.flipPlayerCard(this, event)" tabindex="0">
+    <div class="player-card-flip">
+      ${frontHTML}
+      ${backHTML}
+    </div>
+  </div>`;
+}
+
+// Globals: hofPlayerIdSet（名人堂球员 id 集合）和 highlightsByGameId（哪些 game 有视频）
+const _hofPlayerIdSet = new Set(DB.allHallOfFame().map(h => h.playerId));
+const _highlightsByGameId = new Set(DB.allHighlights().map(h => h.gameId));
+
+// 单场 MVP 计数 map：canonical name key → 次数
+const _gameMvpCountByPlayerKey = (function(){
+  const map = new Map();
+  for (const g of allGames) {
+    if (g.isAggregate || !g.mvpPlayerName) continue;
+    const key = DB.canonicalNameKey(g.mvpPlayerName);
+    if (!key) continue;
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return map;
+})();
+
+// Flip handler — 桌面 click / mobile tap 都走这里
+window.flipPlayerCard = function(shell, event) {
+  // 如果点击在 nav-link 或 child anchor 上，stopPropagation 已让事件不传到这里
+  // 但保险起见再判断一次：若 target 是 a 标签，不翻
+  if (event && event.target && event.target.closest('a')) return;
+  shell.classList.toggle('flipped');
+};
+
+function escapeAttr(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Wire up events（debounce 减少高频 input 重渲染开销）
+const _onSearchInput = DB.debounce(() => {
+  activeFilter.search = document.getElementById('searchInput').value.trim();
+  render();
+}, 180);
+document.getElementById('searchInput').addEventListener('input', _onSearchInput);
+posHost.addEventListener('click', e => {
+  const btn = e.target.closest('.pos-chip');
+  if (!btn) return;
+  posHost.querySelectorAll('.pos-chip').forEach(b => b.classList.toggle('active', b === btn));
+  activeFilter.pos = btn.dataset.pos;
+  render();
+});
+armNodeLayer.addEventListener('pointerover', e => {
+  const node = e.target.closest('.arm-node');
+  if (!node) return;
+  if (armState.hoverId === node.dataset.playerId && armState.focusedId === node.dataset.playerId) return;
+  armState.hoverId = node.dataset.playerId;
+  armState.staticRendered = false;
+  setArmFocus(node.dataset.playerId, { soft: true });
+});
+armNodeLayer.addEventListener('pointerleave', () => {
+  armState.hoverId = null;
+  armState.staticRendered = false;
+  if (!armState.lockedFocus) {
+    armState.focusedId = null;
+    armState.nodesDirty = true;
+    positionArmNodes(performance.now());
+  }
+});
+armNodeLayer.addEventListener('click', e => {
+  const node = e.target.closest('.arm-node');
+  if (!node) return;
+  const player = armState.filtered.find(p => p.id === node.dataset.playerId);
+  const origin = getArmAvatarOrigin(node, e);
+  setArmFocus(node.dataset.playerId, { locked: true });
+  node.classList.add('is-launching');
+  window.setTimeout(() => node.classList.remove('is-launching'), 620);
+  openArmCardModal(player, origin);
+});
+armNodeLayer.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const node = e.target.closest('.arm-node');
+  if (!node) return;
+  e.preventDefault();
+  const player = armState.filtered.find(p => p.id === node.dataset.playerId);
+  const origin = getArmAvatarOrigin(node, e);
+  setArmFocus(node.dataset.playerId, { locked: true });
+  node.classList.add('is-launching');
+  window.setTimeout(() => node.classList.remove('is-launching'), 620);
+  openArmCardModal(player, origin);
+});
+armCardModal.addEventListener('click', e => {
+  if (e.target.closest('[data-arm-card-close]')) closeArmCardModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeArmCardModal();
+});
+function applyArmPointer() {
+  armState.pointerRaf = 0;
+  if (armState.lowMotion) return;
+  const rect = armStage.getBoundingClientRect();
+  armState.pointerActive = true;
+  armState.pointerX = clamp(((armState.pointerClientX - rect.left) / rect.width) * 2 - 1, -1, 1);
+  armState.pointerY = clamp(((armState.pointerClientY - rect.top) / rect.height) * 2 - 1, -1, 1);
+  armState.staticRendered = false;
+}
+armStage.addEventListener('pointermove', e => {
+  if (armState.lowMotion) return;
+  armState.pointerClientX = e.clientX;
+  armState.pointerClientY = e.clientY;
+  if (!armState.pointerRaf) armState.pointerRaf = requestAnimationFrame(applyArmPointer);
+}, { passive: true });
+armStage.addEventListener('pointerleave', () => {
+  if (armState.pointerRaf) {
+    cancelAnimationFrame(armState.pointerRaf);
+    armState.pointerRaf = 0;
+  }
+  armState.pointerX = 0;
+  armState.pointerY = 0;
+  armState.pointerActive = false;
+  armState.webglParticlesSettling = true;
+  armState.staticRendered = false;
+});
+armMotionToggle.addEventListener('click', () => {
+  setArmLowMotion(!armState.lowMotion, { persist: true });
+});
+window.addEventListener('resize', () => {
+  invalidateArmLayout();
+  resetArmParticleField();
+  if (armState.lowMotion) positionArmNodes(0);
+}, { passive: true });
+document.addEventListener('visibilitychange', () => {
+  armState.pageHidden = document.hidden;
+  if (!document.hidden) loadArmGlobalSettings({ apply: true, silent: true, skipIfDirty: true });
+});
+
+await loadArmGlobalSettings({ silent: true });
+syncArmMotionButton();
+initArmAdminPanel();
+render();
+startArmGlobalSettingsPolling();
+})();
+</script>
+</body>
+</html>

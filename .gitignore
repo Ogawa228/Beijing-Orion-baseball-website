@@ -1,0 +1,34 @@
+# Root-level allowlist: publish the app and project docs, not raw work folders.
+*
+!.gitignore
+!README.md
+!DESIGN_BRIEF.md
+!GAMECHANGER_PDF_PARSER_DESIGN.md
+!orion-demo/
+!orion-demo/**
+
+# macOS / editor noise
+.DS_Store
+orion-demo/.DS_Store
+
+# Secrets and local runtime config
+orion-demo/.env
+orion-demo/.env.*
+!orion-demo/.env.example
+*.pem
+*.key
+*secret*
+*token*
+
+# Dependencies and generated outputs
+orion-demo/node_modules/
+orion-demo/backups/
+orion-demo/outputs/
+orion-demo/.claude/
+
+# Heavy or private root workspace artifacts remain ignored by the root allowlist:
+# - raw photo/material folders
+# - season PDF data folders
+# - zip archives
+# - OCR scratch folders
+# - cloud console notes

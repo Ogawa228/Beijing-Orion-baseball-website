@@ -1,0 +1,18 @@
+node_modules
+npm-debug.log
+.DS_Store
+.git
+.gitignore
+.claude
+*.log
+DEPLOY.md
+.env
+.env.local
+# 一次性数据 / 备份 / 本地 dev 工具，不打进 image
+orion-data.json
+orion-data-*.json
+*.bak
+assets/js/*.legacy.js*
+scripts/
+server/schema.sql
+package-lock.json

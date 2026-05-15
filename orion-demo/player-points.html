@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>积分明细 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+<style>
+.pp-hero {
+  display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+  padding: 36px 0 24px;
+}
+.pp-photo-wrap { position: relative; }
+.pp-photo {
+  width: 180px; height: 180px; border-radius: 50%;
+  object-fit: cover; border: 4px solid var(--gold); box-shadow: 0 0 32px rgba(201,169,97,.3);
+}
+.pp-online-dot {
+  position: absolute; bottom: 10px; right: 10px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 4px solid var(--navy-900);
+  background: var(--text-mute);
+}
+.pp-online-dot.online { background: #4ade80; box-shadow: 0 0 14px rgba(74,222,128,.7); }
+.pp-online-dot.recent { background: #fbbf24; }
+
+.pp-info { flex: 1; min-width: 240px; }
+.pp-name {
+  font-family: var(--font-display); font-size: 48px;
+  margin: 0 0 6px;
+}
+.pp-rank-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 999px;
+  background: linear-gradient(135deg, rgba(228,199,122,.18), rgba(201,169,97,.04));
+  border: 1px solid rgba(228,199,122,.4); color: var(--gold-bright);
+  font-size: 14px; margin-top: 6px;
+}
+.pp-meta { color: var(--text-dim); margin-top: 10px; font-size: 14px; }
+
+.pp-total-card {
+  background: linear-gradient(180deg, rgba(228,199,122,.12), rgba(201,169,97,.02));
+  border: 1px solid rgba(228,199,122,.4);
+  border-radius: var(--r-lg);
+  padding: 24px 30px;
+  text-align: center;
+  min-width: 200px;
+  box-shadow: 0 8px 32px rgba(201,169,97,.15);
+}
+.pp-total-num {
+  font-family: var(--font-display); font-size: 64px;
+  color: var(--gold-bright); line-height: 1;
+}
+.pp-total-label { font-size: 13px; color: var(--text-dim); margin-top: 4px; letter-spacing:.1em; }
+
+.pp-breakdown {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px; margin: 28px 0 8px;
+}
+.pp-bd-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 18px; position: relative; overflow: hidden;
+}
+.pp-bd-card::before {
+  content: ''; position: absolute; top:0; left:0; right:0; height: 3px;
+  background: var(--bd-color, var(--gold));
+}
+.pp-bd-card.bd-base       { --bd-color: #2E6BFF; }
+.pp-bd-card.bd-performance{ --bd-color: #4ade80; }
+.pp-bd-card.bd-awards     { --bd-color: var(--gold-bright); }
+.pp-bd-card.bd-manual     { --bd-color: #c79a7a; }
+
+.pp-bd-num {
+  font-family: var(--font-display); font-size: 32px;
+  color: var(--text); margin-bottom: 4px;
+}
+.pp-bd-num.negative { color: #ff8a8a; }
+.pp-bd-label { color: var(--text-dim); font-size: 13px; }
+.pp-bd-hint { color: var(--text-mute); font-size: 11px; margin-top: 4px; }
+
+/* Timeline */
+.pp-section-title {
+  font-family: var(--font-display); font-size: 22px;
+  color: var(--gold-bright);
+  margin: 36px 0 16px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+}
+.pp-section-title .roman {
+  font-size: 14px; color: var(--gold);
+  border: 1px solid var(--gold); padding: 2px 8px;
+  border-radius: 4px; letter-spacing: .1em;
+}
+
+.pp-timeline {
+  list-style: none; padding: 0; margin: 0;
+}
+.pp-tl-item {
+  display: grid; grid-template-columns: 100px 1fr auto;
+  gap: 16px; align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.pp-tl-date {
+  font-family: var(--font-display); font-size: 14px;
+  color: var(--text-dim); padding-top: 2px;
+}
+.pp-tl-body { line-height: 1.5; }
+.pp-tl-label { color: var(--text); font-weight: 500; }
+.pp-tl-detail {
+  font-size: 12px; color: var(--text-dim); margin-top: 4px;
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.pp-tl-detail span::before,
+.pp-tl-detail a::before { content: '· '; opacity: .4; }
+.pp-tl-detail :first-child::before { content: ''; }
+.pp-tl-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(228,199,122,.35);
+  transition: color .15s var(--ease), border-color .15s var(--ease);
+}
+.pp-tl-link:hover { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
+.pp-tl-label .pp-tl-link { display: inline; }
+.pp-tl-piece {
+  display: inline-block;
+  background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2);
+  color: #4ade80;
+  padding: 1px 8px; border-radius: 999px;
+  font-size: 11px; margin-right: 4px; margin-top: 2px;
+}
+.pp-tl-piece.minus {
+  background: rgba(255,138,138,.08); border-color: rgba(255,138,138,.2);
+  color: #ff8a8a;
+}
+.pp-tl-delta {
+  font-family: var(--font-display); font-size: 22px;
+  font-weight: 600; min-width: 64px; text-align: right;
+}
+.pp-tl-delta.positive { color: #4ade80; }
+.pp-tl-delta.negative { color: #ff8a8a; }
+.pp-tl-delta.neutral  { color: var(--text-dim); }
+
+/* Source filter chips */
+.pp-tl-filter {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.pp-tl-chip {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line-strong); color: var(--text-dim);
+  padding: 6px 14px; border-radius: 999px; font-size: 12px;
+  cursor: pointer; transition: all .15s ease;
+}
+.pp-tl-chip.active { background: var(--gold); color: var(--navy-950); border-color: var(--gold); }
+.pp-tl-chip:hover:not(.active) { color: var(--text); border-color: var(--gold); }
+
+/* Source-colored left border */
+.pp-tl-item[data-source="game"]     .pp-tl-label::before { content:'⚾ '; }
+.pp-tl-item[data-source="training"] .pp-tl-label::before { content:''; }
+.pp-tl-item[data-source="event"]    .pp-tl-label::before { content:''; }
+.pp-tl-item[data-source="award"]    .pp-tl-label::before { content:''; }
+.pp-tl-item[data-source="hof"]      .pp-tl-label::before { content:''; }
+.pp-tl-item[data-source="manual"]   .pp-tl-label::before { content:''; }
+
+@media (max-width: 760px) {
+  .pp-name { font-size: 36px; }
+  .pp-total-num { font-size: 48px; }
+  .pp-tl-item { grid-template-columns: 1fr auto; }
+  .pp-tl-date { grid-column: 1/-1; padding-top: 0; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav"><!-- buildNav('ranking') --></nav>
+
+<section class="section">
+  <div class="container">
+    <a class="back" href="ranking.html">← 返回积分榜</a>
+    <div id="ppRoot">
+      <div class="empty">加载中...</div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('ranking');
+
+const params = new URLSearchParams(location.search);
+const playerId = params.get('id');
+const root = document.getElementById('ppRoot');
+
+if (!playerId) {
+  root.innerHTML = `<div class="empty">缺少球员 id 参数。<a href="ranking.html">返回积分榜</a></div>`;
+} else {
+  const p = DB.getPlayerById(playerId);
+  if (!p) {
+    root.innerHTML = `<div class="empty">未找到球员。<a href="ranking.html">返回积分榜</a></div>`;
+  } else {
+    render(p);
+  }
+}
+
+function escapeAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function render(p){
+  const points = DB.getPlayerPoints(p.id);
+  const lb = DB.getPointsLeaderboard();
+  const myRank = lb.findIndex(r => r.player.id === p.id) + 1;
+  const totalRanked = lb.length;
+  const onlineSt = DB.getPlayerOnlineStatus(p.id);
+  const onlineLabel = onlineSt.status === 'online' ? '在线' :
+                      onlineSt.status === 'recent' ? '最近活跃' :
+                      onlineSt.lastActiveAt ? `离线 · 上次活跃 ${formatDate(onlineSt.lastActiveAt)}` : '尚未登录';
+
+  // Hero
+  const heroHTML = `
+    <div class="pp-hero">
+      <div class="pp-photo-wrap">
+        <img class="pp-photo" src="${DB.playerPhotoUrl(p)}" alt="${p.name}" onerror="this.src='assets/img/logo.jpg'">
+        <span class="pp-online-dot ${onlineSt.status}" title="${onlineLabel}"></span>
+      </div>
+      <div class="pp-info">
+        <h1 class="pp-name">${p.name}</h1>
+        <div class="meta" style="color:var(--text-dim)">#${p.number||'--'} · ${p.position||'—'}${p.joinYear ? ' · 加入 '+p.joinYear : ''}</div>
+        ${myRank ? `<div class="pp-rank-badge">🏆 当前排名 第 ${myRank} / ${totalRanked} 位</div>` : ''}
+        <div class="pp-meta">
+          ${onlineLabel}${p.titles?.length ? ' · 称号：' + p.titles.slice(0,3).map(t=>'★ '+t).join('  ') : ''}
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+          <a class="badge gold" href="dashboard.html?player=${encodeURIComponent(p.name)}" style="text-decoration:none">📊 查看比赛数据面板 →</a>
+          <a class="badge" href="ranking.html" style="text-decoration:none">🏆 完整积分榜 →</a>
+        </div>
+      </div>
+      <div class="pp-total-card">
+        <div class="pp-total-num">${points.total}</div>
+        <div class="pp-total-label">TOTAL POINTS · 总积分</div>
+      </div>
+    </div>
+  `;
+
+  // Breakdown
+  const bd = points.breakdown;
+  const breakdownHTML = `
+    <div class="pp-section-title"><span class="roman">I</span> 积分构成</div>
+    <div class="pp-breakdown">
+      <div class="pp-bd-card bd-base">
+        <div class="pp-bd-num ${bd.base<0?'negative':''}">${bd.base>=0?'+':''}${bd.base}</div>
+        <div class="pp-bd-label">出场积分</div>
+        <div class="pp-bd-hint">训练/比赛/活动出席</div>
+      </div>
+      <div class="pp-bd-card bd-performance">
+        <div class="pp-bd-num ${bd.performance<0?'negative':''}">${bd.performance>=0?'+':''}${bd.performance}</div>
+        <div class="pp-bd-label">比赛表现</div>
+        <div class="pp-bd-hint">MVP/HR/SO/RBI 等</div>
+      </div>
+      <div class="pp-bd-card bd-awards">
+        <div class="pp-bd-num ${bd.awards<0?'negative':''}">${bd.awards>=0?'+':''}${bd.awards}</div>
+        <div class="pp-bd-label">赛季奖项</div>
+        <div class="pp-bd-hint">赛季 MVP/金手套/银棒/名人堂</div>
+      </div>
+      <div class="pp-bd-card bd-manual">
+        <div class="pp-bd-num ${bd.manual<0?'negative':''}">${bd.manual>=0?'+':''}${bd.manual}</div>
+        <div class="pp-bd-label">管理员调整</div>
+        <div class="pp-bd-hint">手动加减分（含失误）</div>
+      </div>
+    </div>
+  `;
+
+  // Timeline filter chips
+  const sourceCounts = {};
+  points.timeline.forEach(t => { sourceCounts[t.source] = (sourceCounts[t.source]||0)+1; });
+  const sourceMeta = {
+    game: '⚾ 比赛', training: '🏋 训练', event: '🎉 活动',
+    award: '🥇 奖项', hof: '🌟 名人堂', manual: '⚙ 调整'
+  };
+
+  const filterHTML = `
+    <div class="pp-tl-filter" id="ppTlFilter">
+      <button class="pp-tl-chip active" data-src="all">全部 (${points.timeline.length})</button>
+      ${Object.keys(sourceMeta).map(k => sourceCounts[k] ? `<button class="pp-tl-chip" data-src="${k}">${sourceMeta[k]} (${sourceCounts[k]})</button>` : '').join('')}
+    </div>
+  `;
+
+  // Timeline
+  const timelineHTML = points.timeline.length ? `
+    <div class="pp-section-title"><span class="roman">II</span> 积分时间线</div>
+    ${filterHTML}
+    <ul class="pp-timeline" id="ppTimeline">
+      ${points.timeline.map(t => renderTimelineItem(t)).join('')}
+    </ul>
+  ` : `
+    <div class="pp-section-title"><span class="roman">II</span> 积分时间线</div>
+    <div class="empty" style="padding:32px">暂无积分流水。出场比赛或参加训练/活动后，每一笔都会出现在这里。</div>
+  `;
+
+  root.innerHTML = heroHTML + breakdownHTML + timelineHTML;
+
+  // Wire filter
+  const filter = document.getElementById('ppTlFilter');
+  if (filter) {
+    filter.addEventListener('click', e => {
+      const btn = e.target.closest('.pp-tl-chip');
+      if (!btn) return;
+      filter.querySelectorAll('.pp-tl-chip').forEach(b => b.classList.toggle('active', b === btn));
+      const src = btn.dataset.src;
+      document.querySelectorAll('#ppTimeline .pp-tl-item').forEach(it => {
+        it.style.display = (src === 'all' || it.dataset.source === src) ? '' : 'none';
+      });
+    });
+  }
+}
+
+function renderTimelineItem(t){
+  const cls = t.delta > 0 ? 'positive' : t.delta < 0 ? 'negative' : 'neutral';
+  const date = t.date || (t.detail?.year ? t.detail.year + '-01-01' : '—');
+  let detailHTML = '';
+  const pieces = t.detail?.pieces || [];
+  if (pieces.length) {
+    detailHTML = pieces.map(p => {
+      const isNeg = /-\d/.test(p);
+      return `<span class="pp-tl-piece${isNeg?' minus':''}">${p}</span>`;
+    }).join('');
+  }
+  const sub = [];
+  if (t.detail?.appearance) sub.push({ text: `出场 +${t.detail.appearance}` });
+  if (t.detail?.tournamentName) {
+    sub.push({
+      text: t.detail.tournamentName,
+      href: t.detail.tournamentId ? `tournament.html?id=${encodeURIComponent(t.detail.tournamentId)}` : null
+    });
+  }
+  if (t.detail?.note) sub.push({ text: t.detail.note });
+  if (t.detail?.reason && t.source === 'manual') sub.push({ text: `备注：${t.detail.reason}` });
+  if (t.detail?.reason && t.source === 'hof') sub.push({ text: `入选事由：${t.detail.reason}` });
+  if (t.detail?.title) sub.push({ text: t.detail.title });
+
+  // Make game-source label clickable (jump to game-detail)
+  const labelHTML = (t.source === 'game' && t.detail?.gameId)
+    ? `<a class="pp-tl-link" href="game-detail.html?id=${encodeURIComponent(t.detail.gameId)}" title="查看比赛详情">${t.label}</a>`
+    : t.label;
+
+  const subHTML = sub.map(s => s.href
+    ? `<a class="pp-tl-link" href="${s.href}" title="查看赛事">${escapeAttr(s.text)}</a>`
+    : `<span>${escapeAttr(s.text)}</span>`
+  ).join('');
+
+  return `<li class="pp-tl-item" data-source="${t.source}">
+    <div class="pp-tl-date">${date}</div>
+    <div class="pp-tl-body">
+      <div class="pp-tl-label">${labelHTML}</div>
+      ${sub.length ? `<div class="pp-tl-detail">${subHTML}</div>` : ''}
+      ${detailHTML ? `<div style="margin-top:6px">${detailHTML}</div>` : ''}
+    </div>
+    <div class="pp-tl-delta ${cls}">${t.delta>=0?'+':''}${t.delta}</div>
+  </li>`;
+}
+
+function formatDate(iso){
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+    const hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+    return `${Y}-${M}-${D} ${hh}:${mm}`;
+  } catch(e) { return iso.slice(0,16); }
+}
+})();
+</script>
+</body>
+</html>

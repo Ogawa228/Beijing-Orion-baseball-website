@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>个人面板 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/js/db.js?v=17"></script>
+<style>
+.dash-online-dot {
+  position: absolute; bottom: 8px; right: 8px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 3px solid var(--navy-900);
+  background: var(--text-mute);
+  z-index: 2;
+  transition: all .25s var(--ease);
+}
+.dash-online-dot.online { background: #4ade80; box-shadow: 0 0 14px rgba(74,222,128,.7); }
+.dash-online-dot.recent { background: #fbbf24; box-shadow: 0 0 10px rgba(251,191,36,.5); }
+.dash-online-dot.offline { background: #5e6e8c; }
+.dash-online-dot[data-status="online"]::after {
+  content: ''; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid #4ade80; opacity: 0;
+  animation: pulseOnline 2s ease-out infinite;
+}
+@keyframes pulseOnline {
+  0% { transform: scale(.85); opacity: .8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ---------- Avatar flip card ---------- */
+.dash-avatar-shell {
+  width: 96px; height: 96px;
+  perspective: 800px;
+  flex-shrink: 0;
+}
+.dash-avatar-shell.flippable { cursor: pointer; }
+.dash-avatar-flip {
+  position: relative;
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.4,.2,.2,1);
+}
+.dash-avatar-shell.flipped .dash-avatar-flip {
+  transform: rotateY(180deg);
+}
+.dash-avatar-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.dash-avatar-face.back {
+  transform: rotateY(180deg);
+}
+.dash-avatar-face .dash-avatar.photo {
+  width: 100%; height: 100%;
+  position: relative; /* so dash-online-dot positions inside */
+}
+.dash-avatar-face-label {
+  position: absolute; bottom: -22px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px; letter-spacing: .15em;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+  opacity: 0; transition: opacity .25s var(--ease) .15s;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dash-avatar-shell.flippable:hover .dash-avatar-face-label { opacity: .7; }
+.dash-avatar-shell.flippable::after {
+  content: '↻';
+  position: absolute; top: -4px; right: -4px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  color: var(--navy-900);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  border: 2px solid var(--navy-900);
+  z-index: 3;
+  opacity: 0; transform: scale(.7);
+  transition: opacity .2s var(--ease), transform .2s var(--ease);
+  pointer-events: none;
+}
+.dash-avatar-shell.flippable:hover::after { opacity: 1; transform: scale(1); }
+
+/* Nickname sub-line (own view only) */
+.dash-nick {
+  font-size: 13px; color: var(--gold-bright);
+  margin-top: 2px;
+  font-family: var(--font-display);
+  letter-spacing: .02em;
+}
+.dash-nick-hint {
+  color: var(--text-mute);
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: .1em;
+}
+.notice-stack{display:grid;gap:12px;margin:0 0 20px}
+.notice-card{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(46,107,255,.16),rgba(228,199,122,.06));
+  border:1px solid rgba(228,199,122,.26);
+  border-radius:var(--r-lg);padding:16px 18px;
+  box-shadow:0 18px 44px rgba(0,0,0,.20);
+}
+.notice-card-title{font-family:var(--font-display);font-size:17px;color:var(--gold-bright);margin-bottom:4px}
+.notice-card-body{font-size:13px;color:var(--text-dim);line-height:1.6}
+.notice-card-actions{display:flex;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('dashboard') --></nav>
+
+<section class="section">
+  <div class="container">
+    <a class="back" href="players.html" onclick="if (history.length > 1) { event.preventDefault(); history.back(); }">← 返回</a>
+    <div id="dashboardRoot"></div>
+  </div>
+</section>
+
+<!-- Bind code modal -->
+<div class="modal-mask" id="bindModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('bindModal').classList.remove('open')">×</button>
+    <h3>绑定数据</h3>
+    <p class="modal-sub">输入管理员发给你的绑定码。绑定后你的账号会自动关联到真实姓名，并拉取对应的照片和赛季数据。球员本人不可修改赛季数据。</p>
+    <form class="form" onsubmit="submitBind(event)" style="margin-top:0">
+      <div class="field">
+        <label>绑定码</label>
+        <input type="text" id="bindInput" required placeholder="例如：ORION-XT07-2026" style="letter-spacing:.15em;font-family:'SF Mono',monospace;text-transform:uppercase">
+        <div class="hint">格式：ORION-XXXX-XXXX（不区分大小写）</div>
+      </div>
+      <div class="field err" id="bindErr"></div>
+      <button type="submit" class="btn">确认绑定</button>
+    </form>
+  </div>
+</div>
+
+<!-- Upload highlight modal -->
+<div class="modal-mask" id="uploadModal">
+  <div class="modal" style="max-width:min(520px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">×</button>
+    <h3>上传高亮时刻</h3>
+    <p class="modal-sub">视频请粘贴 B 站 / YouTube 链接，图片为封面</p>
+    <form class="form" onsubmit="submitHighlight(event)" style="margin-top:0">
+      <div class="field">
+        <label>关联比赛</label>
+        <select id="hlGame" required style="background:var(--navy-800);border:1px solid var(--line-strong);border-radius:6px;padding:12px 16px;color:var(--text);font:inherit"></select>
+      </div>
+      <div class="field">
+        <label>标题</label>
+        <input type="text" id="hlTitle" required placeholder="例如：第 4 局 三垒打" maxlength="40">
+        <div class="hint">最多 40 个字符</div>
+      </div>
+      <div class="field">
+        <label>视频链接</label>
+        <input type="url" id="hlUrl" required placeholder="https://www.bilibili.com/video/BV...">
+        <div class="hint">支持 B 站 BV 链接、YouTube 链接，粘贴后自动识别</div>
+      </div>
+      <div class="field">
+        <label>封面图（可选）</label>
+        <input type="file" id="hlCoverFile" accept="image/*" onchange="uploadHlCover(this)" style="margin-bottom:6px">
+        <input type="hidden" id="hlCover">
+        <div id="hlCoverPreview" style="margin-top:8px"></div>
+        <div class="hint">JPG/PNG ≤ 20 MB · 上传后自动存到对象存储</div>
+      </div>
+      <div class="field err" id="hlErr"></div>
+      <button type="submit" class="btn">提交审核</button>
+    </form>
+  </div>
+</div>
+
+<!-- Profile edit modal: 用户改自己的昵称 + 自定义头像 -->
+<div class="modal-mask" id="profileModal">
+  <div class="modal" style="max-width:min(440px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('profileModal').classList.remove('open')">×</button>
+    <h3>编辑我的资料</h3>
+    <p class="modal-sub">这里改的是「<strong style="color:var(--blue-300)">我</strong>」的昵称和头像（非球员档案）。球员档案由管理员维护，绑定后会显示在球员墙上。</p>
+    <form class="form" onsubmit="submitProfile(event)" style="margin-top:0">
+      <div class="field">
+        <label>昵称</label>
+        <input type="text" id="profileDisplayName" required maxlength="20" placeholder="可以用真名 / 也可以用昵称">
+        <div class="hint">2-20 个字符。绑定到正式球员档案后，公开页面会显示档案的真实姓名。</div>
+      </div>
+      <div class="field">
+        <label>自定义头像（可选）</label>
+        <input type="file" id="profileAvatarFile" accept="image/*" onchange="uploadProfileAvatar(this)">
+        <input type="hidden" id="profileAvatar">
+        <div id="profileAvatarPreview" style="margin-top:8px"></div>
+        <div class="hint">JPG/PNG ≤ 20 MB · 上传后存在云存储，跟球员档案照片分离</div>
+      </div>
+      <div class="field err" id="profileErr"></div>
+      <button type="submit" class="btn">保存</button>
+    </form>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('dashboard');
+// Resolve which player we're showing:
+// 1. ?player=<name>  — public view of someone
+// 2. currentUser.boundPlayerId — my own panel
+// 3. fall back: guest with no param → redirect
+	function escapeAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+	function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const params = new URLSearchParams(location.search);
+const queryName = params.get('player');
+const currentUser = DB.currentUser();
+let dashFilter = { season:'', tournamentId:'', gameId:'' };
+let chartRefs = {};
+
+let player = null;
+let isOwnPanel = false;
+if (queryName) {
+  player = DB.getPlayerByName(queryName);
+} else if (currentUser && currentUser.boundPlayerId) {
+  player = DB.getPlayerById(currentUser.boundPlayerId);
+  isOwnPanel = true;
+} else if (currentUser) {
+  // Logged-in but unbound → show bind prompt
+  player = null;
+  isOwnPanel = true;
+}
+
+const root = document.getElementById('dashboardRoot');
+
+function renderBindInvitationNotices(){
+  if (!currentUser || queryName) return '';
+  const notes = DB.notifications()
+    .filter(n => n.type === 'bind_invitation' && !n.readAt && n.payload?.code)
+    .slice(0, 3);
+  if (!notes.length) return '';
+  return `<div class="notice-stack">
+    ${notes.map(n => {
+      const p = n.payload || {};
+      const playerLine = `${p.playerName || '目标球员'}${p.playerNumber ? ' · #'+p.playerNumber : ''}${p.playerPosition ? ' · '+p.playerPosition : ''}`;
+      return `<div class="notice-card">
+        <div style="min-width:220px;flex:1">
+          <div class="notice-card-title">${escapeText(n.title || '绑定邀请')}</div>
+          <div class="notice-card-body">${escapeText(n.body || '')}</div>
+          <div class="notice-card-body" style="color:var(--text)">目标档案：${escapeText(playerLine)}</div>
+        </div>
+        <div class="notice-card-actions">
+          <button class="btn" onclick="acceptBindInvitation('${escapeAttr(n.id)}','${escapeAttr(p.code)}')">一键绑定</button>
+          <button class="btn ghost" onclick="dismissNotification('${escapeAttr(n.id)}')">稍后处理</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+if (!currentUser && !queryName) {
+  root.innerHTML = `<div class="empty">请先登录后查看个人面板</div>`;
+} else if (!player && isOwnPanel) {
+  // Unbound user — prompt to bind
+  root.innerHTML = `
+    ${renderBindInvitationNotices()}
+    <div class="dash-hero">
+      <div class="dash-avatar">${currentUser.displayName.charAt(0)}</div>
+      <div class="dash-info" style="flex:1;min-width:240px">
+        <h2>${currentUser.displayName}</h2>
+        <div class="meta">${currentUser.email}</div>
+        <div class="dash-badges">
+          <span class="badge" style="background:rgba(255,200,100,.15);border-color:#E4C77A;color:#E4C77A">⚠ 未绑定球员数据</span>
+        </div>
+      </div>
+      <button class="btn" onclick="openBindModal()">输入绑定码</button>
+    </div>
+    <div class="empty" style="margin-top:20px">
+      <strong style="color:var(--text)">还没有绑定到球员花名册</strong><br>
+      你的账号已创建，但尚未绑定到具体球员。请联系管理员获取你的专属绑定码，<br>
+      然后点击上方"输入绑定码"按钮完成绑定。
+    </div>
+  `;
+} else if (!player) {
+  root.innerHTML = `<div class="empty">未找到球员：${queryName || ''}</div>`;
+} else {
+  renderDashboard(player);
+}
+
+function renderDashboard(p){
+  const hl = DB.highlightsForPlayer(p.name);
+  const photoUrl = DB.playerPhotoUrl(p);
+  const isHOF = DB.allHallOfFame().some(h => h.playerId === p.id);
+  const canUpload = currentUser && ((currentUser.role==='admin') || (currentUser.boundPlayerId===p.id));
+  const canEditSlogan = canUpload;
+
+  // Build filter options — use ALL games (incl aggregate) so 2025 seasons show up.
+  // Use playerCanonicalKey (alias-aware) so 同一球员在 g.batting 里的别名（如
+  // "靳江山" 是 "江山" 的 alias）也能被正确归到同一个球员名下统计。
+  const myKey = DB.canonicalNameKey(p.name);   // 主名的 key，作为目标桶
+  const allGames = DB.allGames({includeAggregate:true});
+  const myGames = allGames.filter(g => g.batting && g.batting.some(b => DB.playerCanonicalKey(b.name) === myKey));
+  // Total games played across aggregate + regular (uses gp field when present)
+  const myTotalGamesPlayed = myGames.reduce((sum,g) => {
+    const line = g.batting.find(b => DB.playerCanonicalKey(b.name) === myKey);
+    return sum + (line ? (line.gp || 1) : 0);
+  }, 0);
+  const seasons = [...new Set(myGames.map(g => (g.date||'').slice(0,4)).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+  const tournamentsInPlay = [...new Set(myGames.map(g => g.tournamentId).filter(Boolean))]
+    .map(id => DB.getTournamentById(id)).filter(Boolean);
+  const gamesInPlay = myGames.filter(g =>
+    (!dashFilter.season || (g.date||'').startsWith(dashFilter.season)) &&
+    (!dashFilter.tournamentId || g.tournamentId === dashFilter.tournamentId)
+  );
+
+  const onlineSt = DB.getPlayerOnlineStatus(p.id);
+  const totalPts = DB.getPlayerPoints(p.id).total;
+  const playerLevel = DB.getPlayerLevel(p);
+  const isCasual = playerLevel === 'casual';
+  const canReviseData = currentUser?.role === 'admin';
+  const trainings = isCasual ? DB.getTrainingCount(p.id) : 0;
+  const trainingsLeft = Math.max(0, 8 - trainings);
+  const tryoutPct = Math.min(100, (trainings/8) * 100);
+
+  // 试训队员横幅（casual 才显示，金色 + 进度条 + 输入绑定码按钮）
+  const reachedThreshold = trainings >= 8;
+  const tryoutMainText = reachedThreshold
+    ? `✨ 你已积累 80 积分，可以申请升级正式队员了`
+    : `试训队员 · 还差 ${trainingsLeft} 次训练（${trainingsLeft * 10} 分）即可申请升级`;
+  const tryoutSubText = `参加 8 次训练（80 分）后自动升级 · 或联系管理员获得绑定码立即升级`;
+  const tryoutBanner = isCasual ? `
+    <div style="background:linear-gradient(135deg,rgba(46,107,255,.15),rgba(46,107,255,.04));border:1px solid rgba(46,107,255,.35);border-radius:var(--r-lg);padding:18px 24px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="font-size:32px;line-height:1">${reachedThreshold ? '✨' : '⏳'}</div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-family:var(--font-display);font-size:18px;color:var(--blue-300);margin-bottom:4px">${tryoutMainText}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${tryoutSubText}</div>
+          <div style="background:rgba(255,255,255,.05);height:8px;border-radius:4px;overflow:hidden;margin-top:10px">
+            <div style="height:100%;background:linear-gradient(90deg,var(--blue-500),var(--blue-400));border-radius:4px;width:${tryoutPct}%;transition:width .4s ease"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div style="font-family:var(--font-display);font-size:32px;color:var(--blue-300);line-height:1">${trainings}<span style="font-size:18px;color:var(--text-dim)">/8</span></div>
+          <button class="btn ghost" style="padding:6px 14px;font-size:12px" onclick="openBindModal()">📋 输入绑定码</button>
+        </div>
+      </div>
+    </div>
+  ` : '';
+
+  // 双身份显示：
+  //   ① 大字主标永远显示 player 真实姓名（球员页 = 球员档案，public + own 一样）
+  //   ② own 视角且有自定义昵称时（displayName 与 player.name 不同），名字下方小字露昵称 + 「✏️ 编辑」按钮
+  //   ③ 头像：own 视角支持 3D flip（默认 player 真照 → 翻面 user 自定义头像），public 视角只显示真照不可翻
+  const showSelfIdentity = isOwnPanel && currentUser;
+  const heroPlayerName = p.name;
+  const heroPlayerPhoto = photoUrl;             // 真实照片始终用 player 的（fallback 到 logo）
+  const heroUserAvatar = currentUser?.avatar || '';  // 自定义头像（可为空）
+  const heroUserNick   = currentUser?.displayName || '';
+  // 仅 own 视角 + 有不同的昵称时才显示副标
+  const hasDistinctNick = showSelfIdentity && heroUserNick && heroUserNick !== heroPlayerName;
+  const canFlipAvatar = showSelfIdentity && !!heroUserAvatar;
+  const nickLine = hasDistinctNick
+    ? `<div class="dash-nick">@${escapeAttr(heroUserNick)} <span class="dash-nick-hint">· 仅你可见</span></div>`
+    : '';
+
+  root.innerHTML = `
+    ${renderBindInvitationNotices()}
+    ${tryoutBanner}
+    <div class="dash-hero">
+      <div class="dash-avatar-shell ${canFlipAvatar ? 'flippable' : ''}" ${canFlipAvatar ? 'onclick="flipDashAvatar(event)" title="点击切换为自定义头像 / 真实照片"' : ''}>
+        <div class="dash-avatar-flip">
+          <div class="dash-avatar-face front">
+            <div class="dash-avatar photo">
+              <img src="${heroPlayerPhoto}" alt="${heroPlayerName}" onerror="this.src='assets/img/logo.jpg'">
+              <span class="dash-online-dot ${onlineSt.status}" data-status="${onlineSt.status}"
+                    title="${onlineSt.status === 'online' ? '在线' : onlineSt.status === 'recent' ? '最近活跃' : '离线'}"></span>
+            </div>
+            ${canFlipAvatar ? '<div class="dash-avatar-face-label">真照</div>' : ''}
+          </div>
+          ${canFlipAvatar ? `<div class="dash-avatar-face back">
+            <div class="dash-avatar photo">
+              <img src="${heroUserAvatar}" alt="${heroUserNick}" onerror="this.src='${heroPlayerPhoto}'">
+            </div>
+            <div class="dash-avatar-face-label">自定义</div>
+          </div>` : ''}
+        </div>
+      </div>
+      <div class="dash-info" style="flex:1;min-width:240px">
+        <h2>
+          ${heroPlayerName}${isCasual ? ' <span style="font-size:14px;color:var(--blue-300);background:rgba(46,107,255,.15);border:1px solid rgba(46,107,255,.3);padding:2px 10px;border-radius:999px;vertical-align:middle">⏳ 试训中</span>' : ''}
+          ${showSelfIdentity ? '<button class="btn-nav ghost" style="margin-left:10px;padding:4px 10px;font-size:11px;vertical-align:middle" onclick="openProfileModal()" title="编辑昵称和头像">✏️ 编辑</button>' : ''}
+        </h2>
+        ${nickLine}
+        <div class="meta">${(p.position || (isCasual ? '注册试训队员' : '—')) + (p.number?' · #'+p.number:'')}</div>
+        <div class="dash-badges">
+          ${isOwnPanel && currentUser?.boundPlayerId===p.id && !isCasual ? '<span class="badge gold">✓ 已绑定球员档案</span>' : ''}
+          ${isHOF ? '<span class="badge gold">★ 名人堂</span>' : ''}
+          ${!isCasual ? `<span class="badge">共 ${myTotalGamesPlayed} 场出战</span>` : ''}
+          ${totalPts !== 0 ? `<a class="badge gold" href="player-points.html?id=${p.id}" style="text-decoration:none">★ ${totalPts} 积分 →</a>` : ''}
+        </div>
+      </div>
+      ${(canUpload && !isCasual) || canReviseData ? `<div style="display:flex;gap:12px;flex-wrap:wrap">
+        ${canUpload && !isCasual ? `<button class="btn" onclick="openUploadModal()">上传高亮</button>` : ''}
+        ${canReviseData ? `<a class="btn ghost" href="admin.html?section=match&gtab=revise&player=${encodeURIComponent(p.name)}" style="text-decoration:none">修订该球员比赛数据</a>` : ''}
+      </div>` : ''}
+    </div>
+
+    <!-- Slogan slim band -->
+    <div class="player-slogan-card" id="sloganCard">
+      <div class="quote">&ldquo;</div>
+      <div class="content">
+        <div class="text ${p.slogan?'':'empty'}" id="sloganText">${p.slogan || '尚未设置个人标语'}</div>
+      </div>
+      ${canEditSlogan ? `<button class="edit-slogan" onclick="editSlogan('${p.id}')">✎ 编辑</button>` : ''}
+    </div>
+
+    ${isCasual ? `
+      <div style="background:rgba(255,255,255,.02);border:1px dashed var(--line-strong);border-radius:var(--r-lg);padding:48px 32px;margin:32px 0;text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">🎯</div>
+        <h3 style="font-family:var(--font-display);font-size:24px;margin:0 0 8px;color:var(--gold-bright)">升级正式队员后查看比赛数据</h3>
+        <p style="color:var(--text-dim);max-width:520px;margin:0 auto 20px;line-height:1.6">
+          作为试训队员，你可以：累计积分、参加训练 / 活动、出现在「积分榜」。<br>
+          升级正式队员后还可以：查看个人能力剖面图、比赛 game log、上传高亮视频、被列入球员墙的"全员出战"。
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+          <a class="btn" href="ranking.html">🏆 查看积分榜</a>
+          <a class="btn ghost" href="player-points.html?id=${p.id}">查看我的积分明细</a>
+        </div>
+      </div>
+    ` : `
+    <!-- Filter bar -->
+    <div class="dash-filter-bar">
+      <label>数据筛选</label>
+      <select id="filterSeason">
+        <option value="">全部赛季</option>
+        ${seasons.map(s => `<option value="${s}" ${dashFilter.season===s?'selected':''}>${s} 赛季</option>`).join('')}
+      </select>
+      <select id="filterTournament">
+        <option value="">全部赛事</option>
+        ${tournamentsInPlay.map(t => `<option value="${t.id}" ${dashFilter.tournamentId===t.id?'selected':''}>${t.type==='cup'?'🏆 ':t.type==='league'?'🏅 ':'🏋 '}${t.shortName||t.name}</option>`).join('')}
+      </select>
+      <select id="filterGame">
+        <option value="">全部比赛</option>
+        ${gamesInPlay.map(g => `<option value="${g.id}" ${dashFilter.gameId===g.id?'selected':''}>${g.date} ${g.away} vs ${g.home}</option>`).join('')}
+      </select>
+      <button class="filter-reset" onclick="resetFilter()">重置</button>
+    </div>
+
+    <div id="statsContainer"></div>
+
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">III</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Highlights · 高亮时刻</div>
+        <h2 class="section-title">${p.name} 的高亮</h2>
+        <p class="section-sub">由本人或管理员上传 · 视频与图片可点击预览</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="highlights">
+      ${hl.length ? hl.map(h=>`
+        <div class="hl">
+          <div class="hl-thumb"><img src="${h.cover}" alt=""><div class="hl-play"></div></div>
+          <div class="hl-body">
+            <div class="hl-title">${h.title}</div>
+            <div class="hl-meta">${h.uploader==='admin'?'管理员':'球员本人'} · ${linkBadge(h.url)}</div>
+          </div>
+        </div>
+      `).join('') : '<div class="empty">暂无高亮，点击上方按钮上传</div>'}
+    </div>
+    `}
+  `;
+
+  // casual 球员没有 filter / stats / highlights，下面 wiring 直接跳过
+  if (isCasual) return;
+
+  // Wire filter events
+  document.getElementById('filterSeason').addEventListener('change', e => {
+    dashFilter.season = e.target.value; dashFilter.gameId=''; renderDashboard(p);
+  });
+  document.getElementById('filterTournament').addEventListener('change', e => {
+    dashFilter.tournamentId = e.target.value; dashFilter.gameId=''; renderDashboard(p);
+  });
+  document.getElementById('filterGame').addEventListener('change', e => {
+    dashFilter.gameId = e.target.value; renderStatsBlock(p);
+  });
+
+  renderStatsBlock(p);
+}
+
+function fmtAvg(v){ return v ? v.toFixed(3).replace(/^0/,'') : '.000'; }
+function fmtPct(v){ return v ? (v*100).toFixed(1)+'%' : '0.0%'; }
+
+function renderStatsBlock(p){
+  // Destroy previous chart instances if any
+  Object.values(chartRefs).forEach(c => { try{c.destroy()}catch(e){} });
+  chartRefs = {};
+
+  const stats = DB.getPlayerStats(p.name, dashFilter);
+
+  // Core rate stats — use real SLG from DB if extras are tracked
+  const AVG = stats.AVG;
+  const OBP = stats.OBP;
+  const SLG = stats.SLG;
+  const OPS = stats.OPS;
+  const ISO = SLG - AVG;                                // isolated power
+  const BB_PCT = (stats.AB+stats.BB) ? stats.BB/(stats.AB+stats.BB) : 0;
+  const K_PCT = (stats.AB+stats.BB) ? stats.SO/(stats.AB+stats.BB) : 0;
+  const BABIP = (stats.AB - stats.SO) ? (stats.H) / (stats.AB - stats.SO) : 0;
+  const BBvsK = stats.SO ? (stats.BB / stats.SO) : (stats.BB ? stats.BB : 0);
+  // wOBA — use real XBH weights when available, else rough approximation
+  const wOBA = (stats.AB+stats.BB) ? (
+    stats.hasExtras
+      ? (0.69*stats.BB + 0.89*stats._1B + 1.27*stats._2B + 1.62*stats._3B + 2.10*stats.HR) / (stats.AB+stats.BB)
+      : (0.69*stats.BB + 0.89*stats.H) / (stats.AB+stats.BB)
+  ) : 0;
+
+  // Compose scope label
+  let scope = [];
+  if (dashFilter.season) scope.push(dashFilter.season+' 赛季');
+  if (dashFilter.tournamentId) { const t=DB.getTournamentById(dashFilter.tournamentId); if(t) scope.push(t.shortName||t.name); }
+  if (dashFilter.gameId) { const g=DB.getGameById(dashFilter.gameId); if(g) scope.push(g.date+' '+g.away+' vs '+g.home); }
+  const scopeLabel = scope.length ? scope.join(' · ') : '全部数据';
+
+  // === 能力剖面图（CAPABILITY PROFILE）的预算 ===
+  // 5 轴：打击 AVG / 力量 SLG / 上垒 OBP / 跑垒 R/G / 守备 FPCT
+  // 每轴值用「在花名册中的百分位」表达（雷达形状 = 相对队友的强弱），
+  // 中心 overlay 显示 OPS 总分。守备 FPCT 暂未跟踪 → 灰色 "待补"。
+  const rosterStats = DB.allPlayers().map(pp => DB.getPlayerStats(pp.name, dashFilter));
+  const myStatsForRank = stats;
+  function pctOf(getter, myVal){
+    const vals = rosterStats.map(getter).filter(v => v > 0);
+    if (vals.length < 2) return 0;
+    const below = vals.filter(v => v < myVal).length;
+    const equal = vals.filter(v => v === myVal).length;
+    return Math.round((below + equal * 0.5) / vals.length * 100);
+  }
+  const runsPerGame = stats.games ? stats.R / stats.games : 0;
+  const pctAVG  = pctOf(s => s.AVG, AVG);
+  const pctSLG  = pctOf(s => s.SLG, SLG);
+  const pctOBP  = pctOf(s => s.OBP, OBP);
+  const pctRunsPerG = pctOf(s => s.games ? s.R / s.games : 0, runsPerGame);
+  const pctFPCT = null;   // 没数据 → 占位
+
+  document.getElementById('statsContainer').innerHTML = `
+    <div class="scope-bar">📊 当前范围 · ${scopeLabel} · ${stats.games} 场 · ${stats.AB} 打数</div>
+
+    <!-- ========== 能力剖面图 ========== -->
+    <div class="cap-profile">
+      <div class="cap-head">
+        <div class="cap-eyebrow">CAPABILITY PROFILE · 能力剖面图</div>
+        <div class="cap-sub">雷达 · slash · 五轴拆解 · 切片</div>
+      </div>
+      <div class="cap-radar-wrap">
+        <canvas id="chartCapability"></canvas>
+        <div class="cap-radar-center">
+          <div class="cap-ops">${OPS ? OPS.toFixed(3).replace(/^0/,'') : '.000'}</div>
+          <div class="cap-ops-label">OPS</div>
+        </div>
+      </div>
+      <div class="cap-slash">
+        <div class="cap-slash-cell"><div class="cap-slash-val">${fmtAvg(AVG)}</div><div class="cap-slash-label">AVG · 打击率</div></div>
+        <div class="cap-slash-cell"><div class="cap-slash-val">${fmtAvg(OBP)}</div><div class="cap-slash-label">OBP · 上垒率</div></div>
+        <div class="cap-slash-cell"><div class="cap-slash-val">${fmtAvg(SLG)}</div><div class="cap-slash-label">SLG · 长打率</div></div>
+      </div>
+      <div class="cap-breakdown">
+        <div class="cap-row"><span class="cap-row-cat">打击</span><span class="cap-row-code">AVG</span><span class="cap-row-val">${fmtAvg(AVG)}</span><span class="cap-row-pct">P${pctAVG}</span></div>
+        <div class="cap-row"><span class="cap-row-cat">力量</span><span class="cap-row-code">SLG</span><span class="cap-row-val">${fmtAvg(SLG)}</span><span class="cap-row-pct">P${pctSLG}</span></div>
+        <div class="cap-row"><span class="cap-row-cat">上垒</span><span class="cap-row-code">OBP</span><span class="cap-row-val">${fmtAvg(OBP)}</span><span class="cap-row-pct">P${pctOBP}</span></div>
+        <div class="cap-row"><span class="cap-row-cat">跑垒</span><span class="cap-row-code">R/G</span><span class="cap-row-val">${runsPerGame.toFixed(2)}</span><span class="cap-row-pct">P${pctRunsPerG}</span></div>
+        <div class="cap-row cap-row-na"><span class="cap-row-cat">守备</span><span class="cap-row-code">FPCT</span><span class="cap-row-val">—</span><span class="cap-row-pct">待补</span></div>
+      </div>
+      <div class="cap-splits-note">情境切片（vs R / vs L / RISP / 2-OUT）需逐打席跟踪，数据待补充</div>
+    </div>
+
+    <!-- Primary stats (6) -->
+    <div class="stats-section-title">
+      <span class="dot"></span>核心指标 · Core Stats
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi" data-tooltip="打击率 Batting Average" data-tooltip-sub="= H ÷ AB" data-tooltip-formula="打者击出安打的比率，MLB .300 即为一流水准">
+        <div class="kpi-label">AVG · 打击率</div>
+        <div class="kpi-val">${fmtAvg(AVG)}</div>
+        <div class="kpi-trend">${stats.H} H / ${stats.AB} AB</div>
+      </div>
+      <div class="kpi" data-tooltip="上垒率 On-Base Percentage" data-tooltip-sub="= (H + BB + HBP) ÷ (AB + BB + HBP + SF)" data-tooltip-formula="综合评估打者上垒能力，被认为比 AVG 更全面">
+        <div class="kpi-label">OBP · 上垒率</div>
+        <div class="kpi-val">${fmtAvg(OBP)}</div>
+        <div class="kpi-trend">含 ${stats.BB} 次保送</div>
+      </div>
+      <div class="kpi" data-tooltip="长打率 Slugging Percentage" data-tooltip-sub="= 总垒打数 ÷ AB" data-tooltip-formula="一垒安打=1, 二垒=2, 三垒=3, 全垒打=4, 反映长打威力">
+        <div class="kpi-label">SLG · 长打率</div>
+        <div class="kpi-val">${fmtAvg(SLG)}</div>
+        <div class="kpi-trend">${stats.hasExtras?`${stats._1B}·${stats._2B}·${stats._3B}·${stats.HR} (1B/2B/3B/HR)`:'估算值 (无 XBH)'}</div>
+      </div>
+      <div class="kpi" data-tooltip="综合攻击指数 On-Base Plus Slugging" data-tooltip-sub="= OBP + SLG" data-tooltip-formula="MLB 最常用的进攻评价，.800 合格 / .900+ 明星 / 1.000+ 巨星">
+        <div class="kpi-label">OPS · 综合攻击</div>
+        <div class="kpi-val">${fmtAvg(OPS)}</div>
+        <div class="kpi-trend">综合指标</div>
+      </div>
+      <div class="kpi" data-tooltip="得分 Runs Scored" data-tooltip-sub="安全跑回本垒的次数" data-tooltip-formula="反映球员在进攻端的贡献，与队友的打点能力相关">
+        <div class="kpi-label">R · 得分</div>
+        <div class="kpi-val">${stats.R}</div>
+        <div class="kpi-trend">${(stats.games?stats.R/stats.games:0).toFixed(1)} / 场</div>
+      </div>
+      <div class="kpi" data-tooltip="打点 Runs Batted In" data-tooltip-sub="通过自己的击球帮助队友得分" data-tooltip-formula="清垒能力的核心指标，反映关键局的进攻贡献">
+        <div class="kpi-label">RBI · 打点</div>
+        <div class="kpi-val">${stats.RBI}</div>
+        <div class="kpi-trend">${(stats.games?stats.RBI/stats.games:0).toFixed(1)} / 场</div>
+      </div>
+    </div>
+
+    <!-- Advanced stats (6) -->
+    <div class="stats-section-title">
+      <span class="dot"></span>进阶指标 · Advanced Stats
+    </div>
+    <div class="kpi-grid kpi-grid-sm">
+      <div class="kpi" data-tooltip="独立打击力 Isolated Power" data-tooltip-sub="= SLG − AVG" data-tooltip-formula="排除单打，反映纯长打能力。ISO .200+ 为长打型打者">
+        <div class="kpi-label">ISO · 独立打击力</div>
+        <div class="kpi-val">${fmtAvg(ISO)}</div>
+        <div class="kpi-trend">长打纯度</div>
+      </div>
+      <div class="kpi" data-tooltip="保送率 Walk Rate" data-tooltip-sub="= BB ÷ 打席 (PA)" data-tooltip-formula="反映打者的选球能力。MLB 10% 以上属于优秀选球眼">
+        <div class="kpi-label">BB% · 保送率</div>
+        <div class="kpi-val">${fmtPct(BB_PCT)}</div>
+        <div class="kpi-trend">选球能力</div>
+      </div>
+      <div class="kpi" data-tooltip="三振率 Strikeout Rate" data-tooltip-sub="= K ÷ 打席 (PA)" data-tooltip-formula="越低越好。MLB 平均约 22%，低于 15% 为接触型好手">
+        <div class="kpi-label">K% · 三振率</div>
+        <div class="kpi-val">${fmtPct(K_PCT)}</div>
+        <div class="kpi-trend">${stats.SO} 次三振</div>
+      </div>
+      <div class="kpi" data-tooltip="BB/K 比 · 选打比" data-tooltip-sub="= BB ÷ K" data-tooltip-formula="保送对三振的比例。1.0 以上说明选球极佳">
+        <div class="kpi-label">BB/K · 选打比</div>
+        <div class="kpi-val">${BBvsK.toFixed(2)}</div>
+        <div class="kpi-trend">${stats.BB}:${stats.SO}</div>
+      </div>
+      <div class="kpi" data-tooltip="场内打击安打率 BABIP" data-tooltip-sub="= (H − HR) ÷ (AB − K − HR + SF)" data-tooltip-formula="排除三振/本垒打后，场内击球转化为安打的比率。反映打击运气与球速">
+        <div class="kpi-label">BABIP</div>
+        <div class="kpi-val">${fmtAvg(BABIP)}</div>
+        <div class="kpi-trend">场内安打率</div>
+      </div>
+      <div class="kpi" data-tooltip="加权上垒率 wOBA" data-tooltip-sub="≈ (0.69·BB + 0.89·H) ÷ PA" data-tooltip-formula="MLB 官方综合进攻指标，综合权衡各类事件。.320 合格，.400+ 巨星级">
+        <div class="kpi-label">wOBA · 加权上垒</div>
+        <div class="kpi-val">${fmtAvg(wOBA)}</div>
+        <div class="kpi-trend">综合进攻</div>
+      </div>
+    </div>
+
+    ${stats.games > 0 ? `
+    <!-- Charts -->
+    <div class="stats-section-title">
+      <span class="dot"></span>可视化分析 · Visualizations
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h4>逐场打击率 · Rolling AVG</h4>
+        <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>每场得分 / 打点 · R & RBI</h4>
+        <div class="chart-wrap"><canvas id="chartRBI"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>打席分布 · Plate Outcome</h4>
+        <div class="chart-wrap"><canvas id="chartHits"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Game log -->
+    <div class="stats-section-title" style="margin-top:40px">
+      <span class="dot"></span>比赛日志 · Game Log
+    </div>
+    <div class="game-log-wrap">
+      <table class="game-log">
+        <thead>
+          <tr>
+            <th>日期</th><th>对手</th>
+            <th data-tooltip="打数" data-tooltip-pos="bottom">AB</th>
+            <th data-tooltip="安打" data-tooltip-pos="bottom">H</th>
+            <th data-tooltip="得分" data-tooltip-pos="bottom">R</th>
+            <th data-tooltip="打点" data-tooltip-pos="bottom">RBI</th>
+            <th data-tooltip="保送" data-tooltip-pos="bottom">BB</th>
+            <th data-tooltip="三振" data-tooltip-pos="bottom">SO</th>
+            <th data-tooltip="单场打击率" data-tooltip-pos="bottom">AVG</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stats.perGame.map(g => {
+            const a = g.AB ? (g.H/g.AB).toFixed(3).replace(/^0/,'') : '—';
+            const isHot = g.AB && (g.H/g.AB) >= .4;
+            return `<tr>
+              <td><a href="game-detail.html?id=${g.gameId}">${g.date}</a></td>
+              <td>vs ${g.opponent}</td>
+              <td>${g.AB}</td>
+              <td>${g.H}</td>
+              <td>${g.R}</td>
+              <td>${g.RBI}</td>
+              <td>${g.BB}</td>
+              <td>${g.SO}</td>
+              <td class="${isHot?'hot':''}">${a}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : '<div class="empty" style="margin-top:20px">当前筛选范围内暂无数据</div>'}
+  `;
+
+  // 能力剖面图常驻（即使 0 场也展示空 radar），其他图表只在有数据时画
+  renderCapabilityChart(stats, p);
+  if (stats.games > 0) renderCharts(stats, p);
+}
+
+// 能力剖面图（5 轴 radar + 中心 OPS + 花名册百分位）
+function renderCapabilityChart(stats, p){
+  const canvas = document.getElementById('chartCapability');
+  if (!canvas) return;
+  const rosterStats = DB.allPlayers().map(pp => DB.getPlayerStats(pp.name, dashFilter));
+  function pct(getter, myVal){
+    const vals = rosterStats.map(getter).filter(v => v > 0);
+    if (vals.length < 2) return myVal > 0 ? 50 : 0;
+    const below = vals.filter(v => v < myVal).length;
+    const equal = vals.filter(v => v === myVal).length;
+    return Math.round((below + equal * 0.5) / vals.length * 100);
+  }
+  const runsPerGame = stats.games ? stats.R / stats.games : 0;
+  const data = [
+    pct(s => s.AVG, stats.AVG),
+    pct(s => s.SLG, stats.SLG),
+    pct(s => s.OBP, stats.OBP),
+    pct(s => s.games ? s.R/s.games : 0, runsPerGame),
+    50,   // 守备 FPCT 暂未跟踪 → 中位占位
+  ];
+  chartRefs.capability = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: ['打击', '力量', '上垒', '跑垒', '守备'],
+      datasets: [{
+        data,
+        backgroundColor: 'rgba(228,199,122,.18)',
+        borderColor: '#E4C77A',
+        borderWidth: 2,
+        pointBackgroundColor: '#E4C77A',
+        pointBorderColor: '#fff',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: P${ctx.parsed.r}（花名册百分位）` } }
+      },
+      scales: {
+        r: {
+          suggestedMin: 0, suggestedMax: 100,
+          angleLines: { color: 'rgba(255,255,255,.10)' },
+          grid: { color: 'rgba(255,255,255,.10)' },
+          pointLabels: { color: '#9AA9C4', font: { size: 13 } },
+          ticks: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function resetFilter(){
+  dashFilter = { season:'', tournamentId:'', gameId:'' };
+  renderDashboard(player);
+}
+window.resetFilter = resetFilter;
+
+async function editSlogan(pid){
+  const cur = DB.getPlayerById(pid);
+  const max = window.SLOGAN_MAX || 14;
+  const v = prompt(`输入新的个人标语（最多 ${max} 个字）\n建议简短有力，例如：以星辰之名`, cur.slogan || '');
+  if (v === null) return;
+  const slogan = (v || '').trim().slice(0, max);
+  if (slogan.length !== (v||'').trim().length) {
+    toast(`标语超过 ${max} 字，已自动截断`,'error');
+  }
+  await DB.updatePlayer(pid, { slogan });
+  player.slogan = slogan;
+  toast('标语已更新','success');
+  renderDashboard(player);
+}
+window.editSlogan = editSlogan;
+
+function linkBadge(url){
+  if (!url) return '无链接';
+  if (url.includes('bilibili.com')) return '<span style="color:#00a1d6">B 站</span>';
+  if (url.includes('youtube.com')||url.includes('youtu.be')) return '<span style="color:#ff0000">YouTube</span>';
+  return '外链';
+}
+
+function renderCharts(stats, player){
+  Chart.defaults.color='#9AA9C4';
+  Chart.defaults.borderColor='rgba(255,255,255,.08)';
+  Chart.defaults.font.family='Inter,-apple-system,"PingFang SC",sans-serif';
+  const blue='#2E6BFF',blueLight='#5B8BFF',glow='rgba(46,107,255,.25)',gold='#E4C77A';
+
+  // Rolling AVG
+  const labels = stats.perGame.map(g => g.date.slice(5)+' vs '+g.opponent);
+  let cumH = 0, cumAB = 0;
+  const rollingAvg = stats.perGame.map(g => {
+    cumH += g.H; cumAB += g.AB;
+    return cumAB ? cumH/cumAB : 0;
+  });
+  const singleAvg = stats.perGame.map(g => g.AB ? g.H/g.AB : 0);
+  chartRefs.trend = new Chart(document.getElementById('chartTrend'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'累计 AVG', data:rollingAvg, borderColor:gold, backgroundColor:'rgba(228,199,122,.12)', borderWidth:2.5, tension:.35, fill:true, pointBackgroundColor:gold, pointBorderColor:'#0A1628', pointRadius:5, pointHoverRadius:7 },
+        { label:'单场 AVG', data:singleAvg, borderColor:blue, backgroundColor:'transparent', borderWidth:1.5, tension:.35, fill:false, pointBackgroundColor:blueLight, pointBorderColor:'#0A1628', pointRadius:3, borderDash:[4,4] }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12,font:{size:11}}}},
+      scales:{y:{min:0,max:1,ticks:{callback:v=>v.toFixed(3).replace(/^0/,'')}},x:{grid:{display:false}}}
+    }
+  });
+
+  // 旧 6 轴 chartRadar 已被顶部的"能力剖面图" (chartCapability) 取代
+
+  // R and RBI stacked per game
+  chartRefs.rbi = new Chart(document.getElementById('chartRBI'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { label:'R', data:stats.perGame.map(g=>g.R), backgroundColor:'rgba(91,139,255,.75)', borderColor:blueLight, borderWidth:1, borderRadius:3, stack:'s1' },
+        { label:'RBI', data:stats.perGame.map(g=>g.RBI), backgroundColor:'rgba(228,199,122,.75)', borderColor:gold, borderWidth:1, borderRadius:3, stack:'s1' }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12,font:{size:11}}}},
+      scales:{y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}},x:{stacked:true,grid:{display:false}}}
+    }
+  });
+
+  // Plate outcome distribution: hits / BB / SO / field outs
+  const fieldOuts = Math.max(0, stats.AB - stats.H - stats.SO);
+  const total = stats.H + stats.BB + stats.SO + fieldOuts;
+  chartRefs.hits = new Chart(document.getElementById('chartHits'),{
+    type:'doughnut',
+    data:{
+      labels:[`安打 H (${stats.H})`,`保送 BB (${stats.BB})`,`场内出局 (${fieldOuts})`,`三振 K (${stats.SO})`],
+      datasets:[{
+        data:[stats.H,stats.BB,fieldOuts,stats.SO],
+        backgroundColor:['#2E6BFF','#5B8BFF','#3a5380','#C9A961'],
+        borderColor:'#0A1628',borderWidth:3
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{position:'right',labels:{boxWidth:10,padding:10,font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${total?(ctx.parsed/total*100).toFixed(1):0}%`}}
+      }
+    }
+  });
+}
+
+// ---- Bind ----
+function openBindModal(){document.getElementById('bindModal').classList.add('open')}
+
+// 3D flip avatar between real photo and custom user avatar (own view only)
+window.flipDashAvatar = function(e){
+  if (e) e.preventDefault();
+  const shell = (e && e.currentTarget) || document.querySelector('.dash-avatar-shell.flippable');
+  if (!shell) return;
+  shell.classList.toggle('flipped');
+};
+window.openBindModal=openBindModal;
+
+async function acceptBindInvitation(noteId, code){
+  try{
+    const p=await DB.redeemBindCode(currentUser.id,code);
+    await DB.markNotificationRead(noteId).catch(()=>{});
+    toast('绑定成功：'+p.name,'success');
+    setTimeout(()=>window.location.reload(),600);
+  }catch(ex){
+    toast(ex.message || String(ex),'error');
+  }
+}
+window.acceptBindInvitation=acceptBindInvitation;
+
+async function dismissNotification(noteId){
+  try{
+    await DB.markNotificationRead(noteId);
+    toast('已处理','success');
+    setTimeout(()=>window.location.reload(),300);
+  }catch(ex){
+    toast(ex.message || String(ex),'error');
+  }
+}
+window.dismissNotification=dismissNotification;
+
+async function submitBind(e){
+  e.preventDefault();
+  const err=document.getElementById('bindErr');err.textContent='';
+  const code=document.getElementById('bindInput').value.trim().toUpperCase();
+  try{
+    const p=await DB.redeemBindCode(currentUser.id,code);
+    toast('绑定成功：'+p.name,'success');
+    document.getElementById('bindModal').classList.remove('open');
+    setTimeout(()=>window.location.reload(),600);
+  }catch(ex){err.textContent=ex.message}
+}
+window.submitBind=submitBind;
+
+// ---- Upload highlight ----
+function openUploadModal(){
+  const sel=document.getElementById('hlGame');
+  sel.innerHTML=DB.allGames().map(g=>`<option value="${g.id}">${g.away} vs ${g.home} · ${g.date}</option>`).join('');
+  document.getElementById('uploadModal').classList.add('open');
+}
+window.openUploadModal=openUploadModal;
+async function submitHighlight(e){
+  e.preventDefault();
+  const err=document.getElementById('hlErr');err.textContent='';
+  const url=document.getElementById('hlUrl').value;
+  if(!DB.videoEmbedUrl(url)){err.textContent='未识别到 B 站或 YouTube 链接';return}
+  const h={
+    gameId:document.getElementById('hlGame').value,
+    playerName:player.name,
+    title:document.getElementById('hlTitle').value,
+    url:url,
+    cover:document.getElementById('hlCover').value || 'assets/img/photos/1fd55252ed2121c4246c8750cf732edf.JPG',
+    uploader:currentUser.role==='admin'?'admin':'player',
+    status:currentUser.role==='admin'?'approved':'pending'
+  };
+  await DB.addHighlight(h);
+  toast(currentUser.role==='admin'?'已发布':'已提交审核','success');
+  document.getElementById('uploadModal').classList.remove('open');
+  setTimeout(()=>window.location.reload(),600);
+}
+window.submitHighlight=submitHighlight;
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+async function compressUploadImage(file, maxW=1280, maxH=1280, quality=0.78){
+  if (!file.type.startsWith('image/')) return file;
+  if (file.size > 50 * 1024 * 1024) throw new Error('图片超过 50 MB，请先在本地缩小后再上传');
+  if (file.size > 8 * 1024 * 1024) {
+    maxW = Math.min(maxW, 1024);
+    maxH = Math.min(maxH, 1024);
+    quality = Math.min(quality, 0.7);
+  }
+  const dataUrl = await fileToDataUrl(file);
+  const blob = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const ratio = Math.min(1, maxW / width, maxH / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const keepPng = file.type === 'image/png';
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('图片压缩失败')), keepPng ? 'image/png' : 'image/jpeg', quality);
+    };
+    img.onerror = () => reject(new Error('图片无法读取，请换 JPG / PNG / WEBP 格式'));
+    img.src = dataUrl;
+  });
+  const ext = blob.type === 'image/png' ? '.png' : '.jpg';
+  return new File([blob], (file.name || 'upload').replace(/\.[^.]+$/, '') + ext, { type: blob.type });
+}
+async function uploadImageFile(file, kind){
+  const prepared = await compressUploadImage(file);
+  const fd = new FormData();
+  fd.append('file', prepared);
+  fd.append('kind', kind);
+  const r = await fetch('/api/upload', { method:'POST', body: fd, credentials:'include' });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || '上传失败');
+  return data;
+}
+
+// 编辑昵称 / 头像 modal
+window.openProfileModal = function(){
+  if (!currentUser) return;
+  document.getElementById('profileDisplayName').value = currentUser.displayName || '';
+  const preview = document.getElementById('profileAvatarPreview');
+  if (currentUser.avatar) {
+    preview.innerHTML = `<img src="${currentUser.avatar}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--line-strong)"><div style="font-size:11px;color:var(--text-mute);margin-top:4px">当前头像</div>`;
+    document.getElementById('profileAvatar').value = currentUser.avatar;
+  } else {
+    preview.innerHTML = '<div style="font-size:12px;color:var(--text-mute)">还没有自定义头像</div>';
+    document.getElementById('profileAvatar').value = '';
+  }
+  document.getElementById('profileErr').textContent = '';
+  document.getElementById('profileModal').classList.add('open');
+};
+window.uploadProfileAvatar = async function(inputEl){
+  const f = inputEl.files?.[0]; if (!f) return;
+  const preview = document.getElementById('profileAvatarPreview');
+  const hidden = document.getElementById('profileAvatar');
+  preview.innerHTML = '<span style="color:var(--text-dim);font-size:12px">⏳ 压缩 + 上传中…</span>';
+  try {
+    const data = await uploadImageFile(f, 'avatar');
+    hidden.value = data.url;
+    preview.innerHTML = `<img src="${data.url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--gold-bright)"><div style="font-size:11px;color:var(--text-mute);margin-top:4px">✓ 已上传</div>`;
+  } catch(e) {
+    preview.innerHTML = '<span style="color:#ff8a8a;font-size:12px">❌ ' + e.message + '</span>';
+  }
+};
+window.submitProfile = async function(e){
+  e.preventDefault();
+  const err = document.getElementById('profileErr'); err.textContent = '';
+  const displayName = document.getElementById('profileDisplayName').value.trim();
+  const avatar = document.getElementById('profileAvatar').value || null;
+  if (!displayName) { err.textContent = '昵称不能为空'; return; }
+  try {
+    await DB.updateMe({ displayName, avatar });
+    toast('已保存', 'success');
+    document.getElementById('profileModal').classList.remove('open');
+    setTimeout(() => location.reload(), 600);
+  } catch(ex) { err.textContent = ex.message; }
+};
+
+// 上传高亮封面到 COS（云托管对象存储）
+window.uploadHlCover=async function(inputEl){
+  const f=inputEl.files?.[0];if(!f)return;
+  const preview=document.getElementById('hlCoverPreview');
+  const hidden=document.getElementById('hlCover');
+  preview.innerHTML='<span style="color:var(--text-dim);font-size:12px">⏳ 压缩 + 上传中…</span>';
+  try{
+    const data=await uploadImageFile(f,'highlight');
+    hidden.value=data.url;
+    preview.innerHTML=`<img src="${data.url}" style="max-width:240px;max-height:140px;border-radius:8px;border:1px solid var(--line-strong)"><div style="font-size:11px;color:var(--text-mute);margin-top:4px">${(data.size/1024).toFixed(0)} KB · 已上传到 COS</div>`;
+  }catch(e){
+    preview.innerHTML='<span style="color:#ff8a8a;font-size:12px">❌ '+e.message+'</span>';
+  }
+};
+})();
+</script>
+</body>
+</html>

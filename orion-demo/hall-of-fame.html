@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>名人堂 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+<style>
+.hof-empty {
+  text-align: center;
+  padding: 60px 20px 80px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hof-empty-orbit {
+  position: relative;
+  width: 220px; height: 220px;
+  margin: 0 auto 36px;
+  display: flex; align-items: center; justify-content: center;
+}
+.hof-empty-star {
+  font-size: 56px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 24px rgba(228,199,122,.7));
+  z-index: 2;
+  animation: hof-pulse 4s ease-in-out infinite;
+}
+@keyframes hof-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px rgba(228,199,122,.5)); }
+  50%      { transform: scale(1.08); filter: drop-shadow(0 0 32px rgba(228,199,122,.9)); }
+}
+.hof-empty-ring {
+  position: absolute;
+  border: 1px solid rgba(228,199,122,.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hof-empty-ring.r1 { width: 100px; height: 100px; animation: hof-ring 8s linear infinite; }
+.hof-empty-ring.r2 { width: 160px; height: 160px; border-color: rgba(228,199,122,.12); animation: hof-ring 14s linear infinite reverse; }
+.hof-empty-ring.r3 { width: 220px; height: 220px; border-color: rgba(228,199,122,.06); border-style: dashed; animation: hof-ring 22s linear infinite; }
+@keyframes hof-ring {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+/* 在每个圆轨上加一颗小卫星 */
+.hof-empty-ring::before {
+  content: ''; position: absolute;
+  width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  top: -3px; left: 50%;
+  margin-left: -3px;
+  box-shadow: 0 0 12px var(--gold);
+}
+.hof-empty-ring.r2::before { background: var(--blue-400); box-shadow: 0 0 12px var(--blue-400); }
+.hof-empty-ring.r3::before { background: var(--gold-bright); box-shadow: 0 0 8px var(--gold-bright); width: 4px; height: 4px; margin-left: -2px; top: -2px; }
+.hof-empty-eyebrow {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: .25em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.hof-empty-title {
+  font-family: var(--font-display);
+  font-size: 56px;
+  margin: 0 0 18px;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hof-empty-sub {
+  color: var(--text-dim);
+  line-height: 1.85;
+  font-size: 15px;
+  max-width: 520px;
+  margin: 0 auto 36px;
+}
+.hof-empty-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 520px;
+  margin: 36px auto 0;
+}
+.hof-empty-stat {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(228,199,122,.15);
+  border-radius: var(--r-md);
+  padding: 18px 12px;
+}
+.hof-empty-stat .n {
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: var(--gold-bright);
+}
+.hof-empty-stat .l {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: .15em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+.hof-opener {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(228,199,122,.24);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(228,199,122,.18), transparent 30%),
+    linear-gradient(135deg, rgba(46,107,255,.13), rgba(10,22,40,.92) 46%, rgba(5,11,24,.98));
+  box-shadow: 0 24px 70px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+  padding: 26px;
+  margin: 0 0 var(--s-7);
+}
+.hof-opener-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.hof-opener-kicker {
+  font-size: 11px;
+  letter-spacing: .26em;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+}
+.hof-opener-title {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 4vw, 40px);
+  margin-top: 4px;
+}
+.hof-opener-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 6px;
+}
+.hof-replay-btn {
+  border: 1px solid rgba(228,199,122,.32);
+  background: rgba(228,199,122,.06);
+  color: var(--gold-bright);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hof-case-window {
+  position: relative;
+  overflow: hidden;
+  height: 252px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(180deg, rgba(5,11,24,.45), rgba(5,11,24,.8));
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.hof-case-window::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  z-index: 3;
+  background: linear-gradient(180deg, transparent, var(--gold-bright), transparent);
+  box-shadow: 0 0 22px rgba(228,199,122,.78);
+}
+.hof-case-track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  padding: 18px 0 18px 18px;
+  transform: translate3d(0,0,0);
+}
+.hof-opener.is-running .hof-case-track {
+  animation: hofCaseRoll 3.2s cubic-bezier(.08,.72,.12,1) forwards;
+}
+.hof-case-card {
+  flex: 0 0 172px;
+  height: 214px;
+  border: 1px solid rgba(228,199,122,.20);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(91,139,255,.20), transparent 46%),
+    linear-gradient(180deg, rgba(23,41,74,.95), rgba(8,18,40,.98));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.hof-case-card img {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(228,199,122,.76);
+  box-shadow: 0 0 24px rgba(228,199,122,.22);
+  background: var(--navy-900);
+}
+.hof-case-card .case-name {
+  font-family: var(--font-display);
+  color: var(--gold-bright);
+  font-size: 20px;
+  margin-top: 12px;
+}
+.hof-case-card .case-meta {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 5px;
+  letter-spacing: .08em;
+}
+.hof-winner-reveal {
+  position: absolute;
+  inset: 18px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.94);
+  transition: opacity .45s var(--ease), transform .45s var(--ease);
+}
+.hof-opener.is-done .hof-winner-reveal {
+  opacity: 1;
+  transform: scale(1);
+}
+.hof-winner-card {
+  width: min(420px, 86vw);
+  border: 1px solid rgba(228,199,122,.48);
+  border-radius: 8px;
+  padding: 22px;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(20,40,80,.96), rgba(5,11,24,.96));
+  box-shadow: 0 0 0 1px rgba(46,107,255,.26), 0 28px 90px rgba(0,0,0,.58), 0 0 60px rgba(228,199,122,.24);
+}
+.hof-winner-card img {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--gold-bright);
+}
+@keyframes hofCaseRoll {
+  0% { transform: translate3d(0,0,0); filter: blur(0); }
+  16% { filter: blur(1px); }
+  72% { filter: blur(2px); }
+  100% { transform: translate3d(-68%,0,0); filter: blur(0); }
+}
+@media (max-width: 600px) {
+  .hof-empty-title { font-size: 40px; }
+  .hof-opener { padding: 16px; margin-bottom: var(--s-5); }
+  .hof-opener-top { align-items: flex-start; flex-direction: column; }
+  .hof-case-window { height: 224px; }
+  .hof-case-card { flex-basis: 142px; height: 188px; padding: 12px; }
+  .hof-case-card img { width: 68px; height: 68px; }
+  .hof-case-card .case-name { font-size: 17px; }
+  .hof-winner-card { padding: 18px; }
+  .hof-winner-card img { width: 92px; height: 92px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hof-opener.is-running .hof-case-track { animation: none; transform: translate3d(-62%,0,0); }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('hof') --></nav>
+
+<!-- HOF Hero -->
+<section class="hof-hero">
+  <div class="container">
+    <div class="hof-sub">HALL OF FAME · 永恒的荣耀</div>
+    <h1 class="hof-title">北京猎户座 · 名人堂</h1>
+    <p style="max-width:680px;margin:24px auto 0;color:var(--text-dim);font-size:15px;line-height:1.8">
+      每一颗闪耀的星都值得被铭记。这里记录着为北京猎户座留下不朽印记的球员，
+      他们的数据、瞬间与故事将与球队一同延续。
+    </p>
+    <div data-auth="admin" style="margin-top:24px">
+      <a class="btn-nav" href="admin.html#hof">★ 管理名人堂</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div id="hofRoot"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('hof');
+const root = document.getElementById('hofRoot');
+const entries = DB.allHallOfFame();
+
+function escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function hofCaseCard(entry) {
+  const p = entry.player;
+  if (!p) return '';
+  return `<div class="hof-case-card">
+    <img src="${DB.playerPhotoUrl(p)}" alt="${escapeHtml(p.name)}" onerror="this.src='assets/img/logo.jpg'">
+    <div class="case-name">${escapeHtml(p.name)}</div>
+    <div class="case-meta">#${escapeHtml(p.number || '--')} · ${escapeHtml(p.position || 'ORION')}</div>
+  </div>`;
+}
+
+function renderHofOpener(list) {
+  const pool = list.filter(e => e.player);
+  if (!pool.length) return '';
+  const ordered = [...pool].sort((a,b) => (b.inductedYear||0) - (a.inductedYear||0));
+  const winner = ordered[0];
+  const track = [];
+  for (let i = 0; i < 28; i++) track.push(ordered[i % ordered.length]);
+  const wp = winner.player;
+  return `<div class="hof-opener" id="hofOpener">
+    <div class="hof-opener-top">
+      <div>
+        <div class="hof-opener-kicker">ORION HALL CASE</div>
+        <div class="hof-opener-title">名人堂入场仪式</div>
+        <div class="hof-opener-sub">星卡从队史长廊掠过，最终定格本届荣耀。</div>
+      </div>
+      <button type="button" class="hof-replay-btn" onclick="replayHofReveal()">再看一次</button>
+    </div>
+    <div class="hof-case-window">
+      <div class="hof-case-track">${track.map(hofCaseCard).join('')}</div>
+      <div class="hof-winner-reveal">
+        <div class="hof-winner-card">
+          <img src="${DB.playerPhotoUrl(wp)}" alt="${escapeHtml(wp.name)}" onerror="this.src='assets/img/logo.jpg'">
+          <div class="case-name" style="font-size:28px;margin-top:12px">${escapeHtml(wp.name)}</div>
+          <div class="case-meta">CLASS OF ${escapeHtml(winner.inductedYear || 2026)} · #${escapeHtml(wp.number || '--')} · ${escapeHtml(wp.position || 'ORION')}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function replayHofReveal(){
+  const opener = document.getElementById('hofOpener');
+  if (!opener) return;
+  opener.classList.remove('is-running', 'is-done');
+  void opener.offsetWidth;
+  opener.classList.add('is-running');
+  setTimeout(() => opener.classList.add('is-done'), 3250);
+}
+window.replayHofReveal = replayHofReveal;
+
+function render(){
+  if(!entries.length){
+    // 仪式感空状态：星轨 + 期待首位铭牌
+    root.innerHTML = `
+      <div class="hof-empty">
+        <div class="hof-empty-orbit" aria-hidden="true">
+          <div class="hof-empty-star">★</div>
+          <div class="hof-empty-ring r1"></div>
+          <div class="hof-empty-ring r2"></div>
+          <div class="hof-empty-ring r3"></div>
+        </div>
+        <div class="hof-empty-eyebrow">CLASS OF 2026 · 等待首位铭牌</div>
+        <h2 class="hof-empty-title">赛季进行中</h2>
+        <p class="hof-empty-sub">
+          名人堂的第一颗星还未升起。<br>
+          2026 赛季结束后，第一批入选者将在这里诞生 ——<br>
+          他们的名字、瞬间、故事都将被星空铭记。
+        </p>
+        <div class="hof-empty-stats">
+          <div class="hof-empty-stat"><div class="n">${DB.allPlayers().filter(p=>DB.getPlayerLevel(p)==='verified').length}</div><div class="l">在册球员</div></div>
+          <div class="hof-empty-stat"><div class="n">${DB.allGames().length}</div><div class="l">已记录场次</div></div>
+          <div class="hof-empty-stat"><div class="n">${DB.allTournaments().filter(t=>t.season==='2026').length}</div><div class="l">2026 赛事</div></div>
+        </div>
+        <div data-auth="admin" style="margin-top:32px">
+          <a class="btn-nav" href="admin.html#hof">★ 管理员：录入第一位入选</a>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Group by year descending
+  const byYear = {};
+  entries.forEach(e => {
+    const y = e.inductedYear || 2026;
+    (byYear[y] = byYear[y] || []).push(e);
+  });
+  const years = Object.keys(byYear).map(Number).sort((a,b)=>b-a);
+
+  // Roman numeral helper for class chapters (most recent year = I)
+  const toRoman = n => ['','I','II','III','IV','V','VI','VII','VIII','IX','X'][n] || ('#'+n);
+  root.innerHTML = renderHofOpener(entries) + years.map((year, idx) => `
+    <div style="margin-bottom:var(--s-8)">
+      <div class="section-head theatre">
+        <div class="theatre-numeral">${toRoman(idx+1)}</div>
+        <div class="theatre-main">
+          <div class="eyebrow">Class of ${year} · 入选届</div>
+          <h2 class="section-title">${year} 届入选球员</h2>
+          <p class="section-sub">为北京猎户座留下不朽印记的球员，与球队一同延续</p>
+        </div>
+        <div class="theatre-rule"></div>
+      </div>
+      <div class="hof-grid">
+        ${byYear[year].map(e => {
+          const p = e.player;
+          if(!p) return '';
+          const photo = DB.playerPhotoUrl(p);
+          const stats = DB.getPlayerStats(p.name);
+          const avg = stats.AB ? (stats.H/stats.AB).toFixed(3).replace(/^0/,'') : '—';
+          return `
+            <a class="hof-card" href="dashboard.html?player=${encodeURIComponent(p.name)}">
+              <img class="hof-photo" src="${photo}" alt="${p.name}" onerror="this.src='assets/img/logo.jpg'">
+              <div class="hof-name">${p.name}</div>
+              <div class="hof-year">#${p.number} · ${p.position} · ${year}</div>
+              <div class="hof-reason">${e.reason||''}</div>
+              <div style="display:flex;justify-content:space-around;margin-top:20px;padding-top:16px;border-top:1px solid rgba(201,169,97,.15)">
+                <div>
+                  <div style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright)">${avg}</div>
+                  <div style="font-size:10px;letter-spacing:.2em;color:var(--text-mute);margin-top:2px">AVG</div>
+                </div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright)">${stats.H}</div>
+                  <div style="font-size:10px;letter-spacing:.2em;color:var(--text-mute);margin-top:2px">HITS</div>
+                </div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:22px;color:var(--gold-bright)">${stats.RBI}</div>
+                  <div style="font-size:10px;letter-spacing:.2em;color:var(--text-mute);margin-top:2px">RBI</div>
+                </div>
+              </div>
+            </a>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+  setTimeout(replayHofReveal, 80);
+}
+
+render();
+})();
+</script>
+</body>
+</html>

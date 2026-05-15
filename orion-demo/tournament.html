@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>赛事总览 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('games') --></nav>
+
+<section class="section">
+  <div class="container">
+    <a class="back" href="index.html#games">← 返回比赛列表</a>
+    <div id="tournamentRoot"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(async () => {
+await window.dbReady();
+buildNav('games');
+const params = new URLSearchParams(location.search);
+const tid = params.get('id');
+const root = document.getElementById('tournamentRoot');
+
+if (!tid) {
+  root.innerHTML = '<div class="empty">缺少赛事 ID</div>';
+} else {
+  const t = DB.getTournamentById(tid);
+  if (!t) {
+    root.innerHTML = `<div class="empty">未找到赛事：${tid}</div>`;
+  } else {
+    renderTournament(t);
+  }
+}
+
+function typeIcon(type){
+  return { cup:'🏆', league:'🏅', training:'🏋', friendly:'🤝' }[type] || '📅';
+}
+function typeName(type){
+  return { cup:'杯赛', league:'联赛', training:'训练赛', friendly:'友谊赛' }[type] || type;
+}
+function formatDateOnly(value){
+  if (!value) return '—';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10) || '—';
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+function formatDateRange(start, end){
+  const s = formatDateOnly(start);
+  const e = formatDateOnly(end);
+  if (s === '—' && e === '—') return '—';
+  return `${s} ~ ${e}`;
+}
+function tournamentLocation(t){
+  const explicit = (t.location || '').trim();
+  if (explicit) return explicit;
+  const haystack = `${t.name || ''} ${t.shortName || ''} ${t.description || ''}`;
+  if (/猛虎/.test(haystack)) return '北京市通州区私立树人学校棒球场';
+  if (/奥体|周末常规训练/.test(haystack)) return '北京奥体中心棒垒球场';
+  return '地点待补充';
+}
+
+function renderTournament(t){
+  // Gather games (include aggregate so season-summary tournaments still work)
+  const games = DB.allGames({includeAggregate:true}).filter(g => g.tournamentId === t.id);
+
+  // Accumulate team stats
+  let wins = 0, losses = 0, runsFor = 0, runsAgainst = 0;
+  games.forEach(g => {
+    if (g.isAggregate) return; // skip aggregates for W/L totals
+    const homeIsOrion = DB.isOrionTeam(g.home);
+    const ours = homeIsOrion ? g.homeScore : g.awayScore;
+    const theirs = homeIsOrion ? g.awayScore : g.homeScore;
+    runsFor += ours; runsAgainst += theirs;
+    if (ours > theirs) wins++; else if (ours < theirs) losses++;
+  });
+
+  // Build leaderboard from all batting lines.
+  // Bucket by playerCanonicalKey (alias-aware) — 同一注册球员的所有别名
+  // (eg "江山" + "靳江山") 都归到同一桶；繁简/部首/空白/标点变体也归一。
+  const playerMap = {};
+  games.forEach(g => {
+    (g.batting||[]).forEach(b => {
+      const key = DB.playerCanonicalKey(b.name);
+      if (!key) return;
+      if (!playerMap[key]) {
+        // First occurrence — use registered player's canonical name if it exists,
+        // else the raw name from this row. Avoids "李 嘉琪" leaking as the display name.
+        const reg = DB.getPlayerByName(b.name);
+        const display = reg ? reg.name : b.name;
+        playerMap[key] = { name:display, AB:0,R:0,H:0,RBI:0,BB:0,SO:0,_1B:0,_2B:0,_3B:0,HR:0, gp:0 };
+      }
+      const p = playerMap[key];
+      p.AB+=b.AB; p.R+=b.R; p.H+=b.H; p.RBI+=b.RBI; p.BB+=b.BB; p.SO+=b.SO;
+      p._1B += (b._1B||0); p._2B += (b._2B||0); p._3B += (b._3B||0); p.HR += (b.HR||0);
+      p.gp += (b.gp || 1);
+    });
+  });
+  // Compute rate stats for each
+  const leaderboard = Object.values(playerMap).map(p => {
+    const AVG = p.AB ? p.H/p.AB : 0;
+    const OBP = (p.AB+p.BB) ? (p.H+p.BB)/(p.AB+p.BB) : 0;
+    const tb = (p._1B+p._2B+p._3B+p.HR)>0 ? (p._1B+2*p._2B+3*p._3B+4*p.HR) : p.H*1.5;
+    const SLG = p.AB ? tb/p.AB : 0;
+    const OPS = OBP + SLG;
+    return { ...p, AVG, OBP, SLG, OPS };
+  });
+
+  // Pitchers aggregate — same alias-aware bucketing as batters
+  const pitcherMap = {};
+  games.forEach(g => {
+    (g.pitching||[]).forEach(pi => {
+      const key = DB.playerCanonicalKey(pi.name);
+      if (!key) return;
+      if (!pitcherMap[key]) {
+        const reg = DB.getPlayerByName(pi.name);
+        const display = reg ? reg.name : pi.name;
+        pitcherMap[key] = { name:display, IP:0, H:0, R:0, ER:0, BB:0, SO:0, HR:0, W:0, L:0 };
+      }
+      const p = pitcherMap[key];
+      p.IP += (pi.IP||0); p.H += (pi.H||0); p.R += (pi.R||0); p.ER += (pi.ER||0);
+      p.BB += (pi.BB||0); p.SO += (pi.SO||0); p.HR += (pi.HR||0);
+      if (pi.decision === 'W') p.W++;
+      if (pi.decision === 'L') p.L++;
+    });
+  });
+  const pitchers = Object.values(pitcherMap).map(p => ({
+    ...p,
+    ERA: p.IP ? (p.ER * 9 / p.IP) : 0,
+    WHIP: p.IP ? ((p.BB + p.H) / p.IP) : 0,
+  }));
+
+  // Registered roster (players in pool who appeared) — alias-aware match
+  const rosterKeys = new Set(leaderboard.map(p => DB.playerCanonicalKey(p.name)));
+  const roster = DB.allPlayers().filter(p => rosterKeys.has(DB.canonicalNameKey(p.name)));
+
+  const rec = `${wins} 胜 ${losses} 败`;
+  const diff = runsFor - runsAgainst;
+
+  root.innerHTML = `
+    <!-- Hero -->
+    <div class="tournament-hero">
+      <div class="th-cover"><img src="${t.cover || 'assets/img/logo.jpg'}" alt="" onerror="this.src='assets/img/logo.jpg'"></div>
+      <div class="th-info">
+        <div class="th-type">${typeIcon(t.type)} ${typeName(t.type)} · ${t.season} 赛季</div>
+        <h1 class="th-title">${t.name}</h1>
+        <p class="th-desc">${t.description||''}</p>
+        <div class="th-meta">
+          <span>🗓 ${formatDateRange(t.startDate, t.endDate)}</span>
+          <span>📍 ${tournamentLocation(t)}</span>
+          <span>⚾ ${ t.sport==='softball' ? '慢投垒球' : t.sport==='baseball' ? '棒球' : '棒垒合训' }</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team record cards -->
+    <div class="tournament-stats-row">
+      <div class="ts-card">
+        <div class="ts-label">战绩 Record</div>
+        <div class="ts-val ${wins>losses?'hot':''}">${rec}</div>
+        <div class="ts-sub">${(wins+losses)>0 ? ((wins/(wins+losses))*100).toFixed(1)+'% 胜率' : '—'}</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">得失分</div>
+        <div class="ts-val">${runsFor} : ${runsAgainst}</div>
+        <div class="ts-sub">差 ${diff>0?'+':''}${diff}</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">比赛数</div>
+        <div class="ts-val">${games.filter(g=>!g.isAggregate).length + (games.some(g=>g.isAggregate)?'+':'')}</div>
+        <div class="ts-sub">${games.some(g=>g.isAggregate)?'含赛季合计':'场'}</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">注册球员</div>
+        <div class="ts-val">${roster.length}</div>
+        <div class="ts-sub">球员池关联</div>
+      </div>
+    </div>
+
+    ${games.filter(g=>!g.isAggregate).length > 0 ? `
+    <!-- Match list -->
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">I</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Matches · 比赛场次</div>
+        <h2 class="section-title">每一场都计入战绩</h2>
+        <p class="section-sub">点击任意场次查看 box score、逐局得分、MVP 与高亮回放</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="grid" style="margin-bottom:var(--s-8)">
+      ${games.filter(g=>!g.isAggregate).sort((a,b)=>a.date.localeCompare(b.date)).map(g => {
+        const isOrion = DB.isOrionTeam(g.home);
+        const ours = isOrion ? g.homeScore : g.awayScore;
+        const theirs = isOrion ? g.awayScore : g.homeScore;
+        const opp = isOrion ? g.away : g.home;
+        const win = ours > theirs;
+        const color = win ? 'var(--gold-bright)' : '#ff8a8a';
+        return `<a class="card" href="game-detail.html?id=${g.id}">
+          <div class="card-img"><img src="${g.cover || t.cover || 'assets/img/logo.jpg'}" alt="" onerror="this.src='assets/img/logo.jpg'"></div>
+          <div class="card-body">
+            <span class="card-tag">${g.date}</span>
+            <h3 class="card-title">vs ${opp}</h3>
+            <div class="card-meta">
+              <span style="color:${color};font-weight:600">${win?'W':'L'} ${ours}-${theirs}</span>
+              <span>${isOrion?'主':'客'}场</span>
+            </div>
+          </div>
+        </a>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- Insights · 数据洞察图表 -->
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">II</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Insights · 数据洞察</div>
+        <h2 class="section-title">高阶数据一览</h2>
+        <p class="section-sub">本垒打榜 / 攻防趋势 / 得分分布 — 数据直接来自每场上传的 box score</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="insights-grid" style="margin-bottom:var(--s-8)">
+      <div class="insight-card">
+        <h3 class="insight-title">⚡ 全垒打榜 Top 5</h3>
+        <div class="chart-wrap"><canvas id="hrLeadersChart"></canvas></div>
+      </div>
+      <div class="insight-card">
+        <h3 class="insight-title">📈 攻防趋势（累计得失分）</h3>
+        <div class="chart-wrap"><canvas id="offDefChart"></canvas></div>
+      </div>
+      <div class="insight-card">
+        <h3 class="insight-title">🎯 单场得分分布</h3>
+        <div class="chart-wrap"><canvas id="scoreDistChart"></canvas></div>
+      </div>
+      <div class="insight-card">
+        <h3 class="insight-title">🏆 出场榜 Top 8（按场次）</h3>
+        <div class="chart-wrap"><canvas id="apprChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Batting leaderboard -->
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">III</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Batting · 击球榜</div>
+        <h2 class="section-title">谁在打线最热</h2>
+        <p class="section-sub">点击列头切换排序方向 · ↓ 降序 / ↑ 升序</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="game-log-wrap" style="margin-bottom:48px">
+      <table class="game-log leaderboard" id="battingTable">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th style="text-align:left">球员</th>
+            <th class="sortable" data-key="gp">GP</th>
+            <th class="sortable" data-key="AB">AB</th>
+            <th class="sortable" data-key="AVG">AVG</th>
+            <th class="sortable" data-key="OBP">OBP</th>
+            <th class="sortable" data-key="SLG">SLG</th>
+            <th class="sortable" data-key="OPS">OPS</th>
+            <th class="sortable" data-key="H">H</th>
+            <th class="sortable" data-key="_2B">2B</th>
+            <th class="sortable" data-key="_3B">3B</th>
+            <th class="sortable hr-col" data-key="HR">HR</th>
+            <th class="sortable" data-key="RBI">RBI</th>
+            <th class="sortable" data-key="R">R</th>
+            <th class="sortable" data-key="BB">BB</th>
+            <th class="sortable" data-key="SO">SO</th>
+          </tr>
+        </thead>
+        <tbody id="battingBody"></tbody>
+      </table>
+    </div>
+
+    ${pitchers.length > 0 ? `
+    <!-- Pitching leaderboard -->
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">IV</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Pitching · 投手榜</div>
+        <h2 class="section-title">压制力一览</h2>
+        <p class="section-sub">按 ERA 升序排列 · WHIP / K / BB / 胜败均可参考</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="game-log-wrap" style="margin-bottom:var(--s-8)">
+      <table class="game-log leaderboard">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th style="text-align:left">球员</th>
+            <th>W-L</th>
+            <th>IP</th>
+            <th>ERA</th>
+            <th>WHIP</th>
+            <th>K</th>
+            <th>BB</th>
+            <th>H</th>
+            <th>HR</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pitchers.sort((a,b)=>a.ERA-b.ERA).map((p,i) => {
+            const player = DB.getPlayerByName(p.name);
+            const link = player ? `dashboard.html?player=${encodeURIComponent(p.name)}` : null;
+            const nameCell = link ? `<a href="${link}">${p.name}</a>` : p.name;
+            return `<tr>
+              <td>${i+1}</td>
+              <td style="text-align:left">${nameCell}</td>
+              <td>${p.W}-${p.L}</td>
+              <td>${p.IP.toFixed(1)}</td>
+              <td>${p.ERA.toFixed(2)}</td>
+              <td>${p.WHIP.toFixed(2)}</td>
+              <td>${p.SO}</td>
+              <td>${p.BB}</td>
+              <td>${p.H}</td>
+              <td>${p.HR}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- Roster -->
+    <div class="section-head theatre" style="margin-top:var(--s-8)">
+      <div class="theatre-numeral">V</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Roster · 参赛球员 (${roster.length})</div>
+        <h2 class="section-title">这一程的猎户阵容</h2>
+        <p class="section-sub">点击任意球员卡进入个人面板</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+    <div class="players-grid" style="margin-bottom:var(--s-7)">
+      ${roster.map(p => {
+        const pKey = DB.canonicalNameKey(p.name);
+        const stats = leaderboard.find(l => DB.playerCanonicalKey(l.name) === pKey) || {};
+        const avg = stats.AB ? ('.'+(stats.H*1000/stats.AB|0).toString().padStart(3,'0')) : '—';
+        return `<a class="player-card" href="dashboard.html?player=${encodeURIComponent(p.name)}">
+          <img class="pc-photo" src="${DB.playerPhotoUrl(p)}" alt="${p.name}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-meta"><span class="num">#${p.number||'-'}</span><span class="sep">·</span>${p.position||'—'}</div>
+          <div class="pc-stats">
+            <div><div class="pc-stat-v">${avg}</div><div class="pc-stat-k">AVG</div></div>
+            <div><div class="pc-stat-v">${stats.H||0}</div><div class="pc-stat-k">H</div></div>
+            <div><div class="pc-stat-v">${stats.RBI||0}</div><div class="pc-stat-k">RBI</div></div>
+          </div>
+        </a>`;
+      }).join('')}
+    </div>
+  `;
+
+  // Wire leaderboard sort (clickable headers; same UX as game-detail stats-table)
+  const battingTable = document.getElementById('battingTable');
+  const lbBody = document.getElementById('battingBody');
+  const lbState = { sortKey: 'OPS', sortDir: 'desc' };
+  function renderLB(){
+    const { sortKey, sortDir } = lbState;
+    const sorted = [...leaderboard].sort((a,b) => {
+      const av = +a[sortKey] || 0, bv = +b[sortKey] || 0;
+      return sortDir === 'asc' ? av - bv : bv - av;
+    });
+    lbBody.innerHTML = sorted.map((p,i) => {
+      const player = DB.getPlayerByName(p.name);
+      const link = player ? `dashboard.html?player=${encodeURIComponent(p.name)}` : null;
+      const nameCell = link ? `<a href="${link}">${p.name}</a>` : p.name;
+      const fmt = v => v.toFixed(3).replace(/^0/,'');
+      const hrCell = p.HR > 0
+        ? `<td class="hr-cell hot-hr">⚡ ${p.HR}</td>`
+        : `<td class="hr-cell">0</td>`;
+      return `<tr>
+        <td class="${i<3?'hot':''}">${i+1}</td>
+        <td style="text-align:left">${nameCell}</td>
+        <td>${p.gp}</td>
+        <td>${p.AB}</td>
+        <td>${fmt(p.AVG)}</td>
+        <td>${fmt(p.OBP)}</td>
+        <td>${fmt(p.SLG)}</td>
+        <td class="${sortKey==='OPS'?'hot':''}">${fmt(p.OPS)}</td>
+        <td>${p.H}</td>
+        <td>${p._2B}</td>
+        <td>${p._3B}</td>
+        ${hrCell}
+        <td>${p.RBI}</td>
+        <td>${p.R}</td>
+        <td>${p.BB}</td>
+        <td>${p.SO}</td>
+      </tr>`;
+    }).join('');
+    // Refresh sort indicators on headers
+    battingTable.querySelectorAll('th.sortable').forEach(th => {
+      const isActive = th.dataset.key === sortKey;
+      th.classList.toggle('active', isActive);
+      th.classList.toggle('asc', isActive && sortDir === 'asc');
+    });
+  }
+  const lowerBetterCols = new Set(['SO']); // SO 越低越好（暂仅 SO 一项）
+  battingTable.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (lbState.sortKey === key) {
+        lbState.sortDir = lbState.sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        lbState.sortKey = key;
+        lbState.sortDir = lowerBetterCols.has(key) ? 'asc' : 'desc';
+      }
+      renderLB();
+    });
+  });
+  renderLB();
+
+  // -------- 高阶数据图表 --------
+  drawInsightCharts({ games, leaderboard });
+}
+
+function drawInsightCharts({ games, leaderboard }){
+  if (typeof Chart === 'undefined') return;
+  const realGames = games.filter(g => !g.isAggregate).sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  // 颜色
+  const GOLD = '#E4C77A';
+  const BLUE = '#2E6BFF';
+  const RED  = '#ff8a8a';
+  const GREEN = '#4ade80';
+  const baseOpts = (overrides={}) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color:'#cfd6e8', font:{size:11} }}, tooltip:{} },
+    scales: {
+      x: { ticks: { color:'#9AA9C4', font:{size:11} }, grid: { color:'rgba(255,255,255,.04)' } },
+      y: { ticks: { color:'#9AA9C4', font:{size:11} }, grid: { color:'rgba(255,255,255,.04)' }, beginAtZero: true }
+    },
+    ...overrides,
+  });
+
+  // ① HR Top 5（水平柱 · 金色发光）
+  const hrTop = [...leaderboard].filter(p => p.HR > 0).sort((a,b) => b.HR - a.HR).slice(0, 5);
+  const hrCanvas = document.getElementById('hrLeadersChart');
+  if (hrCanvas) {
+    if (hrTop.length === 0) {
+      hrCanvas.parentElement.innerHTML = '<div class="chart-empty">本赛事暂无全垒打记录</div>';
+    } else {
+      new Chart(hrCanvas, {
+        type: 'bar',
+        data: {
+          labels: hrTop.map(p => p.name),
+          datasets: [{
+            label: 'HR',
+            data: hrTop.map(p => p.HR),
+            backgroundColor: 'rgba(228,199,122,.7)',
+            borderColor: GOLD,
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: baseOpts({
+          indexAxis: 'y',
+          plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx => ` ${ctx.parsed.x} HR`}} },
+        })
+      });
+    }
+  }
+
+  // ② 攻防趋势（累计 R / RA · 双线）
+  let cumFor = 0, cumAgainst = 0;
+  const labels = [], offSeries = [], defSeries = [];
+  realGames.forEach(g => {
+    const homeIsOrion = DB.isOrionTeam(g.home);
+    const ours = homeIsOrion ? g.homeScore : g.awayScore;
+    const theirs = homeIsOrion ? g.awayScore : g.homeScore;
+    const opp = homeIsOrion ? g.away : g.home;
+    cumFor += ours; cumAgainst += theirs;
+    labels.push(`${g.date.slice(5)} ${opp.slice(0,4)}`);
+    offSeries.push(cumFor);
+    defSeries.push(cumAgainst);
+  });
+  const offDefCanvas = document.getElementById('offDefChart');
+  if (offDefCanvas) {
+    if (realGames.length === 0) {
+      offDefCanvas.parentElement.innerHTML = '<div class="chart-empty">还没有比赛数据</div>';
+    } else {
+      new Chart(offDefCanvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '累计得分', data: offSeries, borderColor: GOLD, backgroundColor: 'rgba(228,199,122,.15)', fill: true, tension: .25, pointRadius: 3 },
+            { label: '累计失分', data: defSeries, borderColor: RED,  backgroundColor: 'rgba(255,138,138,.10)', fill: true, tension: .25, pointRadius: 3 },
+          ]
+        },
+        options: baseOpts({
+          interaction: { intersect: false, mode: 'index' },
+        })
+      });
+    }
+  }
+
+  // ③ 单场得分分布（柱 · 双队对比）
+  const scoreDistCanvas = document.getElementById('scoreDistChart');
+  if (scoreDistCanvas) {
+    if (realGames.length === 0) {
+      scoreDistCanvas.parentElement.innerHTML = '<div class="chart-empty">还没有比赛数据</div>';
+    } else {
+      const oursArr = [], theirsArr = [], lbls = [];
+      realGames.forEach(g => {
+        const homeIsOrion = DB.isOrionTeam(g.home);
+        const ours = homeIsOrion ? g.homeScore : g.awayScore;
+        const theirs = homeIsOrion ? g.awayScore : g.homeScore;
+        const opp = homeIsOrion ? g.away : g.home;
+        lbls.push(`vs ${opp.slice(0,4)}`);
+        oursArr.push(ours); theirsArr.push(theirs);
+      });
+      new Chart(scoreDistCanvas, {
+        type: 'bar',
+        data: {
+          labels: lbls,
+          datasets: [
+            { label: '猎户座', data: oursArr,   backgroundColor: 'rgba(46,107,255,.7)',  borderColor: BLUE, borderWidth: 1, borderRadius: 4 },
+            { label: '对手',   data: theirsArr, backgroundColor: 'rgba(255,138,138,.55)', borderColor: RED,  borderWidth: 1, borderRadius: 4 },
+          ]
+        },
+        options: baseOpts({})
+      });
+    }
+  }
+
+  // ④ 出场榜 Top 8（按 gp）
+  const apprTop = [...leaderboard].sort((a,b) => b.gp - a.gp).slice(0, 8);
+  const apprCanvas = document.getElementById('apprChart');
+  if (apprCanvas) {
+    if (apprTop.length === 0) {
+      apprCanvas.parentElement.innerHTML = '<div class="chart-empty">还没有球员数据</div>';
+    } else {
+      new Chart(apprCanvas, {
+        type: 'bar',
+        data: {
+          labels: apprTop.map(p => p.name),
+          datasets: [{
+            label: '出场场次',
+            data: apprTop.map(p => p.gp),
+            backgroundColor: 'rgba(46,107,255,.65)',
+            borderColor: BLUE,
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: baseOpts({
+          indexAxis: 'y',
+          plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx => ` ${ctx.parsed.x} 场`}} },
+        })
+      });
+    }
+  }
+}
+})();
+</script>
+</body>
+</html>

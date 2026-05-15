@@ -1,0 +1,28 @@
+{
+  "name": "orion-demo",
+  "version": "1.0.0",
+  "description": "北京猎户座棒垒球俱乐部官网（静态站，由 Express 托管）",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "initdb": "node scripts/initdb.js",
+    "migrate": "node scripts/migrate.js",
+    "test:gamechanger": "node scripts/gamechanger-pdf-regression.js",
+    "deploy": "wxcloud run:deploy -e prod-d5gtkxdyu7263e95b -s express-knlw --noConfirm --remark \"orion-demo update\"",
+    "deploy:verify": "node scripts/verify-wxcloud-deploy.js",
+    "deploy:detach": "wxcloud run:deploy -e prod-d5gtkxdyu7263e95b -s express-knlw --noConfirm --detach"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.1",
+    "cos-nodejs-sdk-v5": "^2.15.4",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^2.1.1",
+    "mysql2": "^3.11.0",
+    "three": "^0.184.0"
+  }
+}

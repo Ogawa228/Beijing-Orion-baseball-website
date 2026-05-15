@@ -1,0 +1,8 @@
+{
+  "type": "run",
+  "server": {
+    "buildDir": ".",
+    "port": 80,
+    "versionRemark": "orion-demo static site via express"
+  }
+}

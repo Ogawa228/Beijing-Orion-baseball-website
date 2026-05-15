@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>比赛 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/db.js?v=17"></script>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js --></nav>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head theatre">
+      <div class="theatre-numeral">I</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Games · 比赛</div>
+        <h2 class="section-title">每一球都在路上</h2>
+        <p class="section-sub">按项目与赛季浏览 · 点击赛事卡片查看完整战绩与 box score · 数据管理员每周更新。</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+
+    <div class="tabs" data-tab-group="sport">
+      <button class="tab" data-tab="baseball">棒球 · Baseball</button>
+      <button class="tab active" data-tab="softball">慢投垒球 · Slow-pitch</button>
+    </div>
+
+    <div data-panel-group="sport">
+      <div data-panel="baseball" style="display:none">
+        <div class="grid" id="baseballGames"></div>
+      </div>
+      <div data-panel="softball">
+        <div class="grid" id="softballGames"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club</div>
+</footer>
+
+<script src="assets/js/auth.js?v=14"></script>
+<script src="assets/js/main.js?v=13"></script>
+<script>
+buildNav('games');
+
+(function(){
+  function typeIcon(type){ return {cup:'🏆',league:'🏅',training:'🏋',friendly:'🤝'}[type]||'📅'; }
+  function typeName(type){ return {cup:'CUP',league:'LEAGUE',training:'TRAINING',friendly:'FRIENDLY'}[type]||type; }
+  const isOrion = team => DB.isOrionTeam(team);
+
+  function renderTournaments(sport, hostId){
+    const host = document.getElementById(hostId);
+    const tournaments = DB.allTournaments()
+      .filter(t => (sport === 'softball' ? t.sport === 'softball' : t.sport === 'baseball') && t.type !== 'training')
+      .sort((a,b) => (b.startDate||'').localeCompare(a.startDate||''));
+
+    if (tournaments.length === 0) {
+      host.innerHTML = '<div class="empty">该项目暂无赛事，管理员可在后台创建</div>';
+      return;
+    }
+
+    host.innerHTML = tournaments.map(t => {
+      const games = DB.allGames({includeAggregate:true}).filter(g => g.tournamentId === t.id);
+      let wins = 0, losses = 0, gp = 0;
+      games.forEach(g => {
+        if (g.isAggregate) return;
+        gp++;
+        const our = isOrion(g.home) ? g.homeScore : g.awayScore;
+        const their = isOrion(g.home) ? g.awayScore : g.homeScore;
+        if (our > their) wins++; else if (our < their) losses++;
+      });
+      const aggGames = games.filter(g => g.isAggregate);
+      let aggGp = 0;
+      aggGames.forEach(g => {
+        const max = (g.batting||[]).reduce((m,b) => Math.max(m, b.gp||1), 0);
+        aggGp = Math.max(aggGp, max);
+      });
+      const totalGp = gp + aggGp;
+      const cover = t.cover || 'assets/img/group/1fd55252ed2121c4246c8750cf732edf.JPG';
+      const recordText = gp > 0 ? `${wins} 胜 ${losses} 败` : (aggGp > 0 ? '赛季合计' : '即将开始');
+      const recordColor = wins > losses ? 'var(--gold-bright)' : (wins < losses ? '#ff8a8a' : 'var(--blue-300)');
+
+      return `<a class="card tournament-card" href="tournament.html?id=${t.id}">
+        <div class="card-img"><img src="${cover}" alt="" onerror="this.src='assets/img/logo.jpg'"></div>
+        <div class="card-body">
+          <span class="card-tag">${typeIcon(t.type)} ${typeName(t.type)} · ${t.season}</span>
+          <h3 class="card-title">${t.name}</h3>
+          <p style="color:var(--text-dim);font-size:13px;margin-top:8px;line-height:1.6">${(t.description||'').slice(0,80)}${t.description && t.description.length>80?'…':''}</p>
+          <div class="card-meta">
+            <span style="color:${recordColor};font-weight:600">${recordText}</span>
+            <span>${totalGp > 0 ? totalGp+' 场' : '—'}</span>
+          </div>
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  (async () => {
+    await window.dbReady();
+    renderTournaments('softball', 'softballGames');
+    renderTournaments('baseball', 'baseballGames');
+  })();
+})();
+</script>
+</body>
+</html>

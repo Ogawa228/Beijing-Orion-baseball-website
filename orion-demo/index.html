@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>北京猎户座 · Beijing Orion</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=21">
+<script src="assets/js/db.js?v=17"></script>
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js buildNav('home') --></nav>
+
+<!-- =================== HERO =================== -->
+<header class="hero" id="home">
+  <!-- Layer 1 (deepest): moon + earthrise photograph -->
+  <div class="hero-moon" aria-hidden="true"></div>
+  <!-- Layer 2: 4 rows of flowing group photos, blended onto the moon -->
+  <div class="hero-bg" id="heroBg"></div>
+  <!-- Layer 3: starfield SVG with Orion constellation anchors -->
+  <svg class="hero-stars" id="heroStars" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1000 700"></svg>
+  <!-- Layer 4: foreground content -->
+  <img class="hero-logo" src="assets/img/logo.jpg" alt="Beijing Orion">
+  <h1 class="hero-name">北京猎户座</h1>
+  <div class="hero-en">B E I J I N G &nbsp; O R I O N &nbsp; B A S E B A L L</div>
+  <p class="hero-tag">以星辰之名，奔赴每一场比赛。棒球 · 慢投垒球 · 热爱不止。</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" data-target="300" data-suffix="+">0</div>
+      <div class="stat-label">Members · 队员总数</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <div class="stat-num" data-target="12" data-suffix="+">0</div>
+      <div class="stat-label">Championships · 冠军</div>
+    </div>
+  </div>
+</header>
+
+<!-- =================== EDITORIAL · 报刊式卷首 =================== -->
+<section class="section" id="about" style="padding-top:var(--s-9);padding-bottom:var(--s-9)">
+  <div class="container">
+    <article class="editorial reveal">
+      <div class="ed-masthead">
+        <span class="ed-mast-l">THE&nbsp;ORION&nbsp;CHRONICLE</span>
+        <span class="ed-mast-dot"></span>
+        <span class="ed-mast-r">EST. SEP&nbsp;2013 · VOL.XII</span>
+      </div>
+
+      <h2 class="ed-headline">十二年，一群人，一个名字<br><span class="ed-headline-sub">Twelve Years, One Constellation</span></h2>
+
+      <p class="ed-lede">
+        <span class="ed-drop">北</span>京猎户座棒球俱乐部成立于 <em>2013 年 9 月</em>，最初由几名棒球爱好者一起组建至今。名字出自秋季夜空中最耀眼的「猎户」星座 — 那时候没有想到，这支因为热爱凑到一起的队伍，会一路走到第十二年。
+      </p>
+
+      <div class="ed-body">
+        <p>如今球队已经长到 <em>300+ 队员</em>，下设 <em>猎户座一队、二队、女垒队、慢垒队</em> 共四支阵容，常年征战各类赛事。从主场奥体的清晨训练到全国邀请赛的客场之路，每一场球都不缺人接力。</p>
+        <p>球队的日常运转由领队、队长、3 名助教、2 名球队经理、3 名数据组以及 1 名物资管理员协同支撑 — 训练有人盯、比赛有人记、装备有人罩；从挥棒到 BoxScore，从签到到积分榜，背后都有一双手把它撑起来。</p>
+        <p>除了打球，我们也常组织线下聚餐、月度生日会、露营 BBQ、桌游、密室、团建 — 想做的不止一支球队，更想做一群在场内场外都愿意彼此奔赴的人。</p>
+        <p>如果你也想试试这个圈子，无论你打过多少年球、能不能挥到底 — 我们留了一个位置给你。</p>
+      </div>
+
+      <blockquote class="ed-quote">
+        <span class="ed-quote-mark">"</span>
+        <p>以星辰之名，把队友过成家人。</p>
+        <span class="ed-quote-attr">— 北京猎户座 · 队训</span>
+      </blockquote>
+    </article>
+  </div>
+</section>
+
+<!-- =================== QUICK NAV =================== -->
+<section class="section" id="quicknav" style="padding-bottom:var(--s-9)">
+  <div class="container">
+    <div class="section-head theatre reveal">
+      <div class="theatre-numeral">I</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Explore · 探索猎户座</div>
+        <h2 class="section-title">了解更多<span class="en">Discover the team</span></h2>
+        <p class="section-sub">活动 · 比赛 · 球员 · 积分 — 点击下方卡片深入了解</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+
+    <div class="grid quick-links">
+      <a class="card quick-card reveal" href="events.html">
+        <div class="quick-icon">🎉</div>
+        <h3 class="card-title">活动</h3>
+        <p style="color:var(--text-dim);font-size:14px">训练 · 团建 · 年会 · 所有让我们成为一支队伍的时刻</p>
+      </a>
+      <a class="card quick-card reveal" href="games.html">
+        <div class="quick-icon">⚾</div>
+        <h3 class="card-title">比赛</h3>
+        <p style="color:var(--text-dim);font-size:14px">棒球 · 慢投垒球 · 赛季战绩 · Box Score</p>
+      </a>
+      <a class="card quick-card reveal" href="players.html">
+        <div class="quick-icon">👤</div>
+        <h3 class="card-title">球员</h3>
+        <p style="color:var(--text-dim);font-size:14px">认识猎户座的每一位队员</p>
+      </a>
+      <a class="card quick-card reveal" href="ranking.html">
+        <div class="quick-icon">🏆</div>
+        <h3 class="card-title">积分榜</h3>
+        <p style="color:var(--text-dim);font-size:14px">出场、表现、奖项自动汇总 · 抽奖将基于积分排名</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =================== POINTS RULES (collapsible) =================== -->
+<section class="section" id="points-rules" style="padding-bottom:var(--s-9)">
+  <div class="container">
+    <details class="points-rules-details">
+      <summary class="points-rules-summary section-head theatre reveal">
+        <div class="theatre-numeral">II</div>
+        <div class="theatre-main">
+          <div class="eyebrow">Rules · 积分规则</div>
+          <h2 class="section-title">怎么算积分？<span class="en">How points are scored</span></h2>
+          <p class="section-sub">点击展开 / 收起 完整公式 — 一切积分都按此公式自动累计</p>
+        </div>
+        <div class="theatre-rule"></div>
+        <span class="rules-toggle-arrow">▾</span>
+      </summary>
+
+      <div class="points-rules-body">
+        <div class="points-rules-grid">
+          <div class="rules-card">
+            <h3 class="rules-card-title">⚾ 出场积分（基础）</h3>
+            <ul class="rules-list">
+              <li><span>参加训练（签到 1 次）</span><b class="pts-pos">+5</b></li>
+              <li><span>参加友谊赛 / 训练赛（出场 1 场）</span><b class="pts-pos">+10</b></li>
+              <li><span>参加联赛 / 杯赛（出场 1 场）</span><b class="pts-pos">+15</b></li>
+              <li><span>参加活动（聚会 / 团建 / 观赛）</span><b class="pts-pos">+5</b></li>
+            </ul>
+          </div>
+
+          <div class="rules-card">
+            <h3 class="rules-card-title">🎯 比赛表现（在出场基础上叠加）</h3>
+            <ul class="rules-list">
+              <li><span>单场 MVP</span><b class="pts-pos">+10</b></li>
+              <li><span>全垒打 HR</span><b class="pts-pos">+10 / 支</b></li>
+              <li><span>三垒安打 3B</span><b class="pts-pos">+3 / 支</b></li>
+              <li><span>二垒安打 2B</span><b class="pts-pos">+2 / 支</b></li>
+              <li><span>一垒安打 1B</span><b class="pts-pos">+1 / 支</b></li>
+              <li><span>打点 RBI</span><b class="pts-pos">+2 / 分</b></li>
+              <li><span>三振 SO（投手）</span><b class="pts-pos">+3 / 次</b></li>
+              <li><span>保送 BB（投手）</span><b class="pts-neg">−3 / 次</b></li>
+              <li><span>失误 E</span><b class="pts-neg">−3 / 次（GameChanger 自动识别）</b></li>
+            </ul>
+          </div>
+
+          <div class="rules-card">
+            <h3 class="rules-card-title">🏆 赛季奖项</h3>
+            <ul class="rules-list">
+              <li><span>赛季 MVP</span><b class="pts-pos">+100</b></li>
+              <li><span>金手套</span><b class="pts-pos">+50</b></li>
+              <li><span>银棒奖</span><b class="pts-pos">+50</b></li>
+              <li><span>入选名人堂</span><b class="pts-pos">+200（一次性）</b></li>
+            </ul>
+          </div>
+
+          <div class="rules-card rules-card-note">
+            <h3 class="rules-card-title">📐 计算原则</h3>
+            <ul class="rules-list rules-list-note">
+              <li>· <b>棒球比赛</b>按 1B/2B/3B/HR 分级计算（GameChanger 数据支持）</li>
+              <li>· <b>慢投垒球</b>同样按 1B/2B/3B/HR 分级计算（GameChanger footer 支持；缺失时才退回 H×+1）</li>
+              <li>· <b>借调规则</b>：借给对手队的场次不计入本人积分</li>
+              <li>· <b>失误 E</b>：GameChanger pitching footer 可提供个人 E，系统自动回填；识别缺失时由管理员补录 −3</li>
+              <li>· <b>抽奖</b>：积分用于后续抽奖排序（具体奖品另行公告）</li>
+            </ul>
+            <a class="btn" style="margin-top:18px" href="ranking.html">🏆 查看完整积分榜 →</a>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<style>
+.points-rules-details {
+  background: linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px 32px;
+  transition: all .25s var(--ease);
+}
+.points-rules-details[open] {
+  border-color: rgba(228,199,122,.3);
+  box-shadow: 0 12px 48px rgba(201,169,97,.08);
+}
+.points-rules-summary {
+  cursor: pointer; list-style: none; position: relative;
+}
+.points-rules-summary::-webkit-details-marker { display: none; }
+.rules-toggle-arrow {
+  position: absolute;
+  top: 24px; right: 4px;
+  font-size: 26px; color: var(--gold-bright);
+  transition: transform .25s var(--ease);
+  z-index: 2;
+}
+.points-rules-details[open] .rules-toggle-arrow { transform: rotate(180deg); }
+.points-rules-body {
+  margin-top: 28px; padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.points-rules-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.rules-card {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 18px 20px;
+}
+.rules-card-title {
+  font-family: var(--font-display); font-size: 16px;
+  margin: 0 0 12px; color: var(--gold-bright);
+}
+.rules-list { list-style: none; margin: 0; padding: 0; }
+.rules-list li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13px;
+}
+.rules-list li:last-child { border-bottom: none; }
+.rules-list span { color: var(--text); }
+.pts-pos { color: #4ade80; font-family: var(--font-display); font-size: 14px; }
+.pts-neg { color: #ff8a8a; font-family: var(--font-display); font-size: 14px; }
+.rules-card-note { background: rgba(228,199,122,.06); border-color: rgba(228,199,122,.25); }
+.rules-list-note li { display: block; color: var(--text-dim); font-size: 12px; line-height:1.6; padding: 4px 0; }
+.rules-list-note b { color: var(--gold-bright); font-weight: 500; }
+</style>
+
+<!-- =================== ROSTER · 走近这群人 =================== -->
+<section class="section" id="team" style="padding-bottom:var(--s-9)">
+  <div class="container">
+    <div class="section-head theatre reveal">
+      <div class="theatre-numeral">III</div>
+      <div class="theatre-main">
+        <div class="eyebrow">Roster · 走近这群人</div>
+        <h2 class="section-title">认识这群人<span class="en">Meet the team, find the way in</span></h2>
+        <p class="section-sub">六位负责人 · 四支阵容 · 球队信息 · 一起打球</p>
+      </div>
+      <div class="theatre-rule"></div>
+    </div>
+
+    <!-- ---------- 球队架构 · The People ---------- -->
+    <div class="about-people-wrap reveal">
+      <div class="about-sub">
+        <div class="about-sub-eyebrow">⚾ The People · 球队架构</div>
+        <div class="about-sub-rule"></div>
+      </div>
+      <div class="contact-people about-people" id="aboutPeople"></div>
+    </div>
+
+    <!-- ---------- 旗下队伍 + 球队信息 ---------- -->
+    <div class="about-cards">
+      <div class="about-card reveal">
+        <h3 class="about-card-title">⚾ 旗下队伍</h3>
+        <ul class="about-list teams">
+          <li><span>猎户座一队</span><b class="team-tag baseball">棒球</b></li>
+          <li><span>猎户座二队</span><b class="team-tag baseball">棒球</b></li>
+          <li><span>猎户座女垒队</span><b class="team-tag softball">女垒</b></li>
+          <li><span>猎户座慢垒队</span><b class="team-tag slowpitch">慢投垒球</b></li>
+        </ul>
+      </div>
+
+      <div class="about-card reveal">
+        <h3 class="about-card-title">📡 球队信息</h3>
+        <div class="info-list compact">
+          <div class="info-item">
+            <div class="info-icon">📍</div>
+            <div>
+              <div class="info-label">Home Field · 主场</div>
+              <div class="info-val">北京 · 奥体中心棒垒球场</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">🗓</div>
+            <div>
+              <div class="info-label">Training · 训练</div>
+              <div class="info-val">每周三、周五、周日 20:00 – 22:00（具体看群）</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">⭐</div>
+            <div>
+              <div class="info-label">Founded · 成立于</div>
+              <div class="info-val">2013 年 9 月</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">📕</div>
+            <div>
+              <div class="info-label">官方小红书</div>
+              <div class="info-val">@北京猎户座棒垒球俱乐部</div>
+            </div>
+          </div>
+          <div class="info-item" id="contact">
+            <div class="info-icon">✉</div>
+            <div>
+              <div class="info-label">Email · 邮箱</div>
+              <div class="info-val"><a class="mail-link" href="mailto:357188292@qq.com">357188292@qq.com</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- 球队文化 chips ---------- -->
+    <div class="about-vibes reveal">
+      <div class="vibes-eyebrow">球队文化 · How we hang out</div>
+      <div class="vibes-row">
+        <span class="vibe-chip">🍽 聚餐</span>
+        <span class="vibe-chip">🎂 月度生日会</span>
+        <span class="vibe-chip">🏕 露营 BBQ</span>
+        <span class="vibe-chip">🎲 桌游</span>
+        <span class="vibe-chip">🔐 密室</span>
+        <span class="vibe-chip">🚀 团建</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* ----- Editorial 报刊式简介 ----- */
+.editorial {
+  position: relative;
+  margin: 0 auto;
+  max-width: 920px;
+  padding: var(--s-7) 0 var(--s-6);
+  border-top: 1px solid rgba(228,199,122,.22);
+  border-bottom: 1px solid rgba(228,199,122,.22);
+  scroll-margin-top: 80px;
+}
+.editorial::before, .editorial::after {
+  content: '✦'; position: absolute; left: 50%; transform: translateX(-50%);
+  color: var(--gold-bright); font-size: 12px;
+  background: var(--navy-950); padding: 0 10px;
+}
+.editorial::before { top: -8px; }
+.editorial::after  { bottom: -8px; }
+
+.ed-masthead {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px;
+  font-size: 11px; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: var(--s-5);
+}
+.ed-mast-l, .ed-mast-r {
+  font-family: var(--font-display);
+  color: var(--gold-bright);
+}
+.ed-mast-dot {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+}
+
+.ed-headline {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0 0 var(--s-6);
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.ed-headline-sub {
+  display: block;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 400;
+  color: var(--gold);
+  margin-top: 8px;
+  letter-spacing: .04em;
+}
+
+.ed-lede {
+  font-family: var(--font-display);
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.85;
+  text-align: justify;
+  margin: 0 0 var(--s-6);
+  color: var(--text);
+}
+.ed-lede em {
+  font-style: normal;
+  color: var(--gold-bright);
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.ed-drop {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: .85;
+  float: left;
+  margin: 6px 14px -2px 0;
+  padding: 4px 14px 0 0;
+  color: var(--gold-bright);
+  font-weight: 700;
+  border-right: 1px solid rgba(228,199,122,.3);
+}
+
+.ed-body {
+  column-count: 2;
+  column-gap: 40px;
+  column-rule: 1px dashed rgba(228,199,122,.18);
+}
+.ed-body p {
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  line-height: 2;
+  color: var(--text-dim);
+  text-align: justify;
+  margin: 0 0 14px;
+  text-indent: 2em;
+  break-inside: avoid-column;
+}
+.ed-body p:last-child { margin-bottom: 0; }
+.ed-body em {
+  font-style: normal;
+  color: var(--gold-bright);
+  font-weight: 500;
+}
+
+.ed-quote {
+  position: relative;
+  margin: var(--s-7) auto 0;
+  padding: var(--s-5) var(--s-6);
+  max-width: 720px;
+  text-align: center;
+  border-top: 1px solid rgba(228,199,122,.22);
+  border-bottom: 1px solid rgba(228,199,122,.22);
+}
+.ed-quote-mark {
+  position: absolute; top: -8px; left: 32px;
+  font-family: var(--font-display);
+  font-size: 70px; line-height: 1;
+  color: var(--gold); opacity: .5;
+}
+.ed-quote p {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 600;
+  color: var(--gold-bright);
+  margin: 0 0 8px;
+  letter-spacing: .1em;
+  line-height: 1.6;
+}
+.ed-quote-attr {
+  font-size: 11px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+@media (max-width: 720px) {
+  .editorial { padding: var(--s-6) 0 var(--s-5); }
+  .ed-masthead { gap: 10px; font-size: 9.5px; flex-wrap: wrap; }
+  .ed-drop { font-size: 56px; margin: 4px 12px -2px 0; padding-right: 11px; }
+  .ed-lede { font-size: 16.5px; line-height: 1.85; }
+  .ed-body { column-count: 1; }
+  .ed-body p { font-size: 14.5px; line-height: 1.9; }
+  .ed-quote { padding: var(--s-5) var(--s-4); }
+  .ed-quote p { font-size: 17px; letter-spacing: .06em; }
+  .ed-quote-mark { font-size: 50px; left: 18px; }
+}
+
+/* ----- 球队架构 sub-head + people grid ----- */
+.about-people-wrap { margin-top: var(--s-8); }
+.about-sub {
+  display: flex; align-items: center; gap: var(--s-4);
+  margin-bottom: var(--s-5);
+}
+.about-sub-eyebrow {
+  font-size: 12px; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--gold-bright);
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.about-sub-rule {
+  flex: 1; height: 1px; background: linear-gradient(90deg, rgba(228,199,122,.4), transparent);
+}
+.about-people {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4) !important;
+  flex-direction: unset !important;
+}
+@media (max-width: 900px) { .about-people { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .about-people { grid-template-columns: 1fr; } }
+.about-people .contact-person {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line);
+  transition: all .25s var(--ease);
+}
+.about-people .contact-person:hover {
+  border-color: rgba(46,107,255,.3);
+  background: rgba(46,107,255,.04);
+  transform: translateY(-2px);
+}
+.about-people .cp-avatar-link {
+  display: block; line-height: 0;
+  transition: transform .2s var(--ease);
+}
+.about-people .cp-avatar-link:hover { transform: scale(1.04); }
+.about-people .cp-avatar-link .cp-avatar { cursor: pointer; }
+.about-people .cp-role {
+  display: block; margin-top: 4px;
+  font-size: 11px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--text-mute);
+  font-weight: 400;
+}
+
+/* ----- 旗下队伍 + 球队信息 ----- */
+.about-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: var(--s-7);
+}
+@media (max-width: 720px) {
+  .about-cards { grid-template-columns: 1fr; }
+}
+.about-card {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 22px 26px;
+  transition: all .25s var(--ease);
+}
+.about-card:hover {
+  border-color: rgba(228,199,122,.25);
+  background: rgba(228,199,122,.03);
+}
+.about-card-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0 0 14px;
+  color: var(--gold-bright);
+}
+.about-list { list-style: none; margin: 0; padding: 0; }
+.about-list li {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 14px;
+}
+.about-list li:last-child { border-bottom: none; }
+.about-list span { color: var(--text); }
+.about-list .team-tag {
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: .08em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.about-list .team-tag.baseball  { color: var(--blue-400); background: rgba(46,107,255,.12); border: 1px solid rgba(46,107,255,.3); }
+.about-list .team-tag.softball  { color: #ff9eb1;        background: rgba(255,158,177,.10); border: 1px solid rgba(255,158,177,.3); }
+.about-list .team-tag.slowpitch { color: #4ade80;        background: rgba(74,222,128,.10); border: 1px solid rgba(74,222,128,.3); }
+
+.info-list.compact { margin-top: 0; gap: var(--s-3); }
+.info-list.compact .info-item { padding: 4px 0; }
+.info-list.compact .info-icon { width: 36px; height: 36px; font-size: 16px; }
+.info-list.compact .info-val { font-size: 14px; }
+.mail-link {
+  color: var(--gold-bright);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(228,199,122,.4);
+  transition: all .2s var(--ease);
+}
+.mail-link:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* ----- 球队文化 chips ----- */
+.about-vibes {
+  margin-top: var(--s-7);
+  text-align: center;
+  padding: 22px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, rgba(228,199,122,.04), transparent);
+}
+.vibes-eyebrow {
+  font-size: 11px; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--gold-bright);
+  margin-bottom: 14px;
+}
+.vibes-row {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 10px;
+}
+.vibe-chip {
+  display: inline-flex; align-items: center;
+  padding: 7px 14px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px; color: var(--text);
+  transition: all .2s var(--ease);
+}
+.vibe-chip:hover {
+  border-color: rgba(228,199,122,.4);
+  background: rgba(228,199,122,.06);
+  transform: translateY(-1px);
+}
+
+#contact { scroll-margin-top: 80px; }
+</style>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club · 以星辰之名</div>
+</footer>
+
+<!-- Auth modal is auto-injected by auth.js on every page -->
+<script src="assets/js/auth.js?v=14"></script>
+<script>
+buildNav('home');
+
+// Render about-section people cards (cp-avatar with link to dashboard)
+(async () => {
+  await window.dbReady();
+  const host = document.getElementById('aboutPeople');
+  if (!host) return;
+  const people = [
+    { name:'曹山',   role:'队长 · CAPTAIN',     initial:'曹', handles:[{type:'wx',v:'qwecaoshan'},{type:'xhs',v:'@山子贼拉酷'}] },
+    { name:'李斯然', role:'队长 · CAPTAIN',     initial:'李', handles:[{type:'wx',v:'Alan__1110'}] },
+    { name:'黄强',   role:'队长 · CAPTAIN',     initial:'黄', handles:[{type:'wx',v:'Deco_E'}] },
+    { name:'董立彬', role:'数据组 · DATA',      initial:'董', handles:[] },
+    { name:'靳江山', role:'数据组 · DATA',      initial:'江', handles:[] },
+    { name:'杰哥',   role:'球队经理 · MANAGER', initial:'杰', handles:[], noLink:true },
+  ];
+  host.innerHTML = people.map(p => {
+    const player = !p.noLink ? DB.getPlayerByName(p.name) : null;
+    const hasOwnPhoto = !!(player && player.photo);
+    const photo  = hasOwnPhoto ? DB.playerPhotoUrl(player) : '';
+    const avatarInner = photo
+      ? `<img class="cp-avatar img" src="${photo}" alt="${p.name}" onerror="this.outerHTML='<div class=&quot;cp-avatar&quot;>${p.initial}</div>'">`
+      : `<div class="cp-avatar">${p.initial}</div>`;
+    const avatar = (!p.noLink && player)
+      ? `<a class="cp-avatar-link" href="dashboard.html?player=${encodeURIComponent(p.name)}" title="查看 ${p.name} 的球员主页">${avatarInner}</a>`
+      : avatarInner;
+    const tags = p.handles.length
+      ? `<div class="cp-handles">${p.handles.map(h=>`<span class="cp-tag ${h.type}">${h.type==='wx'?'微信':'小红书'} ${h.v}</span>`).join('')}</div>`
+      : '';
+    return `<div class="contact-person">
+      ${avatar}
+      <div class="cp-info">
+        <div class="cp-name">${p.name}<span class="cp-role">${p.role}</span></div>
+        ${tags}
+      </div>
+    </div>`;
+  }).join('');
+})();
+
+// Photos — 56 group photos from 猎户座合照
+const photos = [
+  "014d9e7ca899c27d7ee2f07eafed4fcb.JPG","0393d575d7de890857ab08f6c882d9ec.JPG",
+  "0b3936fcd4ced0a56943c3a19eba8118.JPG","0cbaad89d1576e786149b3c5f73d60b4.JPG",
+  "0d0d0792df458e5c251c1979fcddcc67.JPG","0e84c695c4eb0cf50af62a168a89f38f.JPG",
+  "19bde380443fbd83fac39facb625b4dd.JPG","1f13c7c3dc4e57147366a156f6506a9e.JPG",
+  "1fd55252ed2121c4246c8750cf732edf.JPG","24f072089fb9897c3ec4e7156288a5cd.JPG",
+  "24f0ff5364c10a5a958ae7184286dddc.JPG","2cac6152a7021cecfb69a968a8b0e73d.JPG",
+  "2d876fc268d5d1c1765cb94d4215f35b.JPG","31e2bd80a293d9906fd57497c62e9133.JPG",
+  "36dd29d2db07496274f902a44958ca01.JPG","37153d09738e8e61b329e1c4fb6d4911.JPG",
+  "380b128bf16802021187652cd89c06d5.JPG","48f8f71a9eed26dd2afb63c0f3ede3be.JPG",
+  "4dc173ac1f405c11dc15181e94cffd52.JPG","4e78ca035f8ab464513332359249f8d3.JPG",
+  "5607ea03ff624d3cec105aac9c7fa09d.JPG","5a9dd07c6e24852a3912ae951c9c043a.JPG",
+  "5d628b5e83369d2b1a6c2cdffdc4547a.JPG","5fafc920d27491cd7a1e820c44a8c21b.JPG",
+  "6131860b551582021ae29f65debaa7ea.JPG","743e75ed2544f9417939950c9e71a4ae.JPG",
+  "74b594e08645f53f74b8c29f90c9cb12.JPG","88dbd3742efc1f34a78ea17bdd8911c8.JPG",
+  "89e4565456c3cb8021f5baa346bf854f.JPG","8e6d9657bfe49db99c5e548554462add.JPG",
+  "97520ccee598f4aeb1a7d2729fed8378.JPG","9f6ed070fb39dc140d635683f4caa238.JPG",
+  "a0c95f0a72367eb9cd914cb8708892aa.JPG","a0d6756245b6b2555897dc70a47d021c.JPG",
+  "a1923bdb81bcc828d08493d655cc03cb.JPG","a1db2e78f6d61f59917f9563e9bdd553.JPG",
+  "a9d1115b8342cfc4772f51a02b0e2646.JPG","ada4aba2c3584b4f6980a160efd8be15.JPG",
+  "af8738234e1bd5c7087a06844bd788de.JPG","b58f4649845fb8310fa1f7a942e7ea9d.JPG",
+  "bbf36d2ad3ecc927f349423351c2a098.JPG","bdbfe539ccc61cddf0d40fd413fa15d4.JPG",
+  "befa35d206920a4bbfc287b9b72c9b20.JPG","bf3ab1bced541cf63773c4b5f4888b69.JPG",
+  "d034581cc36c0710632c430133838dfd.JPG","d0e71b85ae8446e1a8b203d57e45b461.JPG",
+  "d132843c79fbc735b0c80401ef2144bf.JPG","ddd5dc387457f3bdbad55d5d12a312f9.JPG",
+  "dfba6044e953a6e09161dea93afe2e1f.JPG","e1187fa6bac931b44088be10476f1c54.JPG",
+  "e2392f350d892b8914c204f56f0b6f57.JPG","e4acee2a69694e590bd44a00e77ccf1f.JPG",
+  "f155eb76c12fd157320acb8194634126.JPG","f66abe63a163a62ac865f20c6ac68535.JPG",
+  "f6794694149e2457892afe7b83b95461.JPG","f6e6b3d8c952bb22fa4bf0d9514906e4.JPG"
+];
+const PHOTO_DIR = 'assets/img/group/';
+
+// Stars
+(function(){
+  const svg=document.getElementById('heroStars');const W=1000,H=700;let s='';
+  for(let i=0;i<70;i++){
+    const x=Math.random()*W,y=Math.random()*H,r=Math.random();
+    const cls=r<.7?'star-sm':(r<.95?'star-md':'star-lg');
+    const tw=Math.random()<.4?` twinkle d${(i%4)+1}`:'';
+    const rad=r<.7?1.1:(r<.95?1.8:2.6);
+    s+=`<circle class="star ${cls}${tw}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}"/>`;
+  }
+  const orion=[
+    {x:280,y:170,r:6.5},{x:660,y:200,r:5.5},{x:620,y:380,r:4.5},
+    {x:500,y:395,r:5},{x:385,y:410,r:4.5},{x:320,y:580,r:5},{x:700,y:560,r:6.8}
+  ];
+  orion.forEach((st,i)=>{s+=`<circle class="star star-xl twinkle d${(i%4)+1}" cx="${st.x}" cy="${st.y}" r="${st.r}"/>`;});
+  svg.innerHTML=s;
+})();
+
+// Hero rows — pure flow + breath, no mouse parallax
+const heroBg=document.getElementById('heroBg');
+function shuffle(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+[{cls:'',off:0},{cls:'reverse',off:14},{cls:'slow',off:28},{cls:'reverse slow',off:42}].forEach(cfg=>{
+  const row=document.createElement('div');row.className='hero-row '+cfg.cls;
+  const seq=shuffle(photos.slice(cfg.off).concat(photos.slice(0,cfg.off)));
+  row.innerHTML=seq.concat(seq).map(p=>`<img src="${PHOTO_DIR}${p}" alt="" loading="lazy">`).join('');
+  heroBg.appendChild(row);
+});
+
+// Scroll stats counter (same as before)
+function countUp(el){
+  const target=+el.dataset.target, suffix=el.dataset.suffix||'', dur=1800, start=performance.now();
+  function tick(now){
+    const t=Math.min(1,(now-start)/dur);
+    const eased=1-Math.pow(1-t,3);
+    el.textContent=Math.floor(eased*target)+suffix;
+    if(t<1)requestAnimationFrame(tick);else el.textContent=target+suffix;
+  } requestAnimationFrame(tick);
+}
+document.querySelectorAll('.stat-num[data-target]').forEach(el=>{
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){countUp(el);io.disconnect()}})},{threshold:.4});
+  io.observe(el);
+});
+const revealIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');revealIO.unobserve(e.target)}})},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>revealIO.observe(el));
+
+// Auth modal is fully handled by auth.js now — no page-specific code needed.
+</script>
+</body>
+</html>

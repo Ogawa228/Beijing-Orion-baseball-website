@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>联系我们 · 北京猎户座</title>
+<link rel="icon" href="assets/img/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+</head>
+<body>
+
+<nav class="nav"><!-- built by auth.js --></nav>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow">Contact · 联系我们</div>
+      <h2 class="section-title">想加入我们？</h2>
+      <p class="section-sub">无论你是老手还是零基础，猎户座都欢迎你</p>
+    </div>
+
+    <div class="contact-grid">
+      <div>
+        <h3 style="font-family:var(--font-display);font-size:24px;font-weight:600">球队信息</h3>
+        <div class="info-list">
+          <div class="info-item">
+            <div class="info-icon">📍</div>
+            <div>
+              <div class="info-label">Home Field · 主场</div>
+              <div class="info-val">北京 · 奥体中心棒垒球场</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">🗓</div>
+            <div>
+              <div class="info-label">Training · 训练</div>
+              <div class="info-val">每周六 09:00 - 12:00</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">⭐</div>
+            <div>
+              <div class="info-label">Founded · 成立于</div>
+              <div class="info-val">2010</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">📕</div>
+            <div>
+              <div class="info-label">官方小红书</div>
+              <div class="info-val">@北京猎户座棒垒球俱乐部</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon">✉</div>
+            <div>
+              <div class="info-label">Email · 邮箱</div>
+              <div class="info-val">orion@beijing-orion.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-family:var(--font-display);font-size:24px;font-weight:600">负责人 · Contacts</h3>
+        <div class="contact-people" id="contactPeople"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:var(--s-8)">
+      <h3 style="font-family:var(--font-display);font-size:24px;font-weight:600;margin-bottom:var(--s-5)">发送消息</h3>
+      <form class="form" style="max-width:600px" onsubmit="event.preventDefault();alert('感谢你的消息，我们会尽快联系你！')">
+        <div class="field">
+          <label>姓名 / Name</label>
+          <input type="text" required placeholder="你的名字">
+        </div>
+        <div class="field">
+          <label>邮箱 / Email</label>
+          <input type="email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label>留言 / Message</label>
+          <textarea rows="5" required placeholder="想对猎户座说点什么？"></textarea>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button type="submit" class="btn">发送消息</button>
+          <a href="events.html" class="btn ghost">查看招新活动</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div>© 2026 Beijing Orion Baseball Club · 以星辰之名</div>
+</footer>
+
+<script src="assets/js/db.js?v=17"></script>
+<script src="assets/js/auth.js?v=14"></script>
+<script src="assets/js/main.js?v=13"></script>
+<script>
+buildNav('contact');
+
+// Render contact people with player photos from DB
+(async function(){
+  if (window.dbReady) await window.dbReady();
+  const contacts = [
+    { name:'曹山 · 队长', playerName:'曹山', initial:'曹', handles:[{type:'wx',v:'qwecaoshan'},{type:'xhs',v:'@山子贼拉酷'}] },
+    { name:'李斯然',     playerName:'李斯然', initial:'李', handles:[{type:'wx',v:'Alan__1110'}] },
+    { name:'黄强',       playerName:'黄强',   initial:'黄', handles:[{type:'wx',v:'Deco_E'}] },
+  ];
+  const host = document.getElementById('contactPeople');
+  host.innerHTML = contacts.map(c => {
+    const player = DB.getPlayerByName(c.playerName);
+    const photo = player ? DB.playerPhotoUrl(player) : '';
+    const avatar = photo
+      ? `<img class="cp-avatar img" src="${photo}" alt="${c.playerName}" onerror="this.outerHTML='<div class=&quot;cp-avatar&quot;>${c.initial}</div>'">`
+      : `<div class="cp-avatar">${c.initial}</div>`;
+    return `<div class="contact-person">
+      ${avatar}
+      <div class="cp-info">
+        <div class="cp-name">${c.name}</div>
+        <div class="cp-handles">${c.handles.map(h=>`<span class="cp-tag ${h.type}">${h.type==='wx'?'微信':'小红书'} ${h.v}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('') + '<div class="contact-tip">📩 想加入或了解试训信息，添加任意一位负责人微信即可</div>';
+})();
+</script>
+</body>
+</html>

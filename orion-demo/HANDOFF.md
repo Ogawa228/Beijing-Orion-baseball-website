@@ -14,7 +14,8 @@
 - 云托管控制台：`https://cloud.weixin.qq.com/cloudrun/service/express-knlw`
 - 部署必须走“本地预览 -> 用户确认 -> 云部署”。每一次部署都要用户本轮明确同意，不能沿用旧授权。
 - 改功能代码后同步更新两份文档：本文件和 `/Users/jinjiangshan/Downloads/猎户网站项目/DESIGN_BRIEF.md`。
-- 本地目录不是 git 仓库，动大文档或高风险文件前先留备份。
+- 项目根目录已发布到 GitHub：`https://github.com/Ogawa228/Beijing-Orion-baseball-website`。
+- 用户说“备份代码”时，默认含义是 `git commit` + `git push` 到 GitHub；不要再额外制作本地 zip、复制备份目录或生成一套本地代码副本，除非用户明确要求。
 - `scripts/verify-wxcloud-deploy.js` / `npm run deploy:verify` 是本地部署校验工具，不影响线上运行。
 
 ---
@@ -86,6 +87,22 @@ cd /Users/jinjiangshan/Downloads/猎户网站项目/orion-demo
 npm start
 curl -s http://localhost:3000/api/health
 ```
+
+代码备份：
+
+```bash
+cd /Users/jinjiangshan/Downloads/猎户网站项目
+git status
+git add .
+git commit -m "说明这次改了什么"
+git push
+```
+
+备份边界：
+
+- GitHub 备份代码、设计文档、交接文档和 parser 设计文档。
+- GitHub 不备份 `.env`、`node_modules/`、备份目录、输出截图、原始素材包、赛季 PDF、zip、数据库真实数据和 COS 对象。
+- 需要完整灾备时，代码走 GitHub；MySQL 和 COS/原始素材走单独备份。
 
 常规校验：
 

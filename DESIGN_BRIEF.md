@@ -197,20 +197,22 @@ orion-demo/assets/img/
 ## 8. 不要破坏的契约
 
 1. 部署前必须本地预览并获得用户本轮明确同意。
-2. `DB.isOrionTeam(name)` 同时识别棒球“猎户星”和慢垒“猎户座”。
-3. 所有页面自己的 DB 渲染必须先 `await window.dbReady()`。
-4. GameChanger 文件名 `<away>_vs_<home>_<Mon>_<DD>_<YYYY>.pdf` 是导入权威源。
-5. `Totals/总计/合计/总和` 行不得进入球员数组。
-6. 改 `parser.js` 必跑 `npm run test:gamechanger`，当前覆盖 5 份真实 PDF。
-7. 名字匹配要走 alias-aware canonical：`DB.getPlayerByName` / `DB.playerCanonicalKey` / `DB.playerNameKeys`。
-8. 借调球员的对手队数据只在单场 box score 展示，不计入该球员赛季统计和积分。
-9. 积分公式权威源是 `DB.POINTS_RULES` / 后端 points 语义；展示卡和 admin 快捷按钮也要同步。
-10. 球员合并不得改写 `games` 原始 JSON 姓名；用 `players.aliases` 做统计归并。
-11. `game-detail.html` 的 sortable table 只能排序 `tbody`，`tfoot` 永远钉在底部。
-12. 批量导入封面图的语义边界是子文件夹，不要把不同子目录的 PDF/图片拍平成顶层错配。
-13. COS 返回 URL 必须是 `tcb.qcloud.la` 可浏览器访问路径，不要用私有 COS raw origin。
-14. Three.js r184 静态白名单必须包含 `three.module.js` 和 `three.core.js`。
-15. 普通访客低动效偏好优先，管理员“强制 WebGL”只影响管理员本机即时预览。
+2. 用户说“备份代码”时，默认就是提交并推送到 GitHub 仓库 `Ogawa228/Beijing-Orion-baseball-website`；不要额外做本地 zip/备份目录，除非用户明确要求。
+3. GitHub 只备份代码和文档，不备份 `.env`、数据库真实数据、COS 对象、原始素材包、赛季 PDF、输出截图或 zip。
+4. `DB.isOrionTeam(name)` 同时识别棒球“猎户星”和慢垒“猎户座”。
+5. 所有页面自己的 DB 渲染必须先 `await window.dbReady()`。
+6. GameChanger 文件名 `<away>_vs_<home>_<Mon>_<DD>_<YYYY>.pdf` 是导入权威源。
+7. `Totals/总计/合计/总和` 行不得进入球员数组。
+8. 改 `parser.js` 必跑 `npm run test:gamechanger`，当前覆盖 5 份真实 PDF。
+9. 名字匹配要走 alias-aware canonical：`DB.getPlayerByName` / `DB.playerCanonicalKey` / `DB.playerNameKeys`。
+10. 借调球员的对手队数据只在单场 box score 展示，不计入该球员赛季统计和积分。
+11. 积分公式权威源是 `DB.POINTS_RULES` / 后端 points 语义；展示卡和 admin 快捷按钮也要同步。
+12. 球员合并不得改写 `games` 原始 JSON 姓名；用 `players.aliases` 做统计归并。
+13. `game-detail.html` 的 sortable table 只能排序 `tbody`，`tfoot` 永远钉在底部。
+14. 批量导入封面图的语义边界是子文件夹，不要把不同子目录的 PDF/图片拍平成顶层错配。
+15. COS 返回 URL 必须是 `tcb.qcloud.la` 可浏览器访问路径，不要用私有 COS raw origin。
+16. Three.js r184 静态白名单必须包含 `three.module.js` 和 `three.core.js`。
+17. 普通访客低动效偏好优先，管理员“强制 WebGL”只影响管理员本机即时预览。
 
 ---
 

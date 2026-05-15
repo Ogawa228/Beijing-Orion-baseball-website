@@ -338,7 +338,9 @@ Web 页面 / Admin 后台 / 微信小程序
 - 后台 admin 收到绑定审批提示，核对微信身份/头像/姓名备注与注册球员是否一致；批准后后端自动写 `users.bound_player_id`，必要时合并 casual 试训档案的签到和积分流水。
 - 建议新增 `player_bind_requests` 或等价表：`user_id`、`requested_player_id`、`status(pending/approved/rejected)`、`note`、`reviewed_by`、`reviewed_at`、`created_at`。
 - 可复用 `user_notifications`：用户提交后通知管理员；管理员批准/驳回后通知用户。
-- 网页端继续保留绑定码方案。原因是网页端主要是邮箱注册，缺少微信 openid 这种身份上下文，很难核对“注册账号的人”和“注册球员本人”的一致性；让管理员预先发绑定码更可控。
+- 网页端后续按 A 方案升级：邮箱注册后也允许用户提交“绑定注册球员申请”，选择目标 registered/verified player，并填写真实姓名、队内昵称、球衣号、微信号/手机号后四位、备注等辅助核验信息。
+- 网页端申请同样进入 `player_bind_requests`，必须由 admin 审批后才自动绑定；不能因为姓名或邮箱相似就自动通过。
+- 绑定码在网页端保留为备用/管理员主动邀请路径，不再作为唯一高效路径。原因是网页邮箱注册缺少微信 openid 身份上下文，审批流比用户自绑更安全。
 
 ### 10.3 多端同步
 
@@ -375,7 +377,7 @@ Web 页面 / Admin 后台 / 微信小程序
 
 1. API 盘点：确认现有 auth/player/events/points/attendance 哪些可直接给小程序用。
 2. 小程序登录骨架：`wx.login` -> 后端 session -> `me`。
-3. 球员绑定申请：小程序自选注册球员 -> admin 审批 -> 自动绑定；网页端绑定码逻辑保留。
+3. 球员绑定申请：小程序自选注册球员 -> admin 审批 -> 自动绑定；网页端也按 A 方案提交绑定申请并经 admin 审批，绑定码保留为备用邀请路径。
 4. 活动列表和详情：先只读 API，替换 `events.html` 的占位。
 5. 活动报名表：新增报名表和后台报名管理。
 6. 动态扫码签到：训练/活动两类都走同一 token 校验模型。

@@ -333,9 +333,12 @@ Web 页面 / Admin 后台 / 微信小程序
 
 - 小程序调用 `wx.login()` 拿 code。
 - 后端新增或扩展 auth 接口，把 code 换 openid/session，并写入 `user_identities`，例如 `type='wechat_openid'`。
-- 已有账号通过绑定码或手机号/邮箱登录合并到同一 `users.id`。
 - 保留现有 `user -> bound_player_id -> player` 双身份模型：公开仍看真实球员档案，自己可看昵称/头像。
-- 绑定码流程继续承担“试训 casual -> 预置 verified 球员”的合并路径。
+- 小程序端不优先使用绑定码。用户注册/登录后，可以从正式注册球员列表中自主选择“申请绑定这个球员”。
+- 后台 admin 收到绑定审批提示，核对微信身份/头像/姓名备注与注册球员是否一致；批准后后端自动写 `users.bound_player_id`，必要时合并 casual 试训档案的签到和积分流水。
+- 建议新增 `player_bind_requests` 或等价表：`user_id`、`requested_player_id`、`status(pending/approved/rejected)`、`note`、`reviewed_by`、`reviewed_at`、`created_at`。
+- 可复用 `user_notifications`：用户提交后通知管理员；管理员批准/驳回后通知用户。
+- 网页端继续保留绑定码方案。原因是网页端主要是邮箱注册，缺少微信 openid 这种身份上下文，很难核对“注册账号的人”和“注册球员本人”的一致性；让管理员预先发绑定码更可控。
 
 ### 10.3 多端同步
 
@@ -372,12 +375,13 @@ Web 页面 / Admin 后台 / 微信小程序
 
 1. API 盘点：确认现有 auth/player/events/points/attendance 哪些可直接给小程序用。
 2. 小程序登录骨架：`wx.login` -> 后端 session -> `me`。
-3. 活动列表和详情：先只读 API，替换 `events.html` 的占位。
-4. 活动报名表：新增报名表和后台报名管理。
-5. 动态扫码签到：训练/活动两类都走同一 token 校验模型。
-6. 积分页复用：排行榜、积分明细、我的积分。
-7. 通知：活动提醒、报名成功、签到成功、绑定邀请。
-8. 小程序 UI polish：再做首屏、图表替换、移动端表格体验。
+3. 球员绑定申请：小程序自选注册球员 -> admin 审批 -> 自动绑定；网页端绑定码逻辑保留。
+4. 活动列表和详情：先只读 API，替换 `events.html` 的占位。
+5. 活动报名表：新增报名表和后台报名管理。
+6. 动态扫码签到：训练/活动两类都走同一 token 校验模型。
+7. 积分页复用：排行榜、积分明细、我的积分。
+8. 通知：绑定申请、审批结果、活动提醒、报名成功、签到成功。
+9. 小程序 UI polish：再做首屏、图表替换、移动端表格体验。
 
 ---
 

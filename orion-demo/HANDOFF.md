@@ -2,15 +2,16 @@
 
 > 面向下一轮 Codex/Claude 接手。这里只保留当前状态、硬规则、关键契约和排障入口；逐轮历史已压缩，旧长版已备份到 `orion-demo/backups/`。
 
-最后整理：2026-05-15  
-本轮状态：`players.html?wallpaper=1` 动态壁纸模式已部署到微信云托管；部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
+最后整理：2026-05-21  
+本轮状态：`express-knlw-034-20260521133747` 已部署到微信云托管；包含 `players.html` 球员页动效性能优化、注册入口合规增强、公开身份/真实身份磨砂化、磨砂头像边缘对齐修正和离屏/隐藏态动画节流。注册弹窗现要求勾选用户协议、隐私政策、个人信息处理规则、必要个人信息处理单独同意和年龄/监护人确认；新增 `legal.html` 作为完整规则页；正式球员可在个人面板设置公开展示名和公开头像，未设置时非正式用户在球员页、积分榜、积分明细、比赛详情、赛事页和名人堂看到档案姓名和档案照的磨砂玻璃效果，并通过轻量玻璃高光闪烁提示“可辨但不清晰”。部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
 
 ---
 
 ## 0. 先读这几条
 
-- 当前线上版本：`express-knlw-032`，2026-05-15 16:28 部署。
+- 当前线上版本：`express-knlw-034-20260521133747`，2026-05-21 13:40 部署。
 - 线上域名：`https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com`
+- ICP 信息：域名 `猎户座棒垒球.cn`，备案号 `京ICP备2026027592号-1`；当前仅首页 footer 悬挂并链接 `https://beian.miit.gov.cn/`，子页保持简洁 footer。
 - 云托管控制台：`https://cloud.weixin.qq.com/cloudrun/service/express-knlw`
 - 部署必须走“本地预览 -> 用户确认 -> 云部署”。每一次部署都要用户本轮明确同意，不能沿用旧授权。
 - 改功能代码后同步更新两份文档：本文件和 `/Users/jinjiangshan/Downloads/猎户网站项目/DESIGN_BRIEF.md`。
@@ -54,6 +55,8 @@
 
 | 版本 | 时间 | 摘要 | 验证 |
 |---|---:|---|---|
+| `express-knlw-034-20260521133747` | 2026-05-21 13:40 | 球员页动效性能优化；注册入口合规增强；新增 `legal.html`；球员公开展示资料字段/API；非正式用户在球员页、积分榜、积分明细、比赛详情、赛事页、名人堂和公开 dashboard 看到公开身份或磨砂化档案资料；磨砂头像边缘对齐；离屏/隐藏态动画节流 | 部署前 `node --check` 通过；HTML non-module inline scripts 通过；GameChanger 5/5；`deploy:verify --expected-version express-knlw-034-20260521133747 --domain https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com` 通过；线上 `/api/health` 200 且 DB OK；线上 `players.html` 含 `style.css?v=30`、`db.js?v=24`、`auth.js?v=20`、`is-perf-paused`；`/api/players` 返回 52 人并含 `publicDisplayName/publicAvatar`；`legal.html`、`ranking.html`、默认头像资产 200 |
+| `express-knlw-033-20260520141956` | 2026-05-20 14:22 | 首页 footer 一行 meta 排布，悬挂 `Edited by 江山` 与 `京ICP备2026027592号-1`；子页 footer 收回为简洁版权；首页球队信息标注靳江山为数据组 / 运维组 | `deploy:verify --expected-version express-knlw-033-20260520141956` 通过；线上 `/api/health` 200；线上首页源码含 `style.css?v=27`、`Edited by 江山`、`京ICP备2026027592号-1`；默认域名浏览器访问会先显示 CloudBase 风险提醒中间页 |
 | `express-knlw-032` | 2026-05-15 16:28 | `players.html?wallpaper=1` 动态壁纸模式；全屏星阵；复用管理员全站发布的星阵/星尘动效；隐藏导航、筛选、HUD、弹卡和管理员面板 | `deploy:verify --expected-version express-knlw-032` 通过；线上 `/api/health` 200；线上 `players.html?wallpaper=1` 含 `wallpaper-mode`；浏览器实测 52 个节点、WebGL 运行中、操作 UI 隐藏 |
 | `express-knlw-031-20260515155850` | 2026-05-15 16:01 | 管理员权限 A/B/C + 数据组/运营组权限点；后台按权限显示；账户列表三维筛选；A 级删除账户；注册绑定申请/网页关联码流程 | `deploy:verify` 通过；线上 `/api/health` 200；线上 `admin.html`/`db.js?v=18`/`auth.js?v=17` 资源检查通过 |
 | `express-knlw-030-20260515114335` | 2026-05-15 11:46 | 球员页 `STARDUST` 高级粒子项、WebGL `three.core.js` 白名单、星阵热路径性能优化 | `deploy:verify` 通过；线上 `/api/health` 200；线上可访问 `three.core.js` |
@@ -62,6 +65,8 @@
 
 | 版本 | 摘要 |
 |---|---|
+| `034` | 球员页性能、公开身份磨砂化、注册合规协议、公开展示资料 API、跨公开页面脱敏统一、磨砂边缘对齐和离屏/隐藏态节流 |
+| `033` | 首页 footer 悬挂 ICP 和 `Edited by 江山`，子页简洁 footer，靳江山标注为数据组 / 运维组 |
 | `032` | `players.html?wallpaper=1` 动态壁纸模式，复用管理员全站星阵发布配置 |
 | `031` | 管理员权限分级、数据/运营权限组、账户筛选、A 级删除账户、绑定申请/网页关联码 |
 | `029` / `028` | 球员页 WebGL 粒子可见性与轻量 DOM 星尘兜底，管理员可切换星尘模式 |
@@ -78,7 +83,9 @@
 当前未部署内容：
 
 - 无已知运行时代码未部署。
-- 部署后仅更新了本文件和 `../DESIGN_BRIEF.md` 的记录性内容；不影响线上运行。
+- 部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新；不影响线上运行。
+- 注意：当前自定义域名字段可能返回不带协议的 `www.xn--4gsr8nf4ck7ihxnemb.cn`，`npm run deploy:verify` 如自动取该域名会报 `Failed to parse URL`；本次已使用 `--domain https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com` 完成验证。
+- 自定义域名待处理：中文域名 `猎户座棒垒球.cn` 的 Punycode / ASCII 形式是 `xn--4gsr8nf4ck7ihxnemb.cn`。微信云托管/CloudBase 绑定自定义域名若报 `invalid custom domain`，优先尝试填写 Punycode 形式，并确认 SSL 证书、ICP 备案、域名所有权校验和 CNAME/TXT 解析。
 
 ---
 
@@ -182,13 +189,15 @@ COS：
 user 账号                         player 球员档案
 display_name / avatar / role       name / photo / number / position
 bound_player_id -----------------> player.id
+                                  public_display_name / public_avatar
 ```
 
-- 公开页永远以真实球员档案为主：`player.name` + `player.photo`。
-- 自己看 dashboard 时，可显示昵称/自定义头像，但真实球员身份仍为主；昵称只是“仅你可见”的辅助信息。
+- `user.display_name/avatar` 是账号资料；`player.public_display_name/public_avatar` 是球员页公开展示资料；`player.name/photo` 是真实档案。
+- `players.html`、`ranking.html`、`player-points.html`、`game-detail.html`、`tournament.html`、`hall-of-fame.html` 和普通公开 `dashboard.html?id=...` 对非正式用户优先展示公开名/公开头像；未设置时展示档案姓名和档案照的磨砂玻璃效果，头像/姓名有轻量高光闪烁，避免 `XX` 和默认头像带来的生硬观感。
+- 已绑定正式球员账号和管理员可清晰查看公开页面的真实档案；正式球员本人和管理员在 dashboard 可设置公开展示名/头像；账号昵称/头像不自动等同于球员页公开展示资料。
 - casual 注册占位档案：`p_user_*`。
 - verified 预置档案：如 `p_xute`、`p_lijiaqi`。
-- 测试双身份：后台生成绑定码 -> 新账号兑换 -> dashboard 看真实球员主名 + 自己昵称辅助；公开 `dashboard.html?player=...` 仍显示真实球员。
+- 公开入口优先使用 `dashboard.html?id=<playerId>`，避免 URL 暴露真实姓名；旧 `?player=` 仅为兼容。
 
 ### 5.1b 注册 / 绑定申请
 
@@ -295,12 +304,12 @@ bound_player_id -----------------> player.id
 |---|---|
 | `index.html` | 首页 Hero + 报刊式卷首 + Quick Nav + 积分规则 + 负责人/球队信息；联系锚点为 `#contact` |
 | `players.html` | 星阵首屏、题字、管理员编队台、`STARDUST` 高级项、点击星点弹 v2.4 球星卡；`?wallpaper=1` 进入全屏动态壁纸模式 |
-| `dashboard.html` | 个人能力剖面、真实身份优先、昵称/自定义头像为 own-view 辅助 |
+| `dashboard.html` | 个人能力剖面；公开视角对未设置公开资料的档案姓名/档案照做磨砂玻璃化；本人/管理员可维护公开展示资料 |
 | `games.html` / `tournament.html` | 赛事索引与赛事详情，排行榜可排序 |
 | `game-detail.html` | box score、逐局、图表、4 张 sortable 表、MVP、highlights |
-| `ranking.html` / `player-points.html` | 积分榜、积分构成和时间线 |
+| `ranking.html` / `player-points.html` | 积分榜、积分构成和时间线；公开身份统一走公开名/公开头像或磨砂化档案资料 |
 | `admin.html` | 按权限显示后台：A 管账号权限/系统设置，B 管球员/绑定/积分/荣誉，数据组管比赛数据，运营组管活动/高光/展示资料 |
-| `hall-of-fame.html` | 名人堂，空状态有仪式感 |
+| `hall-of-fame.html` | 名人堂，空状态有仪式感；入选球员头像/姓名同样走公开身份展示 |
 | `events.html` | 占位待补 |
 | `contact.html` | 已被 `index.html#contact` 取代，仅直接访问兜底 |
 
@@ -350,7 +359,7 @@ Web 页面 / Admin 后台 / 微信小程序
 
 - 小程序调用 `wx.login()` 拿 code。
 - 后端新增或扩展 auth 接口，把 code 换 openid/session，并写入 `user_identities`，例如 `type='wechat_openid'`。
-- 保留现有 `user -> bound_player_id -> player` 双身份模型：公开仍看真实球员档案，自己可看昵称/头像。
+- 保留现有 `user -> bound_player_id -> player` 双身份模型：公开优先看球员页公开展示资料，未设置时看磨砂玻璃化档案资料，自己可看真实档案和账号昵称/头像。
 - 小程序端不优先使用绑定码。用户注册/登录后，可以从正式注册球员列表中自主选择“申请绑定这个球员”。
 - 后台 admin 收到绑定审批提示，核对微信身份/头像/姓名备注与注册球员是否一致；批准后后端自动写 `users.bound_player_id`，必要时合并 casual 试训档案的签到和积分流水。
 - 建议新增 `player_bind_requests` 或等价表：`user_id`、`requested_player_id`、`status(pending/approved/rejected)`、`note`、`reviewed_by`、`reviewed_at`、`created_at`。

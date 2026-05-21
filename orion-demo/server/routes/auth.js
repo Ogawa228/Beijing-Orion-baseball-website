@@ -13,6 +13,7 @@ const { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie } = r
 const { wrap, requireAuth } = require('../middleware');
 const { bindUserToPlayer, ensurePeopleTables, logAudit, createNotification } = require('../people-helpers');
 const { ensurePermissionsSchema, serializeUserPermissions } = require('../permissions');
+const { ensurePlayerPublicProfileSchema } = require('../player-public-profile');
 
 const router = express.Router();
 
@@ -231,8 +232,14 @@ router.post('/logout', (_req, res) => {
 // 4. GET /api/auth/me
 router.get('/me', wrap(async (req, res) => {
   if (!req.user) return res.json({ user: null });
+  await ensurePlayerPublicProfileSchema();
   const player = req.user.bound_player_id
-    ? await db.qOne('SELECT id, name, level, photo, position, number FROM players WHERE id = ?', [req.user.bound_player_id])
+    ? await db.qOne(`
+        SELECT id, name, level, photo, position, number,
+               public_display_name AS publicDisplayName,
+               public_avatar AS publicAvatar
+        FROM players WHERE id = ?
+      `, [req.user.bound_player_id])
     : null;
   res.json({
     user: publicUserPayload(req.user),

@@ -6,8 +6,8 @@
 <title>赛事总览 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 </head>
 <body>
 
@@ -22,10 +22,10 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (async () => {
@@ -77,6 +77,28 @@ function tournamentLocation(t){
   if (/猛虎/.test(haystack)) return '北京市通州区私立树人学校棒球场';
   if (/奥体|周末常规训练/.test(haystack)) return '北京奥体中心棒垒球场';
   return '地点待补充';
+}
+function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s){ return escapeText(s); }
+function playerIdentity(p){
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : { name: p?.name || '', avatar: DB.playerPhotoUrl(p), canExposeName: true });
+}
+function identityNameHTML(identity, className = ''){
+  const cls = `${className} public-identity-name${identity.isFrostedName ? ' identity-frosted-name' : ''}`.trim();
+  const hidden = identity.isFrostedName ? ' aria-hidden="true"' : '';
+  return `<span class="${escapeAttr(cls)}"${hidden}>${escapeText(identity.name)}</span>`;
+}
+function playerLinkHTML(player){
+  const identity = playerIdentity(player);
+  const href = DB.publicPlayerProfileHref ? DB.publicPlayerProfileHref(player) : `dashboard.html?id=${encodeURIComponent(player.id)}`;
+  const aria = identity.canExposeName ? `${identity.name} 个人面板` : '球员公开资料个人面板';
+  return `<a href="${href}" aria-label="${escapeAttr(aria)}">${identityNameHTML(identity)}</a>`;
+}
+function publicChartLabel(rawName){
+  const player = DB.getPlayerByName(rawName);
+  if (!player) return rawName;
+  const identity = playerIdentity(player);
+  return identity.canExposeName ? identity.name : `#${player.number || '--'} 球员`;
 }
 
 function renderTournament(t){
@@ -324,8 +346,7 @@ function renderTournament(t){
         <tbody>
           ${pitchers.sort((a,b)=>a.ERA-b.ERA).map((p,i) => {
             const player = DB.getPlayerByName(p.name);
-            const link = player ? `dashboard.html?player=${encodeURIComponent(p.name)}` : null;
-            const nameCell = link ? `<a href="${link}">${p.name}</a>` : p.name;
+            const nameCell = player ? playerLinkHTML(player) : escapeText(p.name);
             return `<tr>
               <td>${i+1}</td>
               <td style="text-align:left">${nameCell}</td>
@@ -355,12 +376,15 @@ function renderTournament(t){
     </div>
     <div class="players-grid" style="margin-bottom:var(--s-7)">
       ${roster.map(p => {
+        const identity = playerIdentity(p);
         const pKey = DB.canonicalNameKey(p.name);
         const stats = leaderboard.find(l => DB.playerCanonicalKey(l.name) === pKey) || {};
         const avg = stats.AB ? ('.'+(stats.H*1000/stats.AB|0).toString().padStart(3,'0')) : '—';
-        return `<a class="player-card" href="dashboard.html?player=${encodeURIComponent(p.name)}">
-          <img class="pc-photo" src="${DB.playerPhotoUrl(p)}" alt="${p.name}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
-          <div class="pc-name">${p.name}</div>
+        return `<a class="player-card" href="${DB.publicPlayerProfileHref ? DB.publicPlayerProfileHref(p) : `dashboard.html?id=${encodeURIComponent(p.id)}`}">
+          <span class="identity-avatar-wrap${identity.isFrostedAvatar ? ' is-frosted-avatar' : ''}" style="width:120px;height:120px;margin:0 auto var(--s-4)">
+            <img class="pc-photo${identity.isFrostedAvatar ? ' identity-frosted-avatar' : ''}" src="${escapeAttr(identity.avatar)}" alt="${escapeAttr(identity.photoAlt || identity.accessibleName || '球员公开头像')}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+          </span>
+          <div class="pc-name">${identityNameHTML(identity)}</div>
           <div class="pc-meta"><span class="num">#${p.number||'-'}</span><span class="sep">·</span>${p.position||'—'}</div>
           <div class="pc-stats">
             <div><div class="pc-stat-v">${avg}</div><div class="pc-stat-k">AVG</div></div>
@@ -384,8 +408,7 @@ function renderTournament(t){
     });
     lbBody.innerHTML = sorted.map((p,i) => {
       const player = DB.getPlayerByName(p.name);
-      const link = player ? `dashboard.html?player=${encodeURIComponent(p.name)}` : null;
-      const nameCell = link ? `<a href="${link}">${p.name}</a>` : p.name;
+      const nameCell = player ? playerLinkHTML(player) : escapeText(p.name);
       const fmt = v => v.toFixed(3).replace(/^0/,'');
       const hrCell = p.HR > 0
         ? `<td class="hr-cell hot-hr">⚡ ${p.HR}</td>`
@@ -463,7 +486,7 @@ function drawInsightCharts({ games, leaderboard }){
       new Chart(hrCanvas, {
         type: 'bar',
         data: {
-          labels: hrTop.map(p => p.name),
+          labels: hrTop.map(p => publicChartLabel(p.name)),
           datasets: [{
             label: 'HR',
             data: hrTop.map(p => p.HR),
@@ -554,7 +577,7 @@ function drawInsightCharts({ games, leaderboard }){
       new Chart(apprCanvas, {
         type: 'bar',
         data: {
-          labels: apprTop.map(p => p.name),
+          labels: apprTop.map(p => publicChartLabel(p.name)),
           datasets: [{
             label: '出场场次',
             data: apprTop.map(p => p.gp),

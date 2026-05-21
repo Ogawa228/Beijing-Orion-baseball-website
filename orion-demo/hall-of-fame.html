@@ -6,8 +6,8 @@
 <title>名人堂 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 <style>
 .hof-empty {
   text-align: center;
@@ -299,10 +299,10 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -313,13 +313,24 @@ const entries = DB.allHallOfFame();
 function escapeHtml(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function playerIdentity(p){
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : { name: p?.name || '', avatar: DB.playerPhotoUrl(p), canExposeName: true });
+}
+function identityNameHTML(identity, className = ''){
+  const cls = `${className} public-identity-name${identity.isFrostedName ? ' identity-frosted-name' : ''}`.trim();
+  const hidden = identity.isFrostedName ? ' aria-hidden="true"' : '';
+  return `<span class="${escapeHtml(cls)}"${hidden}>${escapeHtml(identity.name)}</span>`;
+}
 
 function hofCaseCard(entry) {
   const p = entry.player;
   if (!p) return '';
+  const identity = playerIdentity(p);
   return `<div class="hof-case-card">
-    <img src="${DB.playerPhotoUrl(p)}" alt="${escapeHtml(p.name)}" onerror="this.src='assets/img/logo.jpg'">
-    <div class="case-name">${escapeHtml(p.name)}</div>
+    <span class="identity-avatar-wrap${identity.isFrostedAvatar ? ' is-frosted-avatar' : ''}" style="width:84px;height:84px">
+      <img class="${identity.isFrostedAvatar ? 'identity-frosted-avatar' : ''}" src="${escapeHtml(identity.avatar)}" alt="${escapeHtml(identity.photoAlt || identity.accessibleName || '球员公开头像')}" onerror="this.src='assets/img/logo.jpg'">
+    </span>
+    <div class="case-name">${identityNameHTML(identity)}</div>
     <div class="case-meta">#${escapeHtml(p.number || '--')} · ${escapeHtml(p.position || 'ORION')}</div>
   </div>`;
 }
@@ -332,6 +343,7 @@ function renderHofOpener(list) {
   const track = [];
   for (let i = 0; i < 28; i++) track.push(ordered[i % ordered.length]);
   const wp = winner.player;
+  const winnerIdentity = playerIdentity(wp);
   return `<div class="hof-opener" id="hofOpener">
     <div class="hof-opener-top">
       <div>
@@ -345,8 +357,10 @@ function renderHofOpener(list) {
       <div class="hof-case-track">${track.map(hofCaseCard).join('')}</div>
       <div class="hof-winner-reveal">
         <div class="hof-winner-card">
-          <img src="${DB.playerPhotoUrl(wp)}" alt="${escapeHtml(wp.name)}" onerror="this.src='assets/img/logo.jpg'">
-          <div class="case-name" style="font-size:28px;margin-top:12px">${escapeHtml(wp.name)}</div>
+          <span class="identity-avatar-wrap${winnerIdentity.isFrostedAvatar ? ' is-frosted-avatar' : ''}" style="width:112px;height:112px;border:3px solid var(--gold-bright);margin:0 auto">
+            <img class="${winnerIdentity.isFrostedAvatar ? 'identity-frosted-avatar' : ''}" src="${escapeHtml(winnerIdentity.avatar)}" alt="${escapeHtml(winnerIdentity.photoAlt || winnerIdentity.accessibleName || '球员公开头像')}" onerror="this.src='assets/img/logo.jpg'">
+          </span>
+          <div class="case-name" style="font-size:28px;margin-top:12px">${identityNameHTML(winnerIdentity)}</div>
           <div class="case-meta">CLASS OF ${escapeHtml(winner.inductedYear || 2026)} · #${escapeHtml(wp.number || '--')} · ${escapeHtml(wp.position || 'ORION')}</div>
         </div>
       </div>
@@ -420,13 +434,15 @@ function render(){
         ${byYear[year].map(e => {
           const p = e.player;
           if(!p) return '';
-          const photo = DB.playerPhotoUrl(p);
+          const identity = playerIdentity(p);
           const stats = DB.getPlayerStats(p.name);
           const avg = stats.AB ? (stats.H/stats.AB).toFixed(3).replace(/^0/,'') : '—';
           return `
-            <a class="hof-card" href="dashboard.html?player=${encodeURIComponent(p.name)}">
-              <img class="hof-photo" src="${photo}" alt="${p.name}" onerror="this.src='assets/img/logo.jpg'">
-              <div class="hof-name">${p.name}</div>
+            <a class="hof-card" href="${DB.publicPlayerProfileHref ? DB.publicPlayerProfileHref(p) : `dashboard.html?id=${encodeURIComponent(p.id)}`}">
+              <span class="identity-avatar-wrap hof-photo-wrap${identity.isFrostedAvatar ? ' is-frosted-avatar' : ''}">
+                <img class="hof-photo${identity.isFrostedAvatar ? ' identity-frosted-avatar' : ''}" src="${escapeHtml(identity.avatar)}" alt="${escapeHtml(identity.photoAlt || identity.accessibleName || '球员公开头像')}" onerror="this.src='assets/img/logo.jpg'">
+              </span>
+              <div class="hof-name">${identityNameHTML(identity)}</div>
               <div class="hof-year">#${p.number} · ${p.position} · ${year}</div>
               <div class="hof-reason">${e.reason||''}</div>
               <div style="display:flex;justify-content:space-around;margin-top:20px;padding-top:16px;border-top:1px solid rgba(201,169,97,.15)">

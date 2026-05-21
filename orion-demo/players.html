@@ -6,8 +6,8 @@
 <title>球员 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 <script>
 (() => {
   try {
@@ -211,6 +211,8 @@
   filter: blur(16px);
 }
 .pcv-avatar-wrap .pc-photo {
+  position: relative;
+  z-index: 1;
   width: 140px; height: 140px; border-radius: 50%;
   object-fit: cover; object-position: center 20%;
   border: 3px solid var(--strip-color, var(--blue-400));
@@ -219,6 +221,36 @@
     inset 0 0 0 1px rgba(255,255,255,.1);
   background: var(--navy-900);
   transition: all .3s var(--ease);
+}
+.pcv-avatar-wrap.is-frosted-avatar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 50%;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.38), rgba(210,226,255,.10) 34%, rgba(255,255,255,.24) 68%, rgba(58,82,126,.16)),
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,.36), transparent 34%),
+    radial-gradient(circle at 68% 78%, rgba(137,178,255,.20), transparent 38%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.20),
+    0 0 24px rgba(174,203,255,.20),
+    0 0 34px rgba(228,199,122,.12),
+    inset 0 1px 0 rgba(255,255,255,.42),
+    inset 0 -18px 30px rgba(9,18,36,.20);
+  animation: frosted-card-glint 5.8s ease-in-out infinite;
+  will-change: opacity;
+}
+.pcv-avatar-wrap .pc-photo.identity-frosted-avatar {
+  filter: blur(4.8px) saturate(.78) contrast(.92) brightness(.88);
+  transform: none;
+  -webkit-clip-path: circle(50% at 50% 50%);
+  clip-path: circle(50% at 50% 50%);
+  contain: paint;
 }
 .player-card-shell:hover .pcv-avatar-wrap .pc-photo {
   box-shadow:
@@ -240,6 +272,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(130%);
   backdrop-filter: blur(10px) saturate(130%);
   box-shadow: 0 3px 8px rgba(0,0,0,.42), 0 0 14px rgba(228,199,122,.24), inset 0 1px 0 rgba(255,255,255,.18);
+  z-index: 3;
 }
 
 /* === 名字 === */
@@ -251,6 +284,21 @@
   margin: 0 0 4px;
   letter-spacing: -.01em;
   line-height: 1.1;
+}
+.player-card-shell .pc-name.identity-frosted-name,
+.pcv-back-name.identity-frosted-name {
+  filter: blur(2.6px);
+  opacity: .82;
+  color: rgba(232,238,250,.86);
+  text-shadow:
+    0 0 9px rgba(232,238,250,.36),
+    0 4px 16px rgba(0,0,0,.72);
+  user-select: none;
+  animation: frosted-name-twinkle 5.6s ease-in-out infinite;
+  will-change: opacity;
+}
+.pcv-back-name.identity-frosted-name {
+  display: inline-block;
 }
 
 /* === Meta（位置 / B/T）=== */
@@ -1077,6 +1125,9 @@
   opacity: var(--dot-alpha, .58);
   will-change: transform, opacity;
 }
+.orion-arm-stage:not(.is-css-particle-active) .arm-particle-dot {
+  will-change: auto;
+}
 .arm-particle-dot.is-gold {
   background:
     radial-gradient(circle, rgba(255,244,195,.98) 0 18%, rgba(228,199,122,.78) 44%, rgba(201,169,97,.18) 74%, transparent 100%);
@@ -1224,6 +1275,33 @@
   border-color: rgba(143,176,255,.62);
   box-shadow: 0 0 18px rgba(46,107,255,.28);
 }
+.arm-public-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  margin-top: 10px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(5,11,24,.38), rgba(46,107,255,.08));
+  border: 1px solid rgba(143,176,255,.20);
+  color: rgba(196,210,235,.76);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.62);
+  -webkit-backdrop-filter: blur(10px) saturate(125%);
+  backdrop-filter: blur(10px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+}
+.arm-public-hint::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold-bright);
+  box-shadow: 0 0 10px rgba(228,199,122,.52);
+  opacity: .82;
+}
 .arm-empty-state {
   position: absolute;
   z-index: 8;
@@ -1284,8 +1362,7 @@
   opacity: .26;
   pointer-events: none;
   transform: translateZ(-18px) scale(.94);
-  animation: arm-node-aura-breathe var(--arm-breathe-duration) ease-in-out infinite;
-  animation-delay: calc(var(--arm-i, 0) * -0.13s);
+  animation: none;
   transition: opacity .28s var(--ease), transform .28s var(--ease), filter .28s var(--ease);
 }
 .arm-node::after {
@@ -1319,24 +1396,14 @@
 .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) {
   animation:
     arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
-    arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite,
-    arm-or-path-node var(--arm-path-duration) ease-in-out infinite;
+    arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite;
   animation-delay:
     calc(var(--arm-i, 0) * -0.21s),
-    calc(var(--arm-i, 0) * -0.13s),
-    var(--or-delay);
-}
-.arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) .arm-node-photo-wrap {
-  animation: arm-or-path-bulb var(--arm-path-duration) ease-in-out infinite;
-  animation-delay: var(--or-delay);
+    calc(var(--arm-i, 0) * -0.13s);
 }
 .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused)::before {
-  animation:
-    arm-node-aura-breathe var(--arm-breathe-duration) ease-in-out infinite,
-    arm-or-path-aura var(--arm-path-duration) ease-in-out infinite;
-  animation-delay:
-    calc(var(--arm-i, 0) * -0.13s),
-    var(--or-delay);
+  animation: arm-or-path-aura var(--arm-path-duration) ease-in-out infinite;
+  animation-delay: var(--or-delay);
 }
 .arm-node:hover,
 .arm-node:focus-visible,
@@ -1363,6 +1430,7 @@
 }
 .arm-node-photo-wrap {
   position: relative;
+  --arm-node-photo-size: 34px;
   display: inline-grid;
   place-items: center;
 	  width: 40px;
@@ -1492,22 +1560,58 @@
   position: absolute;
   inset: -13px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--node-color) 34%, transparent), transparent 66%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--node-color) 48%, transparent), rgba(228,199,122,.10) 32%, transparent 68%);
   filter: blur(12px);
-  opacity: .32;
+  opacity: .44;
   z-index: 0;
   animation: none;
 }
+.arm-node-photo-wrap.is-frosted-avatar {
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--node-color) 62%, transparent),
+    0 0 16px rgba(228,199,122,.16),
+    0 8px 24px rgba(0,0,0,.36);
+}
+.arm-node-photo-wrap.is-frosted-avatar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--arm-node-photo-size);
+  height: var(--arm-node-photo-size);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 4;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.34), rgba(168,197,255,.10) 42%, rgba(255,255,255,.23)),
+    radial-gradient(circle at 30% 18%, rgba(255,255,255,.34), transparent 38%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.22),
+    0 0 13px rgba(174,203,255,.26),
+    0 0 18px rgba(228,199,122,.12),
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -10px 16px rgba(4,12,28,.16);
+  animation: frosted-node-glint 5.2s ease-in-out infinite;
+  animation-delay: calc(var(--arm-i, 0) * -0.13s);
+  will-change: opacity;
+}
 .arm-node-photo {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: var(--arm-node-photo-size);
+  height: var(--arm-node-photo-size);
   border-radius: 50%;
   object-fit: cover;
   object-position: center 20%;
   background: var(--navy-900);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
   z-index: 3;
+}
+.arm-node-photo.identity-frosted-avatar {
+  filter: blur(1.8px) saturate(.8) contrast(.94) brightness(.9);
+  transform: none;
+  -webkit-clip-path: circle(50% at 50% 50%);
+  clip-path: circle(50% at 50% 50%);
+  contain: paint;
 }
 .arm-node-photo-wrap,
 .arm-node-name,
@@ -1554,6 +1658,51 @@
   text-shadow: 0 2px 12px rgba(0,0,0,.72);
   transition: opacity .2s var(--ease), transform .2s var(--ease);
 	}
+.arm-node-name.identity-frosted-name {
+  filter: blur(1.25px);
+  opacity: .78;
+  color: rgba(232,238,250,.82);
+  text-shadow:
+    0 0 7px rgba(232,238,250,.42),
+    0 2px 12px rgba(0,0,0,.78);
+  user-select: none;
+  animation: frosted-name-twinkle 5.8s ease-in-out infinite;
+  animation-delay: calc(var(--arm-i, 0) * -0.07s);
+  will-change: opacity;
+}
+@keyframes frosted-node-glint {
+  0%, 100% {
+    opacity: .62;
+    transform: translate(-50%, -50%);
+  }
+  38% {
+    opacity: .96;
+    transform: translate(-50%, -50%);
+  }
+  58% {
+    opacity: .72;
+    transform: translate(-50%, -50%);
+  }
+}
+@keyframes frosted-card-glint {
+  0%, 100% {
+    opacity: .68;
+    transform: translate(-50%, -50%);
+  }
+  42% {
+    opacity: .96;
+    transform: translate(-50%, -50%);
+  }
+  64% {
+    opacity: .74;
+    transform: translate(-50%, -50%);
+  }
+}
+@keyframes frosted-name-twinkle {
+  0%, 100% { opacity: .76; }
+  45% { opacity: .9; }
+  62% { opacity: .70; }
+}
 	@keyframes arm-node-soft-float {
 	  0%, 100% { translate: 0 0; }
 	  34% { translate: var(--arm-sway-x) calc(var(--arm-sway-y) * -1); }
@@ -1566,12 +1715,10 @@
 	@keyframes arm-node-aura-breathe {
 	  0%, 100% {
 	    opacity: .22;
-	    filter: blur(13px) brightness(1);
 	    transform: translateZ(-18px) scale(.94);
 	  }
 	  48% {
 	    opacity: .34;
-	    filter: blur(14px) brightness(1.12);
 	    transform: translateZ(-19px) scale(1.03);
 	  }
 	}
@@ -1602,7 +1749,6 @@
 	  0%, 100% { opacity: .24; }
 	  6% {
 	    opacity: .56;
-	    filter: blur(16px) brightness(1.20);
 	    transform: translateZ(-24px) scale(1.18);
 	  }
 	  14%, 84% { opacity: .24; }
@@ -1865,6 +2011,8 @@ body.arm-card-open {
 .orion-arm-stage.is-low-motion .arm-node::after,
 .orion-arm-stage.is-low-motion .arm-node-photo-wrap,
 .orion-arm-stage.is-low-motion .arm-node-photo-wrap::before,
+.orion-arm-stage.is-low-motion .arm-node-photo-wrap::after,
+.orion-arm-stage.is-low-motion .arm-node-name.identity-frosted-name,
 .orion-arm-stage.is-low-motion .arm-card-modal,
 .orion-arm-stage.is-low-motion .arm-card-dialog {
   transition: none !important;
@@ -1881,6 +2029,24 @@ body.arm-card-open {
 .orion-arm-stage.is-low-motion .arm-node.is-or-path .arm-node-photo-wrap,
 .orion-arm-stage.is-low-motion .arm-node.is-or-path::before {
   animation: none !important;
+}
+.orion-arm-stage.is-perf-paused .arm-node,
+.orion-arm-stage.is-perf-paused .arm-node::before,
+.orion-arm-stage.is-perf-paused .arm-node::after,
+.orion-arm-stage.is-perf-paused .arm-node-photo-wrap,
+.orion-arm-stage.is-perf-paused .arm-node-photo-wrap::before,
+.orion-arm-stage.is-perf-paused .arm-node-photo-wrap::after,
+.orion-arm-stage.is-perf-paused .arm-node-particles,
+.orion-arm-stage.is-perf-paused .arm-node-particles::before,
+.orion-arm-stage.is-perf-paused .arm-node-particles::after,
+.orion-arm-stage.is-perf-paused .arm-node-name.identity-frosted-name,
+.orion-arm-stage.is-perf-paused .arm-particle-dot,
+.orion-arm-stage.is-perf-paused .arm-card-modal,
+.orion-arm-stage.is-perf-paused .arm-card-dialog {
+  animation-play-state: paused !important;
+}
+.orion-arm-stage.is-perf-paused .arm-particle-dot {
+  will-change: auto;
 }
 .arm-motion-toggle.is-low-motion {
   color: var(--gold-bright);
@@ -2169,10 +2335,7 @@ body.arm-card-open {
   .arm-node-photo-wrap {
     width: 36px;
     height: 36px;
-  }
-  .arm-node-photo {
-    width: 30px;
-    height: 30px;
+    --arm-node-photo-size: 30px;
   }
   .arm-node-name { font-size: 11px; }
   .arm-motion-toggle {
@@ -2201,6 +2364,13 @@ body.arm-card-open {
   .arm-search-console .pos-chips {
     justify-content: center;
     flex-wrap: wrap;
+  }
+  .arm-public-hint {
+    max-width: calc(100vw - 42px);
+    justify-content: center;
+    text-align: center;
+    line-height: 1.55;
+    white-space: normal;
   }
   .orion-arm-stage.has-arm-admin-panel .arm-stage-controls {
     left: 14px;
@@ -2357,6 +2527,7 @@ html.wallpaper-mode .arm-stage-mark {
   opacity: .76;
 }
 html.wallpaper-mode .arm-search-console,
+html.wallpaper-mode .arm-public-hint,
 html.wallpaper-mode .arm-hud,
 html.wallpaper-mode .arm-focus-panel,
 html.wallpaper-mode .arm-motion-toggle,
@@ -2383,6 +2554,13 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
   transform: translate(-50%, -2px) scale(.92);
 }
 @media (prefers-reduced-motion: reduce) {
+  .pcv-avatar-wrap.is-frosted-avatar::after,
+  .player-card-shell .pc-name.identity-frosted-name,
+  .pcv-back-name.identity-frosted-name,
+  .arm-node-photo-wrap.is-frosted-avatar::after,
+  .arm-node-name.identity-frosted-name {
+    animation: none !important;
+  }
   html.wallpaper-mode .arm-node {
     animation:
       arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
@@ -2397,12 +2575,10 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
   html.wallpaper-mode .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) {
     animation:
       arm-node-soft-float var(--arm-float-duration) ease-in-out infinite,
-      arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite,
-      arm-or-path-node var(--arm-path-duration) ease-in-out infinite !important;
+      arm-node-breathe var(--arm-breathe-duration) ease-in-out infinite !important;
     animation-delay:
       calc(var(--arm-i, 0) * -0.21s),
-      calc(var(--arm-i, 0) * -0.13s),
-      var(--or-delay) !important;
+      calc(var(--arm-i, 0) * -0.13s) !important;
   }
 }
 @media (max-width: 640px) {
@@ -2438,6 +2614,7 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
             <input type="search" id="searchInput" placeholder="搜索姓名 / 球衣号 / 位置..." autocomplete="off">
             <div class="pos-chips" id="posChips"></div>
           </div>
+          <div class="arm-public-hint">成为正式球员后，可完整查看清晰头像与姓名</div>
         </div>
         <div class="arm-hud" aria-hidden="true">
           <div class="arm-hud-label">ORION FIELD</div>
@@ -2589,7 +2766,12 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
     </div>
 </main>
 
-<script src="assets/js/auth.js?v=17"></script>
+<footer class="footer">
+  <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
+</footer>
+
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -2615,6 +2797,40 @@ const playerCategoryCache = new Map();
 const playerStatsCache = new Map();
 const playerPointsCache = new Map();
 const playerRuntimeCache = new Map();
+
+function playerPublicIdentity(p) {
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : {
+    name: p?.name || '',
+    avatar: DB.playerPhotoUrl(p),
+    maskedName: p?.name || '',
+    accessibleName: p?.name || '',
+    photoAlt: p?.name || '',
+  });
+}
+
+function identityClass(identity) {
+  return identity?.isFrosted ? ' is-identity-frosted' : '';
+}
+
+function identityAvatarWrapClass(identity) {
+  return identity?.isFrostedAvatar ? ' is-frosted-avatar' : '';
+}
+
+function identityAvatarClass(identity) {
+  return identity?.isFrostedAvatar ? ' identity-frosted-avatar' : '';
+}
+
+function identityNameClass(identity) {
+  return identity?.isFrostedName ? ' identity-frosted-name' : '';
+}
+
+function identityHiddenAttr(identity) {
+  return identity?.isFrostedName ? ' aria-hidden="true"' : '';
+}
+
+function playerDashboardHref(p) {
+  return `dashboard.html?id=${encodeURIComponent(p.id)}`;
+}
 
 // Classify a single position string into one of: 内野/外野/投手/捕手/其他
 // 注意 ① 用 /i 标志 case-insensitive，覆盖 SEED 用大写 "CF" 跟比赛数据用小写 "cf" 两种风格
@@ -2728,9 +2944,12 @@ const armState = {
   lastTs: 0,
   lastPaintTs: 0,
   frameId: 0,
+  frameTimer: 0,
   lowMotion: !!armReducedMotion || armStoredLowMotion,
   paused: !!armReducedMotion || armStoredLowMotion,
   pageHidden: false,
+  stageVisible: true,
+  perfPaused: false,
   pointerX: 0,
   pointerY: 0,
   three: null,
@@ -2743,6 +2962,9 @@ const armState = {
   hoverId: null,
   totalGames: 0,
   tryoutCount: 0,
+  stageObserver: null,
+  stageRect: null,
+  stageRectDirty: true,
   resizeObserver: null,
   sceneLoading: false,
   sceneInitQueued: false,
@@ -2793,24 +3015,67 @@ function shouldUseStaticArmScene() {
 
 function markArmStageSizeDirty() {
   armState.stageSizeDirty = true;
+  armState.stageRectDirty = true;
   armState.particleRenderKey = '';
+}
+
+function markArmStagePositionDirty() {
+  armState.stageRectDirty = true;
+}
+
+function getArmStageClientRect() {
+  if (!armState.stageRectDirty && armState.stageRect) return armState.stageRect;
+  const rect = armStage.getBoundingClientRect();
+  armState.stageRect = {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+  armState.stageRectDirty = false;
+  return armState.stageRect;
 }
 
 function getArmStageSize() {
   if (!armState.stageSizeDirty && armState.stageSizeW > 0 && armState.stageSizeH > 0) {
     return { width: armState.stageSizeW, height: armState.stageSizeH };
   }
-  const rect = armStage.getBoundingClientRect();
+  const rect = getArmStageClientRect();
   armState.stageSizeW = Math.max(1, rect.width || window.innerWidth);
   armState.stageSizeH = Math.max(1, rect.height || 760);
   armState.stageSizeDirty = false;
   return { width: armState.stageSizeW, height: armState.stageSizeH };
 }
 
+function syncArmCssParticleClass(active = false) {
+  armStage.classList.toggle('is-css-particle-active', !!active);
+}
+
+function syncArmPerfPauseState() {
+  const perfPaused = !isWallpaperMode && (armState.pageHidden || !armState.stageVisible);
+  if (armState.perfPaused !== perfPaused) {
+    armState.perfPaused = perfPaused;
+    armStage.classList.toggle('is-perf-paused', perfPaused);
+  }
+  return perfPaused;
+}
+
 function stopArmAnimation() {
   if (armState.frameId) cancelAnimationFrame(armState.frameId);
+  if (armState.frameTimer) window.clearTimeout(armState.frameTimer);
   armState.frameId = 0;
+  armState.frameTimer = 0;
   armState.lastTs = 0;
+  syncArmCssParticleClass(false);
+}
+
+function wakeArmAnimation() {
+  if (armState.frameTimer) {
+    window.clearTimeout(armState.frameTimer);
+    armState.frameTimer = 0;
+  }
+  if (syncArmPerfPauseState()) return;
+  startArmAnimation();
 }
 
 function disposeArmMaterial(material) {
@@ -2850,6 +3115,8 @@ function disposeArmScene() {
     sceneLoading: false,
     sceneInitQueued: false,
     staticRendered: true,
+    stageRect: null,
+    stageRectDirty: true,
     particleActualMode: 'pending',
     particleLastError: '',
     webglParticlesSettling: false,
@@ -3158,6 +3425,7 @@ function scheduleArmGlobalPublish({ immediate = false } = {}) {
 function startArmGlobalSettingsPolling() {
   if (armGlobalPollTimer) return;
   armGlobalPollTimer = window.setInterval(() => {
+    if (document.hidden) return;
     loadArmGlobalSettings({ apply: true, silent: true, skipIfDirty: true });
   }, ARM_GLOBAL_POLL_MS);
 }
@@ -3177,6 +3445,13 @@ function applyArmAdminSettings({ persist = true, rerenderControls = true } = {})
   const previousLayoutSignature = armState.appliedLayoutSignature || '';
   const previousParticleMode = armState.particleMode || 'auto';
   const previousParticleDensity = armState.particleDensity || 1;
+  const previousParticleSignature = [
+    previousParticleDensity,
+    armState.particleBrightness || 1,
+    armState.particleRadius || 1,
+    armState.particleStrength || 1,
+    armState.particleReturn || 1,
+  ].map(v => Number(v).toFixed(3)).join(':');
   const settingsSignature = armSettingsSignature(armAdminState);
   const layoutSignature = armLayoutSettingsSignature(armAdminState);
   const previousPath = armStage.dataset.path || '';
@@ -3222,6 +3497,14 @@ function applyArmAdminSettings({ persist = true, rerenderControls = true } = {})
     armState.staticRendered = false;
   }
   const densityChanged = Math.abs(previousParticleDensity - armState.particleDensity) > .001;
+  const particleSignature = [
+    armState.particleDensity,
+    armState.particleBrightness,
+    armState.particleRadius,
+    armState.particleStrength,
+    armState.particleReturn,
+  ].map(v => Number(v).toFixed(3)).join(':');
+  const particleParamsChanged = previousParticleSignature !== particleSignature;
   if (previousParticleMode !== armState.particleMode || densityChanged) {
     resetArmParticleField();
     disposeArmScene();
@@ -3229,6 +3512,12 @@ function applyArmAdminSettings({ persist = true, rerenderControls = true } = {})
     if (shouldUseStaticArmScene()) armStage.classList.add('no-webgl');
     else armStage.classList.remove('no-webgl');
     scheduleArmScene();
+    wakeArmAnimation();
+  } else if (particleParamsChanged) {
+    armState.particleRenderKey = '';
+    armState.staticRendered = false;
+    armState.webglParticlesSettling = true;
+    wakeArmAnimation();
   } else {
     updateArmParticleStatus();
   }
@@ -3488,26 +3777,28 @@ function initArmAdminPanel() {
 
 function renderArmNodes(filtered) {
   armNodeLayer.innerHTML = filtered.map((p, i) => {
+    const identity = playerPublicIdentity(p);
     const runtime = playerRuntime(p);
     const stats = runtime.stats;
     const points = runtime.totalPoints;
     const onlineSt = runtime.online;
     const jersey = p.number ? `#${escapeAttr(p.number)}` : '#--';
     const metric = points ? `★ ${points}` : `${stats.games || 0} GP`;
+    const a11yName = identity.accessibleName || identity.name || '球员公开资料';
     const nodeA11y = isWallpaperMode
       ? 'tabindex="-1" aria-hidden="true"'
-      : `aria-label="${escapeAttr(p.name)} ${jersey}"`;
+      : `aria-label="${escapeAttr(a11yName)} ${jersey}"`;
     const imageLoading = isWallpaperMode ? 'eager' : 'lazy';
-    return `<button class="arm-node ${runtime.posClass} status-${escapeAttr(onlineSt.status || 'offline')}" type="button" role="listitem"
+    return `<button class="arm-node ${runtime.posClass} status-${escapeAttr(onlineSt.status || 'offline')}${identityClass(identity)}" type="button" role="listitem"
         data-player-id="${escapeAttr(p.id)}" data-arm-index="${i}"
         style="--arm-i:${i}"
         ${nodeA11y}>
-        <span class="arm-node-photo-wrap">
+        <span class="arm-node-photo-wrap${identityAvatarWrapClass(identity)}">
           <span class="arm-node-particles" aria-hidden="true"></span>
-          <img class="arm-node-photo" src="${runtime.photoUrl}" alt="" loading="${imageLoading}" decoding="async" onerror="this.src='assets/img/logo.jpg'">
+          <img class="arm-node-photo${identityAvatarClass(identity)}" src="${escapeAttr(identity.avatar)}" alt="" loading="${imageLoading}" decoding="async" onerror="this.src='${DB.DEFAULT_PUBLIC_PLAYER_AVATAR || 'assets/img/logo.jpg'}'">
           <span class="arm-node-dot ${onlineSt.status}" aria-hidden="true"></span>
         </span>
-        <span class="arm-node-name">${escapeAttr(p.name)}</span>
+        <span class="arm-node-name${identityNameClass(identity)}"${identityHiddenAttr(identity)}>${escapeAttr(identity.name)}</span>
         <span class="arm-node-meta"><span>${jersey}</span><span>${metric}</span></span>
       </button>`;
   }).join('');
@@ -4200,6 +4491,7 @@ function renderArmParticleField(ts = performance.now()) {
   const { brightness, strengthScale, strengthSqrt } = params;
   const visibleCount = params.visibleCount;
   const radius = params.cssRadius;
+  const radiusSq = radius * radius;
   const scatterEase = params.cssScatterEase;
   const returnEase = params.cssReturnEase;
   const phase = armState.phase * Math.PI * 2;
@@ -4221,8 +4513,9 @@ function renderArmParticleField(ts = performance.now()) {
     if (active) {
       const dx = baseX - cursorX;
       const dy = baseY - cursorY;
-      const dist = Math.hypot(dx, dy);
-      if (dist < radius) {
+      const distSq = dx * dx + dy * dy;
+      if (distSq < radiusSq) {
+        const dist = Math.sqrt(distSq);
         const falloff = (1 - dist / radius) ** 2;
         const angle = dist > 0.001 ? Math.atan2(dy, dx) : p.seed;
         const scatter = (44 + p.depth * 68) * p.scatter * falloff * strengthScale;
@@ -4493,34 +4786,79 @@ function renderArmScene() {
   armState.renderer.render(armState.scene, armState.camera);
 }
 
+function armUsesCssParticles() {
+  const particleMode = armState.particleMode || 'auto';
+  return !!(
+    armParticleField &&
+    !armState.lowMotion &&
+    armState.filtered.length &&
+    particleMode !== 'off' &&
+    particleMode !== 'webgl' &&
+    (!armState.renderer || particleMode === 'css')
+  );
+}
+
 function startArmAnimation() {
   syncArmMotionButton();
+  if (syncArmPerfPauseState()) return;
   if (armState.lowMotion) {
     stopArmAnimation();
     if (armState.nodesDirty) positionArmNodes(0);
     return;
   }
-  if (armState.frameId) return;
+  if (armState.frameId || armState.frameTimer) return;
+  const queueTick = (delay = 0) => {
+    if (armState.frameId || armState.frameTimer) return;
+    const requestFrame = () => {
+      armState.frameTimer = 0;
+      armState.frameId = requestAnimationFrame(tick);
+    };
+    if (delay > 32) armState.frameTimer = window.setTimeout(requestFrame, delay);
+    else requestFrame();
+  };
   const tick = (ts) => {
+    armState.frameId = 0;
     const dt = armState.lastTs ? Math.min(48, ts - armState.lastTs) : 16;
     armState.lastTs = ts;
-    if (!armState.paused && !armState.pageHidden) {
+    const active = !armState.paused && !armState.pageHidden && armState.stageVisible;
+    if (!active) {
+      stopArmAnimation();
+      syncArmPerfPauseState();
+      return;
+    }
+    const cssParticlesActive = armUsesCssParticles();
+    syncArmCssParticleClass(cssParticlesActive);
+    const interactiveParticles = armState.pointerActive || armState.webglParticlesSettling || armState.cssParticleSettling;
+    const shouldAdvancePhase = active && (isWallpaperMode || cssParticlesActive || interactiveParticles || !armState.staticRendered);
+    if (shouldAdvancePhase) {
       armState.phase = (armState.phase + dt * 0.000016) % 1;
     }
-    const shouldPaint = (ts - armState.lastPaintTs) >= 48;
     if (armState.nodesDirty) positionArmNodes(ts);
-    if (!armState.paused && !armState.pageHidden && shouldPaint) {
+    const frameInterval = isWallpaperMode || cssParticlesActive
+      ? 48
+      : interactiveParticles
+        ? 32
+        : 900;
+    const shouldPaint = active && (
+      isWallpaperMode ||
+      cssParticlesActive ||
+      interactiveParticles ||
+      !armState.staticRendered
+    ) && (ts - armState.lastPaintTs) >= frameInterval;
+    if (shouldPaint) {
       renderArmScene();
-      armState.staticRendered = true;
+      armState.staticRendered = !(isWallpaperMode || armUsesCssParticles() || armState.pointerActive || armState.webglParticlesSettling || armState.cssParticleSettling);
       armState.lastPaintTs = ts;
     } else if (!armState.staticRendered) {
       renderArmScene();
-      armState.staticRendered = true;
+      armState.staticRendered = !(isWallpaperMode || armUsesCssParticles() || armState.pointerActive || armState.webglParticlesSettling || armState.cssParticleSettling);
       armState.lastPaintTs = ts;
     }
-    armState.frameId = requestAnimationFrame(tick);
+    const hasContinuousWork = active && (isWallpaperMode || armUsesCssParticles() || armState.pointerActive || armState.webglParticlesSettling || armState.cssParticleSettling);
+    const nextDelay = hasContinuousWork ? frameInterval : active ? 900 : 1200;
+    queueTick(nextDelay);
   };
-  armState.frameId = requestAnimationFrame(tick);
+  queueTick(0);
 }
 
 function scheduleArmScene() {
@@ -4541,6 +4879,39 @@ function scheduleArmScene() {
   } else {
     window.setTimeout(run, 180);
   }
+}
+
+function setArmStageVisible(visible) {
+  const next = isWallpaperMode ? true : !!visible;
+  if (armState.stageVisible === next) {
+    syncArmPerfPauseState();
+    return;
+  }
+  armState.stageVisible = next;
+  syncArmPerfPauseState();
+  if (!next) {
+    armState.pointerActive = false;
+    armState.pointerX = 0;
+    armState.pointerY = 0;
+    stopArmAnimation();
+    return;
+  }
+  armState.staticRendered = false;
+  markArmStagePositionDirty();
+  wakeArmAnimation();
+}
+
+function initArmStageVisibilityObserver() {
+  if (isWallpaperMode || !('IntersectionObserver' in window)) {
+    setArmStageVisible(true);
+    return;
+  }
+  if (armState.stageObserver) armState.stageObserver.disconnect();
+  armState.stageObserver = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    setArmStageVisible(!!entry?.isIntersecting);
+  }, { root: null, rootMargin: '160px 0px 160px 0px', threshold: 0 });
+  armState.stageObserver.observe(armStage);
 }
 
 function posMatches(p, cat){
@@ -4587,7 +4958,8 @@ function render(){
   if (!isWallpaperMode) renderTryout();
   const filtered = players.filter(p => {
     if (!posMatches(p, activeFilter.pos)) return false;
-    return DB.fuzzyMatch(activeFilter.search, p.name, p.number, p.position, ...(p.titles||[]));
+    const identity = playerPublicIdentity(p);
+    return DB.fuzzyMatch(activeFilter.search, identity.name, p.number, p.position, ...(p.titles||[]));
   });
 
   const totalGames = totalGamesCount;
@@ -4683,6 +5055,7 @@ function pickHeroBadge(p, stats, awards, mvpCount) {
 }
 
 function renderPlayerCardV2(p) {
+  const identity = playerPublicIdentity(p);
   const runtime = playerRuntime(p);
   const stats   = runtime.stats;
   const num     = p.number || '--';
@@ -4692,6 +5065,8 @@ function renderPlayerCardV2(p) {
   const posCls  = runtime.posClass;
   const posDisplay = [...runtime.categories].join(' · ') || '—';
   const handed  = (p.bats || p.throws) ? ` <span class="sep">·</span> B/T: ${(p.bats||'—')}/${(p.throws||'—')}` : '';
+  const cardA11yName = identity.accessibleName || identity.name || '球员公开资料';
+  const cardPhotoAlt = identity.photoAlt || cardA11yName;
 
   // 赛季聚合
   const seasonStats = aggregateBySeason(stats.perGame || [], gameById);
@@ -4774,11 +5149,11 @@ function renderPlayerCardV2(p) {
       </div>
       ${onlineDot}
       <span class="pcv-flip-corner" title="点击翻面看赛季数据" aria-label="翻面">↻</span>
-      <div class="pcv-avatar-wrap">
-        <img class="pc-photo" src="${runtime.photoUrl}" alt="${escapeAttr(p.name)}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+      <div class="pcv-avatar-wrap${identityAvatarWrapClass(identity)}">
+        <img class="pc-photo${identityAvatarClass(identity)}" src="${escapeAttr(identity.avatar)}" alt="${escapeAttr(cardPhotoAlt)}" loading="lazy" onerror="this.src='${DB.DEFAULT_PUBLIC_PLAYER_AVATAR || 'assets/img/logo.jpg'}'">
         <span class="pcv-jersey">#${escapeAttr(num)}</span>
       </div>
-      <div class="pc-name">${escapeAttr(p.name)}</div>
+      <div class="pc-name${identityNameClass(identity)}"${identityHiddenAttr(identity)}>${escapeAttr(identity.name)}</div>
       <div class="pc-meta">${posDisplay}${handed}</div>
       ${sloganRow}
       <div class="pcv-divider"><span>KEY STATS · 赛 季 亮 点</span></div>
@@ -4851,7 +5226,7 @@ function renderPlayerCardV2(p) {
     <div class="face back">
       <div class="pcv-position-strip"></div>
       <div class="pcv-back-header">
-        <span class="pcv-back-name">${escapeAttr(p.name)}</span>
+        <span class="pcv-back-name${identityNameClass(identity)}"${identityHiddenAttr(identity)}>${escapeAttr(identity.name)}</span>
         <span class="pcv-back-sub">SEASON STATS</span>
       </div>
       <table class="pcv-season-table">
@@ -4863,12 +5238,12 @@ function renderPlayerCardV2(p) {
       </table>
       ${recentHTML}
       <div class="pcv-back-footer">
-        <a class="pcv-nav-link" href="dashboard.html?player=${encodeURIComponent(p.name)}" onclick="event.stopPropagation()">查看完整面板 →</a>
+        <a class="pcv-nav-link" href="${playerDashboardHref(p)}" onclick="event.stopPropagation()">查看完整面板 →</a>
         <div class="pcv-flip-hint">↺ 翻回正面</div>
       </div>
     </div>`;
 
-  return `<div class="player-card-shell ${posCls}" onclick="window.flipPlayerCard(this, event)" tabindex="0">
+  return `<div class="player-card-shell ${posCls}${identityClass(identity)}" onclick="window.flipPlayerCard(this, event)" tabindex="0" aria-label="${escapeAttr(cardA11yName)} 球员卡">
     <div class="player-card-flip">
       ${frontHTML}
       ${backHTML}
@@ -4964,15 +5339,18 @@ document.addEventListener('keydown', e => {
 });
 function applyArmPointer() {
   armState.pointerRaf = 0;
-  if (armState.lowMotion) return;
-  const rect = armStage.getBoundingClientRect();
+  if (armState.lowMotion || armState.pageHidden || !armState.stageVisible) return;
+  const rect = getArmStageClientRect();
+  if (!rect.width || !rect.height) return;
   armState.pointerActive = true;
   armState.pointerX = clamp(((armState.pointerClientX - rect.left) / rect.width) * 2 - 1, -1, 1);
   armState.pointerY = clamp(((armState.pointerClientY - rect.top) / rect.height) * 2 - 1, -1, 1);
   armState.staticRendered = false;
+  wakeArmAnimation();
 }
 armStage.addEventListener('pointermove', e => {
-  if (armState.lowMotion) return;
+  if (armState.lowMotion || armState.pageHidden || !armState.stageVisible) return;
+  if (Math.abs(e.clientX - armState.pointerClientX) < 1.5 && Math.abs(e.clientY - armState.pointerClientY) < 1.5) return;
   armState.pointerClientX = e.clientX;
   armState.pointerClientY = e.clientY;
   if (!armState.pointerRaf) armState.pointerRaf = requestAnimationFrame(applyArmPointer);
@@ -4987,6 +5365,7 @@ armStage.addEventListener('pointerleave', () => {
   armState.pointerActive = false;
   armState.webglParticlesSettling = true;
   armState.staticRendered = false;
+  wakeArmAnimation();
 });
 armMotionToggle.addEventListener('click', () => {
   setArmLowMotion(!armState.lowMotion, { persist: true });
@@ -4996,15 +5375,25 @@ window.addEventListener('resize', () => {
   resetArmParticleField();
   if (armState.lowMotion) positionArmNodes(0);
 }, { passive: true });
+window.addEventListener('scroll', markArmStagePositionDirty, { passive: true });
 document.addEventListener('visibilitychange', () => {
   armState.pageHidden = document.hidden;
-  if (!document.hidden) loadArmGlobalSettings({ apply: true, silent: true, skipIfDirty: true });
+  syncArmPerfPauseState();
+  if (document.hidden) {
+    armState.pointerActive = false;
+    stopArmAnimation();
+    return;
+  }
+  markArmStagePositionDirty();
+  loadArmGlobalSettings({ apply: true, silent: true, skipIfDirty: true });
+  wakeArmAnimation();
 });
 
 await loadArmGlobalSettings({ silent: true });
 syncArmMotionButton();
 initArmAdminPanel();
 render();
+initArmStageVisibilityObserver();
 startArmGlobalSettingsPolling();
 })();
 </script>

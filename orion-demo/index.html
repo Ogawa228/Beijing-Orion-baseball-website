@@ -6,8 +6,8 @@
 <title>北京猎户座 · Beijing Orion</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 </head>
 <body>
 
@@ -58,7 +58,7 @@
 
       <div class="ed-body">
         <p>如今球队已经长到 <em>300+ 队员</em>，下设 <em>猎户座一队、二队、女垒队、慢垒队</em> 共四支阵容，常年征战各类赛事。从主场奥体的清晨训练到全国邀请赛的客场之路，每一场球都不缺人接力。</p>
-        <p>球队的日常运转由领队、队长、3 名助教、2 名球队经理、3 名数据组以及 1 名物资管理员协同支撑 — 训练有人盯、比赛有人记、装备有人罩；从挥棒到 BoxScore，从签到到积分榜，背后都有一双手把它撑起来。</p>
+        <p>球队的日常运转由领队、队长、3 名助教、2 名球队经理、3 名数据组、网站运维以及 1 名物资管理员协同支撑 — 训练有人盯、比赛有人记、装备有人罩；从挥棒到 BoxScore，从签到到积分榜，背后都有一双手把它撑起来。</p>
         <p>除了打球，我们也常组织线下聚餐、月度生日会、露营 BBQ、桌游、密室、团建 — 想做的不止一支球队，更想做一群在场内场外都愿意彼此奔赴的人。</p>
         <p>如果你也想试试这个圈子，无论你打过多少年球、能不能挥到底 — 我们留了一个位置给你。</p>
       </div>
@@ -620,11 +620,17 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club · 以星辰之名</div>
+  <div class="footer-meta">
+    <span>© 2026 Beijing Orion Baseball Club</span>
+    <i class="footer-dot" aria-hidden="true"></i>
+    <span>Edited by 江山</span>
+    <i class="footer-dot" aria-hidden="true"></i>
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">京ICP备2026027592号-1</a>
+  </div>
 </footer>
 
 <!-- Auth modal is auto-injected by auth.js on every page -->
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 buildNav('home');
 
@@ -638,7 +644,7 @@ buildNav('home');
     { name:'李斯然', role:'队长 · CAPTAIN',     initial:'李', handles:[{type:'wx',v:'Alan__1110'}] },
     { name:'黄强',   role:'队长 · CAPTAIN',     initial:'黄', handles:[{type:'wx',v:'Deco_E'}] },
     { name:'董立彬', role:'数据组 · DATA',      initial:'董', handles:[] },
-    { name:'靳江山', role:'数据组 · DATA',      initial:'江', handles:[] },
+    { name:'靳江山', role:'数据组 / 运维组 · DATA / DEVOPS', initial:'江', handles:[] },
     { name:'杰哥',   role:'球队经理 · MANAGER', initial:'杰', handles:[], noLink:true },
   ];
   host.innerHTML = people.map(p => {

@@ -8,6 +8,7 @@
    =================================================================== */
 
 const SLOGAN_MAX = 14;
+const DEFAULT_PUBLIC_PLAYER_AVATAR = 'assets/img/generated/orion-default-player-avatar.png?v=4';
 
 // ============== fetch helper ==============
 async function _api(method, url, body) {
@@ -47,6 +48,30 @@ function _canonicalNameKey(s) {
   return n.toLowerCase();
 }
 
+function _imageUrl(value, fallback = 'assets/img/logo.jpg') {
+  const v = String(value || '').trim();
+  if (!v) return fallback;
+  if (/^(data:|blob:|https?:\/\/|\/)/i.test(v)) return v;
+  if (v.startsWith('assets/')) return v;
+  return 'assets/img/players/' + v;
+}
+
+function _maskPlayerName(name) {
+  const chars = Array.from(String(name || '').trim());
+  if (!chars.length) return '星X';
+  if (chars.length === 1) return chars[0] + 'X';
+  const mask = 'X'.repeat(Math.max(1, chars.length - 1));
+  return chars[0] + (chars.length >= 3 ? ' ' : '') + mask;
+}
+
+function _maskPlayerIdentityName(player) {
+  const candidates = [player?.name, ...(Array.isArray(player?.aliases) ? player.aliases : [])]
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
+    .sort((a, b) => Array.from(b).length - Array.from(a).length);
+  return _maskPlayerName(candidates[0] || player?.name || '');
+}
+
 // ============== 内存 cache ==============
 const _cache = {
   players: [], games: [], tournaments: [], events: [],
@@ -63,6 +88,7 @@ const DB = {
   // 暴露常量（页面引用）
   POINTS_RULES: null,
   SLOGAN_MAX,
+  DEFAULT_PUBLIC_PLAYER_AVATAR,
 
   // ==================== 加载 ====================
   async preload(force = false) {
@@ -125,6 +151,59 @@ const DB = {
   getPlayerLevel(player) {
     if (!player) return 'verified';
     return player.level || 'verified';
+  },
+  maskPlayerName: _maskPlayerName,
+  canViewRealPlayerIdentity(player) {
+    if (!player) return false;
+    if (DB.hasPermission('players:write') || DB.hasPermission('players:display_write')) return true;
+    const u = _cache.user;
+    if (u && u.boundPlayerId === player.id) return true;
+    return !!(_cache.player && DB.getPlayerLevel(_cache.player) === 'verified');
+  },
+  canEditPlayerPublicProfile(player) {
+    if (!player) return false;
+    if (DB.hasPermission('players:write') || DB.hasPermission('players:display_write')) return true;
+    const u = _cache.user;
+    return !!(u && u.boundPlayerId === player.id && DB.getPlayerLevel(player) === 'verified');
+  },
+  publicPlayerName(player, opts = {}) {
+    if (!player) return '';
+    if (opts.reveal === true) return player.name || '';
+    return String(player.publicDisplayName || '').trim() || player.name || _maskPlayerIdentityName(player);
+  },
+  publicPlayerAvatar(player, opts = {}) {
+    if (!player) return DEFAULT_PUBLIC_PLAYER_AVATAR;
+    if (opts.reveal === true) return DB.playerPhotoUrl(player);
+    return String(player.publicAvatar || '').trim()
+      ? _imageUrl(player.publicAvatar, DEFAULT_PUBLIC_PLAYER_AVATAR)
+      : DB.playerPhotoUrl(player);
+  },
+  publicPlayerIdentity(player, opts = {}) {
+    const reveal = opts.reveal === true;
+    const hasCustomName = !!String(player?.publicDisplayName || '').trim();
+    const hasCustomAvatar = !!String(player?.publicAvatar || '').trim();
+    const isFrostedName = !reveal && !hasCustomName;
+    const isFrostedAvatar = !reveal && !hasCustomAvatar;
+    const canExposeName = reveal || hasCustomName;
+    return {
+      name: DB.publicPlayerName(player, { reveal }),
+      avatar: DB.publicPlayerAvatar(player, { reveal }),
+      maskedName: _maskPlayerIdentityName(player),
+      hasCustomName,
+      hasCustomAvatar,
+      isFrostedName,
+      isFrostedAvatar,
+      isFrosted: isFrostedName || isFrostedAvatar,
+      canExposeName,
+      accessibleName: canExposeName ? DB.publicPlayerName(player, { reveal }) : '球员公开资料',
+      photoAlt: canExposeName ? DB.publicPlayerName(player, { reveal }) : '球员公开头像',
+    };
+  },
+  publicPlayerIdentityForViewer(player) {
+    return DB.publicPlayerIdentity(player, { reveal: DB.canViewRealPlayerIdentity(player) });
+  },
+  publicPlayerProfileHref(player) {
+    return player?.id ? `dashboard.html?id=${encodeURIComponent(player.id)}` : '#';
   },
   getTrainingCount(playerId) {
     return _cache.attendances.filter(a => a.playerId === playerId && a.kind === 'training').length;
@@ -192,17 +271,15 @@ const DB = {
   allPlayers()           { return [..._cache.players]; },
   getPlayerById(id)      { return _cache.players.find(p => p.id === id); },
   playerPhotoUrl(player) {
-    if (!player || !player.photo) return 'assets/img/logo.jpg';
-    if (player.photo.startsWith('data:')) return player.photo;
-    if (player.photo.startsWith('assets/')) return player.photo;
-    return 'assets/img/players/' + player.photo;
+    return _imageUrl(player?.photo, 'assets/img/logo.jpg');
   },
   // 同步 API：本地立即推一个临时 player，后台 fetch 把临时换成真版
   addPlayer(data) {
     const tempId = data.id || `p_pending_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
     const tempPlayer = {
       id: tempId, name: data.name||'', number: data.number||'', position: data.position||'',
-      photo: data.photo||'', slogan: data.slogan||'', bats: data.bats||'', throws: data.throws||'',
+      photo: data.photo||'', publicDisplayName: data.publicDisplayName || '', publicAvatar: data.publicAvatar || '',
+      slogan: data.slogan||'', bats: data.bats||'', throws: data.throws||'',
       joinYear: data.joinYear||null, titles: data.titles||[],
       aliases: data.aliases||null, level: data.level || 'verified',
     };
@@ -230,6 +307,13 @@ const DB = {
       DB._toastErr('更新球员失败', e);
     });
     return _cache.players[idx];
+  },
+  async updatePlayerPublicProfile(id, updates) {
+    const r = await _api('PATCH', `/api/players/${encodeURIComponent(id)}/public-profile`, updates);
+    const idx = _cache.players.findIndex(p => p.id === id);
+    if (idx >= 0 && r.player) _cache.players[idx] = r.player;
+    if (_cache.player?.id === id && r.player) _cache.player = { ..._cache.player, ...r.player };
+    return r.player;
   },
   deletePlayer(id) {
     const before = _cache.players.find(p => p.id === id);

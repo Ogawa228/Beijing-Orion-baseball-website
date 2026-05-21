@@ -86,6 +86,7 @@ const HTML_PAGES = new Set([
   'ranking.html',
   'tournament.html',
   'contact.html',
+  'legal.html',
   'admin.html',
 ]);
 

@@ -6,8 +6,8 @@
 <title>积分榜 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 <style>
 /* 顶部 hero */
 .rank-hero { padding: 100px 0 36px; text-align: center; }
@@ -298,6 +298,10 @@
 .rank-table tr[data-top="3"] .rank-num { color: #c79a7a; font-size: 20px; }
 
 .rank-photo-cell { display: flex; align-items: center; gap: 12px; }
+.rank-mini-avatar {
+  width: 44px;
+  height: 44px;
+}
 .rank-mini-photo {
   width: 44px; height: 44px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--line-strong);
@@ -404,10 +408,10 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -446,7 +450,22 @@ function getFilteredLB(){
   }).filter(r => r.total !== 0).sort((a,b)=>b.total - a.total);
 }
 
-function escapeAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s){ return escapeText(s); }
+function playerIdentity(p){
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : { name: p?.name || '', avatar: DB.playerPhotoUrl(p), canExposeName: true });
+}
+function identityNameHTML(identity, className = ''){
+  const cls = `${className} public-identity-name${identity.isFrostedName ? ' identity-frosted-name' : ''}`.trim();
+  const hidden = identity.isFrostedName ? ' aria-hidden="true"' : '';
+  return `<span class="${escapeAttr(cls)}"${hidden}>${escapeText(identity.name)}</span>`;
+}
+function identityAvatarWrapClass(identity, base = 'identity-avatar-wrap'){
+  return `${base}${identity.isFrostedAvatar ? ' is-frosted-avatar' : ''}`;
+}
+function identityAvatarClass(identity, base = ''){
+  return `${base}${identity.isFrostedAvatar ? ' identity-frosted-avatar' : ''}`.trim();
+}
 
 function render(){
   const lb = getFilteredLB();
@@ -471,9 +490,9 @@ function render(){
     podiumHost.innerHTML = top3.map((row, i) => {
       const rank = i + 1;
       const p = row.player;
+      const identity = playerIdentity(p);
       const bd = row.breakdown || {base:0,performance:0,awards:0,manual:0};
       const performance = Number(bd.performance || 0);
-      const photoUrl = DB.playerPhotoUrl(row.player);
       const rankLabel = rank === 1 ? 'POINTS LEADER' : `TOP ${rank}`;
       return `<div class="podium-col col-${rank}">
         <a class="podium-link" href="player-points.html?id=${p.id}">
@@ -481,12 +500,12 @@ function render(){
             <div class="podium-rank-chip">${rankLabel}</div>
             <div class="podium-medal" aria-label="第${rank}名">${medals[i]}</div>
             <div class="podium-photo-wrap">
-              <div class="podium-photo-clip">
-                <img class="podium-photo" src="${photoUrl}" alt="${p.name}" onerror="this.src='assets/img/logo.jpg'">
+              <div class="${identityAvatarWrapClass(identity, 'podium-photo-clip')}">
+                <img class="${identityAvatarClass(identity, 'podium-photo')}" src="${escapeAttr(identity.avatar)}" alt="${escapeAttr(identity.photoAlt || identity.accessibleName || '球员公开头像')}" onerror="this.src='assets/img/logo.jpg'">
               </div>
               <span class="podium-jersey">#${p.number||'--'}</span>
             </div>
-            <div class="podium-name">${p.name}${DB.getPlayerLevel(p)==='casual' ? ' <span style="font-size:11px;color:var(--blue-300);vertical-align:middle">⏳</span>' : ''}</div>
+            <div class="podium-name">${identityNameHTML(identity)}${DB.getPlayerLevel(p)==='casual' ? ' <span style="font-size:11px;color:var(--blue-300);vertical-align:middle">⏳</span>' : ''}</div>
             <div class="podium-pos">${p.position || '—'}</div>
             <div class="podium-pts">${row.total}</div>
             <div class="podium-kicker">SEASON POINTS</div>
@@ -507,7 +526,7 @@ function render(){
   tbody.innerHTML = lb.map((row, i) => {
     const rank = i + 1;
     const p = row.player;
-    const photoUrl = DB.playerPhotoUrl(p);
+    const identity = playerIdentity(p);
     const onlineSt = DB.getPlayerOnlineStatus(p.id);
     const bd = row.breakdown || {base:0,performance:0,awards:0,manual:0};
     const breakdownHTML = (bd.base || bd.performance || bd.awards || bd.manual) ? `
@@ -521,9 +540,11 @@ function render(){
       <td class="rank-num">${rank}</td>
       <td>
         <div class="rank-photo-cell">
-          <img class="rank-mini-photo" src="${photoUrl}" alt="${p.name}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+          <span class="${identityAvatarWrapClass(identity, 'identity-avatar-wrap rank-mini-avatar')}">
+            <img class="${identityAvatarClass(identity, 'rank-mini-photo')}" src="${escapeAttr(identity.avatar)}" alt="${escapeAttr(identity.photoAlt || identity.accessibleName || '球员公开头像')}" loading="lazy" onerror="this.src='assets/img/logo.jpg'">
+          </span>
           <div class="rank-name-block">
-            <div class="rank-name"><span class="rank-online-dot ${onlineSt.status}"></span>${p.name}${DB.getPlayerLevel(p)==='casual' ? ' <span style="font-size:10px;color:var(--blue-300);background:rgba(46,107,255,.12);border:1px solid rgba(46,107,255,.3);padding:1px 6px;border-radius:999px;margin-left:4px;vertical-align:middle">⏳ 试训</span>' : ''}</div>
+            <div class="rank-name"><span class="rank-online-dot ${onlineSt.status}"></span>${identityNameHTML(identity)}${DB.getPlayerLevel(p)==='casual' ? ' <span style="font-size:10px;color:var(--blue-300);background:rgba(46,107,255,.12);border:1px solid rgba(46,107,255,.3);padding:1px 6px;border-radius:999px;margin-left:4px;vertical-align:middle">⏳ 试训</span>' : ''}</div>
             <div class="rank-num-pos">#${p.number||'--'} · ${p.position || '—'}</div>
           </div>
         </div>

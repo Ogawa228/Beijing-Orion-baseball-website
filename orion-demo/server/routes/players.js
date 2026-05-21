@@ -6,6 +6,7 @@ const { wrap, requirePermission } = require('../middleware');
 const { hasPermission } = require('../permissions');
 const { canonicalNameKey } = require('../name-utils');
 const { logAudit } = require('../people-helpers');
+const { ensurePlayerPublicProfileSchema } = require('../player-public-profile');
 
 const router = express.Router();
 
@@ -56,6 +57,8 @@ function rowToPlayer(r) {
     number: r.number,
     position: r.position,
     photo: r.photo,
+    publicDisplayName: r.public_display_name || '',
+    publicAvatar: r.public_avatar || '',
     slogan: r.slogan,
     bats: r.bats,
     throws: r.throws_,         // throws_ 是关键字回避
@@ -70,12 +73,57 @@ function rowToPlayer(r) {
 
 // GET /api/players - 列表（默认只返 verified；?include=casual 返 casual）
 router.get('/', wrap(async (req, res) => {
+  await ensurePlayerPublicProfileSchema();
   const inc = (req.query.include || '').toLowerCase();
   let where = '';
   if (inc === 'all' || inc === 'casual') where = '';
   else where = `WHERE level = 'verified'`;
   const rows = await db.q(`SELECT * FROM players ${where} ORDER BY created_at ASC`);
   res.json({ players: rows.map(rowToPlayer) });
+}));
+
+// PATCH /api/players/:id/public-profile - 球员本人或管理员维护球员页公开展示资料
+router.patch('/:id/public-profile', wrap(async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'unauthorized', message: '请先登录' });
+  await ensurePlayerPublicProfileSchema();
+  const player = await db.qOne('SELECT id, name, level FROM players WHERE id = ?', [req.params.id]);
+  if (!player) return res.status(404).json({ error: 'not_found' });
+  const isSelfVerified = req.user.bound_player_id === req.params.id && player.level === 'verified';
+  const canAdminEdit = hasPermission(req.user, 'players:display_write') || hasPermission(req.user, 'players:write');
+  if (!isSelfVerified && !canAdminEdit) {
+    return res.status(403).json({ error: 'forbidden', message: '只有球员本人或管理员可以修改公开展示资料' });
+  }
+  req.publicProfilePlayer = player;
+  next();
+}), wrap(async (req, res) => {
+  const body = req.body || {};
+  const fields = [];
+  const values = [];
+  if (body.publicDisplayName !== undefined) {
+    const name = String(body.publicDisplayName || '').trim();
+    if (name.length > 80) return res.status(400).json({ error: 'bad_request', message: '公开展示名称不能超过 80 个字符' });
+    fields.push('public_display_name = ?');
+    values.push(name);
+  }
+  if (body.publicAvatar !== undefined) {
+    const avatar = String(body.publicAvatar || '').trim();
+    if (avatar.length > 1_200_000) return res.status(400).json({ error: 'bad_request', message: '公开展示头像数据过大，请重新上传压缩后的图片' });
+    fields.push('public_avatar = ?');
+    values.push(avatar || null);
+  }
+  if (!fields.length) return res.status(400).json({ error: 'bad_request', message: '没有可更新字段' });
+  values.push(req.params.id);
+  await db.q(`UPDATE players SET ${fields.join(', ')} WHERE id = ?`, values);
+  const row = await db.qOne('SELECT * FROM players WHERE id = ?', [req.params.id]);
+  await logAudit({
+    actorUserId: req.user?.id,
+    action: 'player_public_profile_update',
+    targetType: 'player',
+    targetId: req.params.id,
+    summary: `更新球员公开展示资料「${req.publicProfilePlayer?.name || req.params.id}」`,
+    metadata: { fields: Object.keys(body || {}) },
+  }).catch(() => {});
+  res.json({ player: rowToPlayer(row) });
 }));
 
 // POST /api/players/merge - 合并两个球员档案（admin only）
@@ -226,6 +274,7 @@ router.post('/merge', requirePermission('players:write'), wrap(async (req, res) 
 
 // GET /api/players/:id - 单球员
 router.get('/:id', wrap(async (req, res) => {
+  await ensurePlayerPublicProfileSchema();
   const row = await db.qOne('SELECT * FROM players WHERE id = ?', [req.params.id]);
   if (!row) return res.status(404).json({ error: 'not_found' });
   res.json({ player: rowToPlayer(row) });
@@ -233,6 +282,7 @@ router.get('/:id', wrap(async (req, res) => {
 
 // POST /api/players - 新建（admin only）
 router.post('/', requirePermission('players:write'), wrap(async (req, res) => {
+  await ensurePlayerPublicProfileSchema();
   const b = req.body || {};
   if (!b.name) return res.status(400).json({ error: 'bad_request', message: 'name 必填' });
   const id = b.id || `p_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
@@ -267,6 +317,7 @@ router.patch('/:id', wrap(async (req, res, next) => {
   }
   next();
 }), wrap(async (req, res) => {
+  await ensurePlayerPublicProfileSchema();
   const b = req.body || {};
   const fields = [], values = [];
   const map = {

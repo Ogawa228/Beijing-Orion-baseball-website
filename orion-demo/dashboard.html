@@ -6,16 +6,16 @@
 <title>个人面板 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=30">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="assets/js/db.js?v=18"></script>
+<script src="assets/js/db.js?v=24"></script>
 <style>
 .dash-online-dot {
   position: absolute; bottom: 8px; right: 8px;
   width: 18px; height: 18px; border-radius: 50%;
   border: 3px solid var(--navy-900);
   background: var(--text-mute);
-  z-index: 2;
+  z-index: 4;
   transition: all .25s var(--ease);
 }
 .dash-online-dot.online { background: #4ade80; box-shadow: 0 0 14px rgba(74,222,128,.7); }
@@ -58,6 +58,72 @@
 .dash-avatar-face .dash-avatar.photo {
   width: 100%; height: 100%;
   position: relative; /* so dash-online-dot positions inside */
+}
+.dash-avatar.photo.is-frosted-avatar {
+  overflow: hidden;
+}
+.dash-avatar.photo.is-frosted-avatar::after,
+.public-avatar-preview.is-frosted-avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.32), rgba(190,212,255,.08) 38%, rgba(255,255,255,.17) 70%, rgba(48,73,118,.14)),
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,.28), transparent 34%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -16px 28px rgba(5,14,32,.24);
+  z-index: 2;
+  animation: dash-frosted-glint 5.8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+.dash-avatar.photo img.identity-frosted-avatar,
+.public-avatar-preview img.identity-frosted-avatar {
+  filter: blur(4.6px) saturate(.8) contrast(.92) brightness(.9);
+  transform: scale(1.1);
+}
+.dash-info h2 .identity-frosted-name {
+  display: inline-block;
+  filter: blur(2.6px);
+  opacity: .84;
+  color: rgba(232,238,250,.88);
+  text-shadow: 0 0 9px rgba(232,238,250,.34), 0 4px 16px rgba(0,0,0,.72);
+  user-select: none;
+  animation: dash-frosted-name-twinkle 5.8s ease-in-out infinite;
+  will-change: opacity;
+}
+.public-avatar-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--line-strong);
+  background: var(--navy-900);
+}
+.public-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@keyframes dash-frosted-glint {
+  0%, 100% { opacity: .62; transform: translate3d(0, 0, 0) scale(1); }
+  42% { opacity: .9; transform: translate3d(1px, -1px, 0) scale(1.012); }
+  64% { opacity: .68; transform: translate3d(-1px, .5px, 0) scale(1.004); }
+}
+@keyframes dash-frosted-name-twinkle {
+  0%, 100% { opacity: .78; }
+  45% { opacity: .9; }
+  62% { opacity: .72; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-avatar.photo.is-frosted-avatar::after,
+  .public-avatar-preview.is-frosted-avatar::after,
+  .dash-info h2 .identity-frosted-name {
+    animation: none !important;
+  }
 }
 .dash-avatar-face-label {
   position: absolute; bottom: -22px; left: 50%;
@@ -214,12 +280,12 @@
   <div class="modal" style="max-width:min(440px, calc(100vw - 32px))">
     <button class="modal-close" onclick="document.getElementById('profileModal').classList.remove('open')">×</button>
     <h3>编辑我的资料</h3>
-    <p class="modal-sub">这里改的是「<strong style="color:var(--blue-300)">我</strong>」的昵称和头像（非球员档案）。球员档案由管理员维护，绑定后会显示在球员墙上。</p>
+    <p class="modal-sub">这里改的是「<strong style="color:var(--blue-300)">账号</strong>」昵称和头像，不等于球员页公开展示资料。球员页公开名称和头像请用“球员页公开展示”单独设置。</p>
     <form class="form" onsubmit="submitProfile(event)" style="margin-top:0">
       <div class="field">
         <label>昵称</label>
         <input type="text" id="profileDisplayName" required maxlength="20" placeholder="可以用真名 / 也可以用昵称">
-        <div class="hint">2-20 个字符。绑定到正式球员档案后，公开页面会显示档案的真实姓名。</div>
+        <div class="hint">2-20 个字符。账号昵称主要用于登录后的个人视角和站内提示。</div>
       </div>
       <div class="field">
         <label>自定义头像（可选）</label>
@@ -234,12 +300,41 @@
   </div>
 </div>
 
+<!-- Public player profile modal: 球员页公开展示名 + 公开头像 -->
+<div class="modal-mask" id="publicProfileModal">
+  <div class="modal" style="max-width:min(480px, calc(100vw - 32px))">
+    <button class="modal-close" onclick="document.getElementById('publicProfileModal').classList.remove('open')">×</button>
+    <h3>球员页公开展示</h3>
+    <p class="modal-sub">这里决定非正式用户在球员页看到的名称和头像。留空时，网站会把档案姓名和档案照做成磨砂玻璃效果，熟人可辨认，陌生人不清晰。</p>
+    <form class="form" onsubmit="submitPublicProfile(event)" style="margin-top:0">
+      <div class="field">
+        <label>公开展示名称</label>
+        <input type="text" id="publicDisplayName" maxlength="40" placeholder="例如：J.S. / 江山 / 队内昵称">
+        <div class="hint" id="publicDisplayNameHint">留空则以磨砂玻璃效果显示档案姓名。</div>
+      </div>
+      <div class="field">
+        <label>公开展示头像（可选）</label>
+        <input type="file" id="publicAvatarFile" accept="image/*" onchange="uploadPublicProfileAvatar(this)">
+        <input type="hidden" id="publicAvatar">
+        <div id="publicAvatarPreview" style="margin-top:8px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button type="button" class="btn-nav ghost" style="padding:6px 12px;font-size:11px" onclick="useAccountAvatarForPublicProfile()">使用账号头像</button>
+          <button type="button" class="btn-nav ghost" style="padding:6px 12px;font-size:11px" onclick="clearPublicProfileAvatar()">清空为磨砂效果</button>
+        </div>
+        <div class="hint">公开头像会清晰出现在球员页；不设置时使用档案照的磨砂玻璃效果。</div>
+      </div>
+      <div class="field err" id="publicProfileErr"></div>
+      <button type="submit" class="btn">保存公开展示</button>
+    </form>
+  </div>
+</div>
+
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -252,27 +347,32 @@ buildNav('dashboard');
 	function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const params = new URLSearchParams(location.search);
 const queryName = params.get('player');
+const queryId = params.get('id');
 const currentUser = DB.currentUser();
 let dashFilter = { season:'', tournamentId:'', gameId:'' };
 let chartRefs = {};
 
 let player = null;
 let isOwnPanel = false;
-if (queryName) {
+const hasLookupParam = !!(queryId || queryName);
+if (queryId) {
+  player = DB.getPlayerById(queryId);
+} else if (queryName) {
   player = DB.getPlayerByName(queryName);
 } else if (currentUser && currentUser.boundPlayerId) {
   player = DB.getPlayerById(currentUser.boundPlayerId);
-  isOwnPanel = true;
 } else if (currentUser) {
   // Logged-in but unbound → show bind prompt
   player = null;
   isOwnPanel = true;
 }
+if (player && currentUser && currentUser.boundPlayerId === player.id) isOwnPanel = true;
+const isPublicLookup = hasLookupParam && !isOwnPanel;
 
 const root = document.getElementById('dashboardRoot');
 
 function renderBindInvitationNotices(){
-  if (!currentUser || queryName) return '';
+  if (!currentUser || isPublicLookup) return '';
   const notes = DB.notifications()
     .filter(n => n.type === 'bind_invitation' && !n.readAt && n.payload?.code)
     .slice(0, 3);
@@ -297,7 +397,7 @@ function renderBindInvitationNotices(){
 }
 
 function renderBindRequestStatus(){
-  if (!currentUser || queryName) return '';
+  if (!currentUser || isPublicLookup) return '';
   const latest = DB.latestBindRequest && DB.latestBindRequest();
   if (!latest || latest.status === 'approved') return '';
   const target = `${latest.requestedPlayerName || '目标球员'}${latest.requestedPlayerNumber ? ' · #'+latest.requestedPlayerNumber : ''}`;
@@ -330,7 +430,7 @@ function renderBindRequestStatus(){
   return '';
 }
 
-if (!currentUser && !queryName) {
+if (!currentUser && !hasLookupParam) {
   root.innerHTML = `<div class="empty">请先登录后查看个人面板</div>`;
 } else if (!player && isOwnPanel) {
   // Unbound user — prompt to bind
@@ -358,7 +458,7 @@ if (!currentUser && !queryName) {
     </div>
   `;
 } else if (!player) {
-  root.innerHTML = `<div class="empty">未找到球员：${queryName || ''}</div>`;
+  root.innerHTML = `<div class="empty">未找到球员：${queryName || queryId || ''}</div>`;
 } else {
   renderDashboard(player);
 }
@@ -366,6 +466,10 @@ if (!currentUser && !queryName) {
 function renderDashboard(p){
   const hl = DB.highlightsForPlayer(p.name);
   const photoUrl = DB.playerPhotoUrl(p);
+  const canViewRealIdentity = DB.canViewRealPlayerIdentity ? DB.canViewRealPlayerIdentity(p) : isOwnPanel;
+  const canEditPublicProfile = DB.canEditPlayerPublicProfile ? DB.canEditPlayerPublicProfile(p) : false;
+  const publicIdentity = DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: canViewRealIdentity }) : { name: p.name, avatar: photoUrl };
+  const publicPreviewIdentity = DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p) : { name: p.name, avatar: photoUrl };
   const isHOF = DB.allHallOfFame().some(h => h.playerId === p.id);
   const canManageHighlights = DB.hasPermission && DB.hasPermission('highlights:write');
   const canUpload = currentUser && (canManageHighlights || (currentUser.boundPlayerId===p.id));
@@ -426,12 +530,16 @@ function renderDashboard(p){
   ` : '';
 
   // 双身份显示：
-  //   ① 大字主标永远显示 player 真实姓名（球员页 = 球员档案，public + own 一样）
-  //   ② own 视角且有自定义昵称时（displayName 与 player.name 不同），名字下方小字露昵称 + 「✏️ 编辑」按钮
-  //   ③ 头像：own 视角支持 3D flip（默认 player 真照 → 翻面 user 自定义头像），public 视角只显示真照不可翻
+  //   ① 本人 / 管理员可看真实球员档案。
+  //   ② 非正式用户和普通公开访问优先看公开展示名 / 公开头像；未设置时以磨砂玻璃效果显示档案名和档案照。
+  //   ③ 账号昵称 / 账号头像与球员页公开展示资料分离。
   const showSelfIdentity = isOwnPanel && currentUser;
-  const heroPlayerName = p.name;
-  const heroPlayerPhoto = photoUrl;             // 真实照片始终用 player 的（fallback 到 logo）
+  const heroPlayerName = publicIdentity.name;
+  const heroPlayerPhoto = publicIdentity.avatar;
+  const heroNameAttr = publicIdentity.isFrostedName ? ' class="identity-frosted-name" aria-hidden="true"' : '';
+  const heroPhotoClass = publicIdentity.isFrostedAvatar ? ' identity-frosted-avatar' : '';
+  const heroPhotoWrapClass = publicIdentity.isFrostedAvatar ? ' is-frosted-avatar' : '';
+  const heroPhotoAlt = publicIdentity.photoAlt || (publicIdentity.canExposeName ? heroPlayerName : '球员公开头像');
   const heroUserAvatar = currentUser?.avatar || '';  // 自定义头像（可为空）
   const heroUserNick   = currentUser?.displayName || '';
   // 仅 own 视角 + 有不同的昵称时才显示副标
@@ -439,6 +547,15 @@ function renderDashboard(p){
   const canFlipAvatar = showSelfIdentity && !!heroUserAvatar;
   const nickLine = hasDistinctNick
     ? `<div class="dash-nick">@${escapeAttr(heroUserNick)} <span class="dash-nick-hint">· 仅你可见</span></div>`
+    : '';
+  const privacyLine = !canViewRealIdentity && DB.getPlayerLevel(p) === 'verified'
+    ? `<div class="dash-nick">公开展示资料 <span class="dash-nick-hint">· 未设置公开资料时以磨砂玻璃效果显示</span></div>`
+    : '';
+  const publicOwnerLine = canEditPublicProfile && DB.getPlayerLevel(p) === 'verified'
+    ? `<div class="dash-nick">球员页对外显示：${escapeText(publicPreviewIdentity.name)} <span class="dash-nick-hint">· 未设置时自动磨砂化</span></div>`
+    : '';
+  const publicProfileButton = canEditPublicProfile
+    ? '<button class="btn-nav ghost" style="margin-left:10px;padding:4px 10px;font-size:11px;vertical-align:middle" onclick="openPublicProfileModal()" title="设置球员页公开展示">设置公开展示</button>'
     : '';
 
   root.innerHTML = `
@@ -449,12 +566,12 @@ function renderDashboard(p){
       <div class="dash-avatar-shell ${canFlipAvatar ? 'flippable' : ''}" ${canFlipAvatar ? 'onclick="flipDashAvatar(event)" title="点击切换为自定义头像 / 真实照片"' : ''}>
         <div class="dash-avatar-flip">
           <div class="dash-avatar-face front">
-            <div class="dash-avatar photo">
-              <img src="${heroPlayerPhoto}" alt="${heroPlayerName}" onerror="this.src='assets/img/logo.jpg'">
+            <div class="dash-avatar photo${heroPhotoWrapClass}">
+              <img class="${heroPhotoClass.trim()}" src="${escapeAttr(heroPlayerPhoto)}" alt="${escapeAttr(heroPhotoAlt)}" onerror="this.src='${DB.DEFAULT_PUBLIC_PLAYER_AVATAR || 'assets/img/logo.jpg'}'">
               <span class="dash-online-dot ${onlineSt.status}" data-status="${onlineSt.status}"
                     title="${onlineSt.status === 'online' ? '在线' : onlineSt.status === 'recent' ? '最近活跃' : '离线'}"></span>
             </div>
-            ${canFlipAvatar ? '<div class="dash-avatar-face-label">真照</div>' : ''}
+            ${canFlipAvatar ? `<div class="dash-avatar-face-label">${canViewRealIdentity ? '真照' : (publicIdentity.isFrostedAvatar ? '磨砂' : '公开')}</div>` : ''}
           </div>
           ${canFlipAvatar ? `<div class="dash-avatar-face back">
             <div class="dash-avatar photo">
@@ -466,10 +583,13 @@ function renderDashboard(p){
       </div>
       <div class="dash-info" style="flex:1;min-width:240px">
         <h2>
-          ${heroPlayerName}${isCasual ? ' <span style="font-size:14px;color:var(--blue-300);background:rgba(46,107,255,.15);border:1px solid rgba(46,107,255,.3);padding:2px 10px;border-radius:999px;vertical-align:middle">⏳ 试训中</span>' : ''}
+          <span${heroNameAttr}>${escapeText(heroPlayerName)}</span>${isCasual ? ' <span style="font-size:14px;color:var(--blue-300);background:rgba(46,107,255,.15);border:1px solid rgba(46,107,255,.3);padding:2px 10px;border-radius:999px;vertical-align:middle">⏳ 试训中</span>' : ''}
           ${showSelfIdentity ? '<button class="btn-nav ghost" style="margin-left:10px;padding:4px 10px;font-size:11px;vertical-align:middle" onclick="openProfileModal()" title="编辑昵称和头像">✏️ 编辑</button>' : ''}
+          ${publicProfileButton}
         </h2>
         ${nickLine}
+        ${privacyLine}
+        ${publicOwnerLine}
         <div class="meta">${(p.position || (isCasual ? '注册试训队员' : '—')) + (p.number?' · #'+p.number:'')}</div>
         <div class="dash-badges">
           ${isOwnPanel && currentUser?.boundPlayerId===p.id && !isCasual ? '<span class="badge gold">✓ 已绑定球员档案</span>' : ''}
@@ -531,7 +651,7 @@ function renderDashboard(p){
       <div class="theatre-numeral">III</div>
       <div class="theatre-main">
         <div class="eyebrow">Highlights · 高亮时刻</div>
-        <h2 class="section-title">${p.name} 的高亮</h2>
+        <h2 class="section-title">${escapeText(heroPlayerName)} 的高亮</h2>
         <p class="section-sub">由本人或管理员上传 · 视频与图片可点击预览</p>
       </div>
       <div class="theatre-rule"></div>
@@ -1195,6 +1315,70 @@ window.submitProfile = async function(e){
     document.getElementById('profileModal').classList.remove('open');
     setTimeout(() => location.reload(), 600);
   } catch(ex) { err.textContent = ex.message; }
+};
+
+function renderPublicAvatarPreview(url, label = '', opts = {}) {
+  const preview = document.getElementById('publicAvatarPreview');
+  const isFrostedFallback = opts.frostedFallback === true;
+  const finalUrl = url || (isFrostedFallback && player ? DB.playerPhotoUrl(player) : (DB.DEFAULT_PUBLIC_PLAYER_AVATAR || 'assets/img/logo.jpg'));
+  const safeLabel = label || (url ? '当前公开头像' : '未设置：磨砂显示档案照');
+  preview.innerHTML = `<div class="public-avatar-preview${isFrostedFallback ? ' is-frosted-avatar' : ''}"><img class="${isFrostedFallback ? 'identity-frosted-avatar' : ''}" src="${escapeAttr(finalUrl)}"></div><div style="font-size:11px;color:var(--text-mute);margin-top:4px">${safeLabel}</div>`;
+}
+
+window.openPublicProfileModal = function(){
+  if (!player || !(DB.canEditPlayerPublicProfile && DB.canEditPlayerPublicProfile(player))) return;
+  document.getElementById('publicDisplayName').value = player.publicDisplayName || '';
+  document.getElementById('publicDisplayNameHint').textContent = `留空则以磨砂玻璃效果显示档案姓名；想清晰显示昵称或英文名，可以在这里填写。`;
+  document.getElementById('publicAvatar').value = player.publicAvatar || '';
+  renderPublicAvatarPreview(player.publicAvatar || '', player.publicAvatar ? '当前公开头像' : '未设置：磨砂显示档案照', { frostedFallback: !player.publicAvatar });
+  document.getElementById('publicProfileErr').textContent = '';
+  document.getElementById('publicProfileModal').classList.add('open');
+};
+
+window.uploadPublicProfileAvatar = async function(inputEl){
+  const f = inputEl.files?.[0]; if (!f) return;
+  const preview = document.getElementById('publicAvatarPreview');
+  const hidden = document.getElementById('publicAvatar');
+  preview.innerHTML = '<span style="color:var(--text-dim);font-size:12px">⏳ 压缩 + 上传中…</span>';
+  try {
+    const data = await uploadImageFile(f, 'avatar');
+    hidden.value = data.url;
+    renderPublicAvatarPreview(data.url, '✓ 已上传为公开头像');
+  } catch(e) {
+    preview.innerHTML = '<span style="color:#ff8a8a;font-size:12px">❌ ' + e.message + '</span>';
+  }
+};
+
+window.useAccountAvatarForPublicProfile = function(){
+  if (!currentUser?.avatar) {
+    const err = document.getElementById('publicProfileErr');
+    err.textContent = '当前账号还没有自定义头像';
+    return;
+  }
+  document.getElementById('publicAvatar').value = currentUser.avatar;
+  renderPublicAvatarPreview(currentUser.avatar, '将使用账号头像');
+};
+
+window.clearPublicProfileAvatar = function(){
+  document.getElementById('publicAvatar').value = '';
+  renderPublicAvatarPreview('', '将磨砂显示档案照', { frostedFallback: true });
+};
+
+window.submitPublicProfile = async function(e){
+  e.preventDefault();
+  const err = document.getElementById('publicProfileErr'); err.textContent = '';
+  if (!player) { err.textContent = '球员不存在'; return; }
+  const publicDisplayName = document.getElementById('publicDisplayName').value.trim();
+  const publicAvatar = document.getElementById('publicAvatar').value || '';
+  try {
+    const updated = await DB.updatePlayerPublicProfile(player.id, { publicDisplayName, publicAvatar });
+    if (updated) player = updated;
+    toast('公开展示资料已保存', 'success');
+    document.getElementById('publicProfileModal').classList.remove('open');
+    renderDashboard(player);
+  } catch(ex) {
+    err.textContent = ex.message;
+  }
 };
 
 // 上传高亮封面到 COS（云托管对象存储）

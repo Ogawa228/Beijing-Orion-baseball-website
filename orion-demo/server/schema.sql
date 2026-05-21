@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS players (
   number VARCHAR(8) DEFAULT '',
   position VARCHAR(80) DEFAULT '',
   photo MEDIUMTEXT DEFAULT NULL,             -- data: URL 或 assets/img/players/xxx.jpg
+  public_display_name VARCHAR(80) DEFAULT '',-- 球员页公开展示名；空值则前端脱敏真实姓名
+  public_avatar MEDIUMTEXT DEFAULT NULL,     -- 球员页公开展示头像；空值则前端使用默认星云头像
   slogan VARCHAR(50) DEFAULT '',
   bats CHAR(1) DEFAULT '',                   -- L/R/S
   throws_ CHAR(1) DEFAULT '',                -- throws 是 MySQL 关键字，加下划线

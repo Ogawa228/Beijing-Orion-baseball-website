@@ -283,6 +283,40 @@ window.ensureAuthModal = function ensureAuthModal(){
             <div class="field"><label>验证码</label><input type="text" id="regCap" required placeholder="请输入" maxlength="4" style="text-transform:uppercase"></div>
             <div class="captcha-img" id="captcha2" onclick="refreshCaptcha('captcha2')">M5X9</div>
           </div>
+          <div class="auth-legal-panel" aria-label="注册协议与个人信息保护">
+            <div class="auth-legal-head">
+              <strong>协议与个人信息保护</strong>
+              <span>注册前请阅读并确认。完整版本可在独立页面查阅和保存。</span>
+            </div>
+            <div class="auth-legal-links">
+              <a href="legal.html#user-agreement" target="_blank" rel="noopener">用户协议</a>
+              <a href="legal.html#privacy-policy" target="_blank" rel="noopener">隐私政策</a>
+              <a href="legal.html#personal-info-rules" target="_blank" rel="noopener">个人信息处理规则</a>
+            </div>
+            <div class="auth-legal-public-note">球员页公开展示由正式球员本人在个人面板设置；未设置时，非正式用户看到的是档案姓名和档案照的磨砂玻璃效果。</div>
+            <details class="auth-legal-detail">
+              <summary>查看注册相关合规要点</summary>
+              <div class="auth-legal-copy">
+                <p><strong>我们会处理的信息：</strong>昵称、邮箱、密码加密摘要、登录状态、试训/正式球员身份、签到和积分；申请绑定正式档案时，还会处理目标球员档案、队内昵称、微信号和你填写的验证说明。</p>
+                <p><strong>处理目的：</strong>创建账号、登录认证、展示球员档案、记录训练/比赛/积分、处理正式球员绑定申请、维护账号安全和履行法律法规要求。邮箱、微信号和验证说明不向普通访客公开。</p>
+                <p><strong>球员页公开展示：</strong>正式球员可以在个人面板设置球员页对外显示的名称和头像；未设置时，非正式用户看到的是档案姓名和档案照的磨砂玻璃效果，不清晰展示真实身份。</p>
+                <p><strong>你的权利：</strong>你可以申请查阅、复制、更正、补充、删除个人信息，撤回同意或注销账号。请通过网站联系邮箱或球队负责人微信提出申请。</p>
+                <p><strong>未成年人：</strong>未满 14 周岁的注册、绑定或公开展示，应由监护人阅读并同意相关规则，并联系管理员完成核验。</p>
+              </div>
+            </details>
+            <label class="auth-legal-check">
+              <input type="checkbox" id="regTermsAgree">
+              <span>我已阅读并同意《用户协议》《隐私政策》及《个人信息处理规则》。</span>
+            </label>
+            <label class="auth-legal-check">
+              <input type="checkbox" id="regPersonalInfoAgree">
+              <span>我单独同意网站为账号注册、球队管理、绑定审核、赛事数据展示和安全维护而处理必要个人信息；选择绑定正式球员档案时，同意提交微信号和验证说明供管理员核验。</span>
+            </label>
+            <label class="auth-legal-check">
+              <input type="checkbox" id="regGuardianConfirm">
+              <span>我确认本人已满 14 周岁；如未满 14 周岁，本次注册及个人信息处理已由监护人阅读并同意，且会联系管理员完成核验。</span>
+            </label>
+          </div>
           <div class="field err" id="regErr"></div>
           <button type="submit" class="btn">注册账号</button>
           <div class="auth-mini-link">
@@ -315,6 +349,17 @@ window.ensureAuthModal = function ensureAuthModal(){
               <input type="password" id="linkPwd" required placeholder="至少 8 位，包含字母和数字" minlength="8">
               <button type="button" class="pwd-toggle" onclick="togglePwd('linkPwd',this)" aria-label="显示密码">👁</button>
             </div>
+          </div>
+          <div class="auth-legal-panel compact" aria-label="网页邮箱关联协议">
+            <div class="auth-legal-links">
+              <a href="legal.html#user-agreement" target="_blank" rel="noopener">用户协议</a>
+              <a href="legal.html#privacy-policy" target="_blank" rel="noopener">隐私政策</a>
+              <a href="legal.html#personal-info-rules" target="_blank" rel="noopener">个人信息处理规则</a>
+            </div>
+            <label class="auth-legal-check">
+              <input type="checkbox" id="linkLegalAgree">
+              <span>我已阅读并同意上述协议和个人信息处理规则，同意将网页邮箱作为原账号的新登录方式。</span>
+            </label>
           </div>
           <div class="field err" id="linkErr"></div>
           <button type="submit" class="btn">完成关联</button>
@@ -517,6 +562,8 @@ window.closeModal = function(){
 function switchMTab(key){
   document.querySelectorAll('#authModal .modal-tab').forEach(t => t.classList.toggle('active', t.dataset.mtab === key));
   document.querySelectorAll('#authModal [data-mpanel]').forEach(p => p.style.display = p.dataset.mpanel === key ? '' : 'none');
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.toggle('auth-registering', key === 'register' || key === 'link-email');
   // 切 tab 时给即将显示的那个 panel 的验证码刷新一次（防止 admin 切回时还看到旧码）
   if (typeof window.refreshCaptcha === 'function') {
     window.refreshCaptcha(key === 'register' ? 'captcha2' : 'captcha1');
@@ -602,6 +649,9 @@ window.handleRegister = async function(e){
   const mode = document.getElementById('regMode')?.value || 'trial';
   if (pwd !== pwd2) { err.textContent = '两次密码不一致'; return; }
   if (pwdScore(pwd) < 2) { err.textContent = '密码强度不足，至少包含字母和数字'; return; }
+  if (!document.getElementById('regTermsAgree')?.checked) { err.textContent = '请先阅读并同意用户协议、隐私政策和个人信息处理规则'; return; }
+  if (!document.getElementById('regPersonalInfoAgree')?.checked) { err.textContent = '请确认同意必要的个人信息处理规则'; return; }
+  if (!document.getElementById('regGuardianConfirm')?.checked) { err.textContent = '请确认年龄/监护人同意事项'; return; }
   const displayName = document.getElementById('regName').value.trim();
   const payload = {
     email: document.getElementById('regEmail').value,
@@ -640,6 +690,7 @@ window.handleLinkEmail = async function(e){
   err.textContent = '';
   const pwd = document.getElementById('linkPwd').value;
   if (pwdScore(pwd) < 2) { err.textContent = '密码强度不足，至少包含字母和数字'; return; }
+  if (!document.getElementById('linkLegalAgree')?.checked) { err.textContent = '请先阅读并同意协议和个人信息处理规则'; return; }
   try {
     const u = await DB.linkEmail({
       code: document.getElementById('linkCode').value,

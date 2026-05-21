@@ -6,8 +6,8 @@
 <title>积分明细 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
-<script src="assets/js/db.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=30">
+<script src="assets/js/db.js?v=24"></script>
 <style>
 .pp-hero {
   display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
@@ -23,6 +23,7 @@
   width: 22px; height: 22px; border-radius: 50%;
   border: 4px solid var(--navy-900);
   background: var(--text-mute);
+  z-index: 4;
 }
 .pp-online-dot.online { background: #4ade80; box-shadow: 0 0 14px rgba(74,222,128,.7); }
 .pp-online-dot.recent { background: #fbbf24; }
@@ -189,10 +190,10 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -213,9 +214,19 @@ if (!playerId) {
   }
 }
 
-function escapeAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s){ return escapeText(s); }
+function playerIdentity(p){
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : { name: p?.name || '', avatar: DB.playerPhotoUrl(p), canExposeName: true });
+}
+function identityNameHTML(identity, className = ''){
+  const cls = `${className} public-identity-name${identity.isFrostedName ? ' identity-frosted-name' : ''}`.trim();
+  const hidden = identity.isFrostedName ? ' aria-hidden="true"' : '';
+  return `<span class="${escapeAttr(cls)}"${hidden}>${escapeText(identity.name)}</span>`;
+}
 
 function render(p){
+  const identity = playerIdentity(p);
   const points = DB.getPlayerPoints(p.id);
   const lb = DB.getPointsLeaderboard();
   const myRank = lb.findIndex(r => r.player.id === p.id) + 1;
@@ -228,19 +239,19 @@ function render(p){
   // Hero
   const heroHTML = `
     <div class="pp-hero">
-      <div class="pp-photo-wrap">
-        <img class="pp-photo" src="${DB.playerPhotoUrl(p)}" alt="${p.name}" onerror="this.src='assets/img/logo.jpg'">
+      <div class="pp-photo-wrap${identity.isFrostedAvatar ? ' is-frosted-avatar' : ''}">
+        <img class="pp-photo${identity.isFrostedAvatar ? ' identity-frosted-avatar' : ''}" src="${escapeAttr(identity.avatar)}" alt="${escapeAttr(identity.photoAlt || identity.accessibleName || '球员公开头像')}" onerror="this.src='assets/img/logo.jpg'">
         <span class="pp-online-dot ${onlineSt.status}" title="${onlineLabel}"></span>
       </div>
       <div class="pp-info">
-        <h1 class="pp-name">${p.name}</h1>
+        <h1 class="pp-name">${identityNameHTML(identity)}</h1>
         <div class="meta" style="color:var(--text-dim)">#${p.number||'--'} · ${p.position||'—'}${p.joinYear ? ' · 加入 '+p.joinYear : ''}</div>
         ${myRank ? `<div class="pp-rank-badge">🏆 当前排名 第 ${myRank} / ${totalRanked} 位</div>` : ''}
         <div class="pp-meta">
           ${onlineLabel}${p.titles?.length ? ' · 称号：' + p.titles.slice(0,3).map(t=>'★ '+t).join('  ') : ''}
         </div>
         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-          <a class="badge gold" href="dashboard.html?player=${encodeURIComponent(p.name)}" style="text-decoration:none">📊 查看比赛数据面板 →</a>
+          <a class="badge gold" href="${DB.publicPlayerProfileHref ? DB.publicPlayerProfileHref(p) : `dashboard.html?id=${encodeURIComponent(p.id)}`}" style="text-decoration:none">📊 查看比赛数据面板 →</a>
           <a class="badge" href="ranking.html" style="text-decoration:none">🏆 完整积分榜 →</a>
         </div>
       </div>

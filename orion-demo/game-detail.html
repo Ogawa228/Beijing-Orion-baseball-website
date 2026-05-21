@@ -6,9 +6,9 @@
 <title>比赛详情 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=30">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="assets/js/db.js?v=18"></script>
+<script src="assets/js/db.js?v=24"></script>
 </head>
 <body>
 
@@ -23,10 +23,10 @@
 
 <footer class="footer">
   <div class="footer-brand">B E I J I N G &nbsp; O R I O N</div>
-  <div>© 2026 Beijing Orion Baseball Club</div>
+  <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=17"></script>
+<script src="assets/js/auth.js?v=20"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -42,6 +42,34 @@ console.log('[orion-game-detail] gid=', gid, 'found=', !!g, g);
 // NOTE: page entry-point lives at the bottom of this script — all const
 // metric tables (BAT_METRICS / PIT_METRICS) must be initialized before
 // render() runs, otherwise we hit a temporal-dead-zone error.
+
+function escapeText(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeAttr(s){ return escapeText(s); }
+function playerIdentity(p){
+  return DB.publicPlayerIdentityForViewer ? DB.publicPlayerIdentityForViewer(p) : (DB.publicPlayerIdentity ? DB.publicPlayerIdentity(p, { reveal: DB.canViewRealPlayerIdentity && DB.canViewRealPlayerIdentity(p) }) : { name: p?.name || '', avatar: DB.playerPhotoUrl(p), canExposeName: true });
+}
+function identityNameHTML(identity, className = ''){
+  const cls = `${className} public-identity-name${identity.isFrostedName ? ' identity-frosted-name' : ''}`.trim();
+  const hidden = identity.isFrostedName ? ' aria-hidden="true"' : '';
+  return `<span class="${escapeAttr(cls)}"${hidden}>${escapeText(identity.name)}</span>`;
+}
+function playerLinkHTML(player, labelClass = ''){
+  const identity = playerIdentity(player);
+  const href = DB.publicPlayerProfileHref ? DB.publicPlayerProfileHref(player) : `dashboard.html?id=${encodeURIComponent(player.id)}`;
+  const aria = identity.canExposeName ? `${identity.name} 个人面板` : '球员公开资料个人面板';
+  return `<a class="player-link" href="${href}" aria-label="${escapeAttr(aria)}">${identityNameHTML(identity, labelClass)}</a>`;
+}
+function publicGameName(rawName, fallbackRaw = true){
+  const player = DB.getPlayerByName(rawName);
+  if (!player) return fallbackRaw ? escapeText(rawName) : '';
+  return playerLinkHTML(player);
+}
+function publicChartLabel(rawName){
+  const player = DB.getPlayerByName(rawName);
+  if (!player) return rawName;
+  const identity = playerIdentity(player);
+  return identity.canExposeName ? identity.name : `#${player.number || '--'} 球员`;
+}
 
 function render(g){
   const isAdmin = DB.hasPermission && DB.hasPermission('games:revise');
@@ -86,7 +114,8 @@ function render(g){
 
   // MVP
   const mvpPlayer=DB.getPlayerByName(g.mvpPlayerName);
-  const mvpPhoto=mvpPlayer?DB.playerPhotoUrl(mvpPlayer):'assets/img/logo.jpg';
+  const mvpIdentity=mvpPlayer?playerIdentity(mvpPlayer):null;
+  const mvpPhoto=mvpIdentity?mvpIdentity.avatar:'assets/img/logo.jpg';
 
   // Cumulative runs per inning. 'X' means "did not bat" → treated as 0.
   const cumOrion=[],cumOpp=[];let ao=0,au=0;
@@ -136,10 +165,12 @@ function render(g){
 
     ${mvpPlayer?`
     <div class="mvp-card">
-      <img class="mvp-photo" src="${mvpPhoto}" alt="${mvpPlayer.name}">
+      <span class="identity-avatar-wrap mvp-photo-wrap${mvpIdentity.isFrostedAvatar ? ' is-frosted-avatar' : ''}">
+        <img class="mvp-photo${mvpIdentity.isFrostedAvatar ? ' identity-frosted-avatar' : ''}" src="${escapeAttr(mvpPhoto)}" alt="${escapeAttr(mvpIdentity.photoAlt || mvpIdentity.accessibleName || '球员公开头像')}">
+      </span>
       <div>
         <div class="mvp-label">★ Game MVP · 本场最佳</div>
-        <div class="mvp-name"><a class="player-link" href="dashboard.html?player=${encodeURIComponent(mvpPlayer.name)}">${mvpPlayer.name}</a></div>
+        <div class="mvp-name">${playerLinkHTML(mvpPlayer)}</div>
         <div class="mvp-note">${g.mvpNote||''}</div>
       </div>
     </div>`:''}
@@ -221,7 +252,7 @@ function render(g){
           <div class="hl-thumb"><img src="${h.cover}" alt=""><div class="hl-play"></div></div>
           <div class="hl-body">
             <div class="hl-title">${h.title}</div>
-            <div class="hl-meta">${h.playerName?h.playerName+' · ':''}${linkBadge(h.url)}</div>
+            <div class="hl-meta">${h.playerName?publicGameName(h.playerName)+' · ':''}${linkBadge(h.url)}</div>
           </div>
         </div>
       `).join(''):'<div class="empty">暂无高亮</div>'}
@@ -347,9 +378,8 @@ function renderRows(state) {
     return state.sortDir==='asc' ? av-bv : bv-av;
   });
   return sorted.map(r=>{
-    const name = state.isOrion && DB.getPlayerByName(r.name)
-      ? `<a class="player-link" href="dashboard.html?player=${encodeURIComponent(r.name)}">${r.name}</a>`
-      : r.name;
+    const player = state.isOrion ? DB.getPlayerByName(r.name) : null;
+    const name = player ? playerLinkHTML(player) : escapeText(r.name);
     const suffix = state.kind==='pitching' && r.decision ? ` (${r.decision})`
                  : state.kind==='batting'  && r.pos      ? ` (${r.pos})` : '';
     const cells = state.metrics.map(m => `<td>${metricStr(r, m)}</td>`).join('');
@@ -438,7 +468,7 @@ function drawTableChart(state) {
   state.chart = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: sorted.map(r=>r.name),
+      labels: sorted.map(r=>state.isOrion ? publicChartLabel(r.name) : r.name),
       datasets: [{
         label: m.label,
         data: sorted.map(r=>+metricVal(r,m).toFixed(3)),

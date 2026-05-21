@@ -3,15 +3,15 @@
 > 面向下一轮 Codex/Claude 接手。这里只保留当前状态、硬规则、关键契约和排障入口；逐轮历史已压缩，旧长版已备份到 `orion-demo/backups/`。
 
 最后整理：2026-05-21  
-本轮状态：`express-knlw-034-20260521133747` 已部署到微信云托管；包含 `players.html` 球员页动效性能优化、注册入口合规增强、公开身份/真实身份磨砂化、磨砂头像边缘对齐修正和离屏/隐藏态动画节流。注册弹窗现要求勾选用户协议、隐私政策、个人信息处理规则、必要个人信息处理单独同意和年龄/监护人确认；新增 `legal.html` 作为完整规则页；正式球员可在个人面板设置公开展示名和公开头像，未设置时非正式用户在球员页、积分榜、积分明细、比赛详情、赛事页和名人堂看到档案姓名和档案照的磨砂玻璃效果，并通过轻量玻璃高光闪烁提示“可辨但不清晰”。部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新。
+本轮状态：`express-knlw-035-20260521140027` 已部署到微信云托管；首页 footer 已补齐用户协议、隐私政策、个人信息处理规则、未成年人规则、个人信息权利、中央网信办举报中心和公安部网络违法犯罪举报网站；`players.html` 修复低动效/暂停后磨砂头像遮罩偏移，并在普通球员页启用省帧模式，停止每个节点常驻微位移动画，保留星阵、光圈、磨砂闪烁和交互态动效。注册弹窗现要求勾选用户协议、隐私政策、个人信息处理规则、必要个人信息处理单独同意和年龄/监护人确认；`legal.html` 作为完整规则页；正式球员可在个人面板设置公开展示名和公开头像，未设置时非正式用户在球员页、积分榜、积分明细、比赛详情、赛事页和名人堂看到档案姓名和档案照的磨砂玻璃效果。
 
 ---
 
 ## 0. 先读这几条
 
-- 当前线上版本：`express-knlw-034-20260521133747`，2026-05-21 13:40 部署。
+- 当前线上版本：`express-knlw-035-20260521140027`，2026-05-21 14:03 部署。
 - 线上域名：`https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com`
-- ICP 信息：域名 `猎户座棒垒球.cn`，备案号 `京ICP备2026027592号-1`；当前仅首页 footer 悬挂并链接 `https://beian.miit.gov.cn/`，子页保持简洁 footer。
+- ICP / 合规链接：域名 `猎户座棒垒球.cn`，备案号 `京ICP备2026027592号-1`；首页 footer 悬挂协议与个人信息保护规则、违法和不良信息举报入口、署名和备案号，备案号链接 `https://beian.miit.gov.cn/`；子页保持简洁 footer。
 - 云托管控制台：`https://cloud.weixin.qq.com/cloudrun/service/express-knlw`
 - 部署必须走“本地预览 -> 用户确认 -> 云部署”。每一次部署都要用户本轮明确同意，不能沿用旧授权。
 - 改功能代码后同步更新两份文档：本文件和 `/Users/jinjiangshan/Downloads/猎户网站项目/DESIGN_BRIEF.md`。
@@ -55,6 +55,7 @@
 
 | 版本 | 时间 | 摘要 | 验证 |
 |---|---:|---|---|
+| `express-knlw-035-20260521140027` | 2026-05-21 14:03 | 首页 footer 新增用户协议、隐私政策、个人信息处理规则、未成年人规则、个人信息权利、中央网信办举报中心和公安部网络违法犯罪举报网站；球员页暂停/低动效状态磨砂遮罩居中修复；普通球员页启用 `is-frame-saver`，减少常驻节点动画和过度 `will-change` 层 | 部署前 `node --check` 通过；HTML non-module inline scripts 通过；GameChanger 5/5；本地浏览器验证首页 footer 链接、`style.css?v=31`、球员页 52 节点、`is-frame-saver`、低动效遮罩居中且粒子隐藏、无 console error；`deploy:verify --expected-version express-knlw-035-20260521140027 --domain https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com` 通过；线上 `/api/health` 200 且 DB OK；线上 `index.html` 含合规/举报链接，`players.html` 含 `style.css?v=31`、`is-frame-saver`、低动效遮罩 transform 修复和 `is-perf-paused` 粒子隐藏规则 |
 | `express-knlw-034-20260521133747` | 2026-05-21 13:40 | 球员页动效性能优化；注册入口合规增强；新增 `legal.html`；球员公开展示资料字段/API；非正式用户在球员页、积分榜、积分明细、比赛详情、赛事页、名人堂和公开 dashboard 看到公开身份或磨砂化档案资料；磨砂头像边缘对齐；离屏/隐藏态动画节流 | 部署前 `node --check` 通过；HTML non-module inline scripts 通过；GameChanger 5/5；`deploy:verify --expected-version express-knlw-034-20260521133747 --domain https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com` 通过；线上 `/api/health` 200 且 DB OK；线上 `players.html` 含 `style.css?v=30`、`db.js?v=24`、`auth.js?v=20`、`is-perf-paused`；`/api/players` 返回 52 人并含 `publicDisplayName/publicAvatar`；`legal.html`、`ranking.html`、默认头像资产 200 |
 | `express-knlw-033-20260520141956` | 2026-05-20 14:22 | 首页 footer 一行 meta 排布，悬挂 `Edited by 江山` 与 `京ICP备2026027592号-1`；子页 footer 收回为简洁版权；首页球队信息标注靳江山为数据组 / 运维组 | `deploy:verify --expected-version express-knlw-033-20260520141956` 通过；线上 `/api/health` 200；线上首页源码含 `style.css?v=27`、`Edited by 江山`、`京ICP备2026027592号-1`；默认域名浏览器访问会先显示 CloudBase 风险提醒中间页 |
 | `express-knlw-032` | 2026-05-15 16:28 | `players.html?wallpaper=1` 动态壁纸模式；全屏星阵；复用管理员全站发布的星阵/星尘动效；隐藏导航、筛选、HUD、弹卡和管理员面板 | `deploy:verify --expected-version express-knlw-032` 通过；线上 `/api/health` 200；线上 `players.html?wallpaper=1` 含 `wallpaper-mode`；浏览器实测 52 个节点、WebGL 运行中、操作 UI 隐藏 |
@@ -65,6 +66,7 @@
 
 | 版本 | 摘要 |
 |---|---|
+| `035` | 首页 footer 合规/举报链接；球员页暂停遮罩居中修复；普通球员页省帧模式，减少常驻节点动画和过度层提升 |
 | `034` | 球员页性能、公开身份磨砂化、注册合规协议、公开展示资料 API、跨公开页面脱敏统一、磨砂边缘对齐和离屏/隐藏态节流 |
 | `033` | 首页 footer 悬挂 ICP 和 `Edited by 江山`，子页简洁 footer，靳江山标注为数据组 / 运维组 |
 | `032` | `players.html?wallpaper=1` 动态壁纸模式，复用管理员全站星阵发布配置 |
@@ -83,7 +85,7 @@
 当前未部署内容：
 
 - 无已知运行时代码未部署。
-- 部署后仅本文件和 `../DESIGN_BRIEF.md` 有记录性更新；不影响线上运行。
+- 本文件和 `../DESIGN_BRIEF.md` 为部署后的记录性更新；不影响线上运行。
 - 注意：当前自定义域名字段可能返回不带协议的 `www.xn--4gsr8nf4ck7ihxnemb.cn`，`npm run deploy:verify` 如自动取该域名会报 `Failed to parse URL`；本次已使用 `--domain https://express-knlw-255356-7-1429688831.sh.run.tcloudbase.com` 完成验证。
 - 自定义域名待处理：中文域名 `猎户座棒垒球.cn` 的 Punycode / ASCII 形式是 `xn--4gsr8nf4ck7ihxnemb.cn`。微信云托管/CloudBase 绑定自定义域名若报 `invalid custom domain`，优先尝试填写 Punycode 形式，并确认 SSL 证书、ICP 备案、域名所有权校验和 CNAME/TXT 解析。
 

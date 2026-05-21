@@ -6,7 +6,7 @@
 <title>球员 · 北京猎户座</title>
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=30">
+<link rel="stylesheet" href="assets/css/style.css?v=31">
 <script src="assets/js/db.js?v=24"></script>
 <script>
 (() => {
@@ -227,6 +227,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
   height: 100%;
   z-index: 2;
@@ -243,7 +244,6 @@
     inset 0 1px 0 rgba(255,255,255,.42),
     inset 0 -18px 30px rgba(9,18,36,.20);
   animation: frosted-card-glint 5.8s ease-in-out infinite;
-  will-change: opacity;
 }
 .pcv-avatar-wrap .pc-photo.identity-frosted-avatar {
   filter: blur(4.8px) saturate(.78) contrast(.92) brightness(.88);
@@ -1348,6 +1348,9 @@
     opacity .24s var(--ease),
     filter .24s var(--ease);
 }
+.orion-arm-stage.is-frame-saver .arm-node:not(:hover):not(:focus-visible):not(.is-focused) {
+  animation: none;
+}
 .arm-node::before {
   content: '';
   position: absolute;
@@ -1400,6 +1403,9 @@
   animation-delay:
     calc(var(--arm-i, 0) * -0.21s),
     calc(var(--arm-i, 0) * -0.13s);
+}
+.orion-arm-stage.is-frame-saver .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused) {
+  animation: none;
 }
 .arm-node.is-or-path:not(:hover):not(:focus-visible):not(.is-focused)::before {
   animation: arm-or-path-aura var(--arm-path-duration) ease-in-out infinite;
@@ -1577,6 +1583,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
+  transform: translate(-50%, -50%);
   width: var(--arm-node-photo-size);
   height: var(--arm-node-photo-size);
   border-radius: 50%;
@@ -1591,9 +1598,8 @@
     0 0 18px rgba(228,199,122,.12),
     inset 0 1px 0 rgba(255,255,255,.36),
     inset 0 -10px 16px rgba(4,12,28,.16);
-  animation: frosted-node-glint 5.2s ease-in-out infinite;
+  animation: frosted-node-glint 6.8s ease-in-out infinite;
   animation-delay: calc(var(--arm-i, 0) * -0.13s);
-  will-change: opacity;
 }
 .arm-node-photo {
   position: relative;
@@ -1666,9 +1672,8 @@
     0 0 7px rgba(232,238,250,.42),
     0 2px 12px rgba(0,0,0,.78);
   user-select: none;
-  animation: frosted-name-twinkle 5.8s ease-in-out infinite;
+  animation: frosted-name-twinkle 7.2s ease-in-out infinite;
   animation-delay: calc(var(--arm-i, 0) * -0.07s);
-  will-change: opacity;
 }
 @keyframes frosted-node-glint {
   0%, 100% {
@@ -2044,6 +2049,11 @@ body.arm-card-open {
 .orion-arm-stage.is-perf-paused .arm-card-modal,
 .orion-arm-stage.is-perf-paused .arm-card-dialog {
   animation-play-state: paused !important;
+}
+.orion-arm-stage.is-perf-paused .arm-node-particles,
+.orion-arm-stage.is-perf-paused .arm-node-particles::before,
+.orion-arm-stage.is-perf-paused .arm-node-particles::after {
+  display: none !important;
 }
 .orion-arm-stage.is-perf-paused .arm-particle-dot {
   will-change: auto;
@@ -3576,6 +3586,7 @@ function syncArmMotionButton() {
   const lowMotion = !!armState.lowMotion;
   armState.paused = lowMotion;
   armStage.classList.toggle('is-low-motion', lowMotion);
+  armStage.classList.toggle('is-frame-saver', !isWallpaperMode && !lowMotion);
   armMotionToggle.textContent = lowMotion ? '▶' : 'Ⅱ';
   armMotionToggle.classList.toggle('is-low-motion', lowMotion);
   armMotionToggle.setAttribute('aria-pressed', lowMotion ? 'true' : 'false');

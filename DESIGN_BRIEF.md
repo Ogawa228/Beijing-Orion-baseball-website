@@ -3,9 +3,9 @@
 > 面向 Claude Design、设计师或下一轮前端重构。本文保留设计语言、页面职责、组件契约、数据边界和近期状态；逐轮流水账已压缩，旧长版已备份到 `orion-demo/backups/`。
 
 最后整理：2026-05-21  
-当前线上：`express-knlw-035-20260521140027`
+当前线上：`express-knlw-036-20260521142313`
 
-部署状态：2026-05-21 14:03 已部署 `express-knlw-035-20260521140027`：首页 footer 合规/举报入口、球员页低动效遮罩居中修复、普通球员页省帧模式、注册入口合规增强、公开身份/真实身份磨砂化和跨公开页面脱敏均已上线。部署后仅本文档和 `orion-demo/HANDOFF.md` 有记录性更新。
+部署状态：2026-05-21 14:26 已部署 `express-knlw-036-20260521142313`：首页 footer 举报入口增加 `12377` / `公安` 本地标识；中文域名基础站内 SEO、`robots.txt`、`sitemap.xml`、首页结构化数据已上线；积分榜、比赛详情、赛事页等公开身份头像使用统一圆形 mask 和稳定尺寸，修复磨砂头像/光圈边缘偏移。部署后仅本文档和 `orion-demo/HANDOFF.md` 有记录性更新。
 
 ---
 
@@ -52,9 +52,9 @@
 | `players.html` | 球员墙 | 首屏星阵头像节点、题字“猎户群星闪耀时”、点击节点弹 v2.4 球星卡、管理员星阵编队台；`?wallpaper=1` 可作为 Wallpaper Engine 动态壁纸源 | 星阵优先；非正式用户优先看公开名/公开头像，未设置时看磨砂玻璃化档案名/档案照，并有低成本玻璃高光闪烁；普通球员页启用省帧模式，保留视觉但减少常驻节点动画；低动效/暂停态不得出现磨砂遮罩偏移或粒子残影；球星卡只在点击后 modal 出现；壁纸模式隐藏操作 UI |
 | `dashboard.html` | 个人面板 | 能力剖面、核心/进阶数据、趋势图、Game Log、高光、球员页公开展示资料设置 | 公开视角对未设置公开资料的档案姓名/档案照做磨砂玻璃化；本人/管理员可看真实档案并维护公开展示名称/头像；账号昵称/头像与公开展示资料分离 |
 | `games.html` | 比赛索引 | 棒球 / 慢垒 tabs，按赛事卡片展示 | 等待 dbReady 后渲染 |
-| `tournament.html` | 单赛事 | 赛事信息、全部场次、球员排行榜 | 排行榜需要可排序；头像/姓名走公开身份或磨砂化 |
-| `game-detail.html` | 单场 | 比分、逐局、累计得分线图、双方对比、4 张 batting/pitching 表、MVP、高光 | 列头排序 + `tfoot` 合计不动是硬契约；MVP、表格姓名、高光球员名和图表标签不得向非正式用户清晰暴露真实姓名/真照 |
-| `ranking.html` | 积分榜 | Top 3 领奖台、完整排行表、赛季筛选、跳积分明细 | 移动端隐藏部分拆解列；头像/姓名走公开身份或磨砂化 |
+| `tournament.html` | 单赛事 | 赛事信息、全部场次、球员排行榜 | 排行榜需要可排序；头像/姓名走公开身份或磨砂化；头像必须走统一圆形 mask，避免光圈和照片边缘错位 |
+| `game-detail.html` | 单场 | 比分、逐局、累计得分线图、双方对比、4 张 batting/pitching 表、MVP、高光 | 列头排序 + `tfoot` 合计不动是硬契约；MVP、表格姓名、高光球员名和图表标签不得向非正式用户清晰暴露真实姓名/真照；公开头像不得出现半圆裁切或光圈偏移 |
+| `ranking.html` | 积分榜 | Top 3 领奖台、完整排行表、赛季筛选、跳积分明细 | 移动端隐藏部分拆解列；头像/姓名走公开身份或磨砂化；Top 3 和列表头像都使用统一圆形 mask |
 | `player-points.html` | 积分明细 | 头像、排名、总分、4 类构成、时间线筛选 | game 类时间线应能跳比赛/赛事；头像/姓名走公开身份或磨砂化 |
 | `admin.html` | 后台 | CRUD、导入、确认、修订、合并、积分、签到、上传 | 更像操作面板，不要弱化“确认/修订/留痕” |
 | `hall-of-fame.html` | 名人堂 | 入选球员或仪式感空状态 | 赛季奖项由 admin 录入；头像/姓名走公开身份或磨砂化 |
@@ -67,10 +67,16 @@ Footer 合规与审美要求：
 - 域名：`猎户座棒垒球.cn`。
 - ICP 备案号：`京ICP备2026027592号-1`。
 - 首页 footer 悬挂协议与个人信息保护规则链接：用户协议、隐私政策、个人信息处理规则、未成年人规则、个人信息权利。
-- 首页 footer 悬挂违法和不良信息举报入口：中央网信办举报中心 `https://www.12377.cn/` 和公安部网络违法犯罪举报网站 `https://cyberpolice.mps.gov.cn/`。
+- 首页 footer 悬挂违法和不良信息举报入口：中央网信办举报中心 `https://www.12377.cn/` 和公安部网络违法犯罪举报网站 `https://cyberpolice.mps.gov.cn/`；链接前使用轻量本地 CSS 标识 `12377` / `公安`，不引入外部徽标图片，避免额外请求和授权风险。
 - 首页 footer 悬挂 `Edited by 江山` 和 ICP 备案号，meta 信息保留版权 / 署名 / 备案号，备案号链接到工信部备案官网 `https://beian.miit.gov.cn/`。
 - 其他子页按页面气质选择简洁 footer，目前只保留品牌 + 版权，不逐页堆叠备案号和署名。
 - `players.html?wallpaper=1` 是动态壁纸源，保持隐藏 footer；普通 `players.html` 只显示简洁 footer。
+
+域名 SEO 基线：
+
+- 首选公开域名为 `https://xn--4gsr8nf4ck7ihxnemb.cn/`，对应中文域名 `猎户座棒垒球.cn`。
+- 首页、球员、比赛、积分榜、名人堂、活动、联系、规则页设置 `index,follow` 和 canonical；`dashboard.html`、`game-detail.html`、`tournament.html`、`player-points.html`、`admin.html` 等动态/参数/私密页面设置 noindex。
+- 根目录提供 `robots.txt` 与 `sitemap.xml`；首页提供 SportsTeam / WebSite JSON-LD。后续新增公开页面必须同步 sitemap 和 canonical。
 
 首页球队信息：
 
@@ -154,6 +160,7 @@ Footer 合规与审美要求：
 | `.arm-node` / `.orion-arm-stage` | 球员页星阵 | 星点节点、路径闪耀、hover 粒子圈、点击弹卡；默认星阵优先 |
 | `.arm-admin-panel` | 管理员星阵编队台 | 可发布全站配置；自定义模板保存在本机 |
 | `.podium-card` | 积分榜 Top 3 | 迷你球星卡语言、头像 ring、积分大字 |
+| `.identity-avatar-wrap` / `.podium-photo-clip` / `.pp-photo-wrap` | 公开身份头像容器 | 头像、磨砂层、光圈必须共用圆形 mask 和稳定宽高；动画只改 opacity / transform，不动态改变 blur / filter 半径 |
 | `.pp-bd-card` / `.pp-tl-item` | 积分明细 | 4 类构成 + 时间线拆解；正负分颜色区分 |
 | `.file-picker` | 上传 | 支持点击/拖拽，图片先压缩；批量导入保留子目录语义 |
 | `.modal-mask` / `.modal` | 后台弹窗 | 暗背景 + 功能卡，关闭按钮不压内容 |
@@ -222,6 +229,7 @@ orion-demo/assets/img/
 - `players.public_display_name` / `players.public_avatar` 是球员页公开展示资料。
 - `player.name` / `player.photo` 仍是真实档案，服务于后台、本人视角、比赛统计和 alias-aware 匹配。
 - 非正式用户（访客、试训、绑定待审）在 `players.html`、`ranking.html`、`player-points.html`、`game-detail.html`、`tournament.html`、`hall-of-fame.html` 和公开 `dashboard.html?id=...` 优先看公开展示资料；未设置时看到档案姓名和档案照的磨砂玻璃效果，不再显示 `XX` 或统一默认头像。图表 canvas 标签在非正式视角下不直接显示真实姓名。
+- 公开头像组件必须先固定容器尺寸，再对真实照片/公开头像做 cover；不要在子图上叠加额外外边距、独立圆角或不等比例缩放，否则移动端会出现半圆裁切、光圈偏移或磨砂层错位。
 - `assets/img/generated/orion-default-player-avatar.png?v=4` 仅作为缺少档案照时的兜底静态头像，不作为常规公开身份展示。
 
 `site_settings/players-starfield` 当前字段语义：
@@ -272,6 +280,7 @@ orion-demo/assets/img/
 - 性能优化已缓存比赛/球员运行态、路径分配、布局签名、粒子参数，并在稳定后跳过无效顶点遍历；2026-05-21 `express-knlw-034-20260521133747` 进一步把普通页面 WebGL 空闲态改为按需绘制，鼠标扰动、CSS 粒子兜底和 `?wallpaper=1` 壁纸模式才连续绘制，同时避免大量节点持续执行 filter/blur 动画；星阵离开视口或页面隐藏时通过 IntersectionObserver + Page Visibility 停止 JS 帧循环、暂停 CSS 动画、关闭 CSS 粒子的常驻 `will-change`，恢复可见前自动唤醒。
 - 2026-05-21 `express-knlw-034-20260521133747` 新增公开身份磨砂化：星点、弹卡正反面和公开 dashboard 优先使用公开身份；未设置公开资料时对档案名/档案照加磨砂玻璃和轻量高光闪烁，动画只改 opacity，不改 blur/filter/scale；星点头像、磨砂层和光圈共用圆形尺寸变量，窄屏 30px 节点也保持圆心和边缘对齐；aria-label/alt 避免直接暴露真实姓名；链接改为 `dashboard.html?id=<playerId>`。
 - 2026-05-21 `express-knlw-034-20260521133747` 扩展到积分榜、积分明细、比赛详情、赛事页和名人堂：所有球员头像/姓名统一走 `DB.publicPlayerIdentityForViewer()`；已绑定正式球员账号和管理员可清晰查看，非正式视角使用公开身份或磨砂化档案资料。
+- 2026-05-21 `express-knlw-036-20260521142313` 修复跨页面头像边缘：`.identity-avatar-wrap`、`.podium-photo-clip`、`.pp-photo-wrap` 统一圆形 mask、hidden overflow 和固定尺寸；积分榜列表、Top 3、比赛详情 MVP、赛事球员卡不得再用页面局部样式覆盖成半圆裁切。
 - 球员页搜索区下方有一行轻量提示：成为正式球员后，可完整查看清晰头像与姓名。
 - `players.html?wallpaper=1` 进入全屏动态壁纸模式：隐藏导航、搜索、筛选、HUD、弹卡和管理员面板；继续读取 `site_settings/players-starfield`，并强制保留动态效果，供 Wallpaper Engine 加载。
 

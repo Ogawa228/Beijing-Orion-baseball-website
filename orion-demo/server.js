@@ -96,6 +96,16 @@ app.use('/assets', express.static(path.join(__dirname, 'assets'), {
   fallthrough: true,
 }));
 
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(__dirname, 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (_req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(__dirname, 'sitemap.xml'));
+});
+
 // players.html 当前按浏览器 ESM 方式加载 three，只开放所需 build 产物。
 app.get('/node_modules/three/build/:file', (req, res, next) => {
   const file = String(req.params.file || '');

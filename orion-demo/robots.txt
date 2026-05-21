@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /node_modules/
+
+Sitemap: https://xn--4gsr8nf4ck7ihxnemb.cn/sitemap.xml

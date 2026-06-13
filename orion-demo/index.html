@@ -59,7 +59,7 @@
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=33">
-<script src="assets/js/db.js?v=24"></script>
+<script src="assets/js/db.js?v=27"></script>
 </head>
 <body>
 
@@ -296,7 +296,7 @@
       <div class="theatre-main">
         <div class="eyebrow">Roster · 走近这群人</div>
         <h2 class="section-title">认识这群人<span class="en">Meet the team, find the way in</span></h2>
-        <p class="section-sub">六位负责人 · 四支阵容 · 球队信息 · 一起打球</p>
+        <p class="section-sub">联络人 · 管理组 · 四支阵容 · 一起打球</p>
       </div>
       <div class="theatre-rule"></div>
     </div>
@@ -700,7 +700,7 @@
 </footer>
 
 <!-- Auth modal is auto-injected by auth.js on every page -->
-<script src="assets/js/auth.js?v=20"></script>
+<script src="assets/js/auth.js?v=23"></script>
 <script>
 buildNav('home');
 
@@ -710,13 +710,15 @@ buildNav('home');
   const host = document.getElementById('aboutPeople');
   if (!host) return;
   const people = [
-    { name:'曹山',   role:'队长 · CAPTAIN',     initial:'曹', handles:[{type:'wx',v:'qwecaoshan'},{type:'xhs',v:'@山子贼拉酷'}] },
+    { name:'曹山',   role:'联络人 · LIAISON',   initial:'曹', handles:[{type:'wx',v:'qwecaoshan'},{type:'xhs',v:'@山子贼拉酷'}] },
+    { name:'王斌',   role:'联络人 · #110 · 外野', initial:'王', handles:[{type:'mail',v:'478753480@qq.com'},{type:'xhs',v:'609655049'}] },
     { name:'李斯然', role:'队长 · CAPTAIN',     initial:'李', handles:[{type:'wx',v:'Alan__1110'}] },
     { name:'黄强',   role:'队长 · CAPTAIN',     initial:'黄', handles:[{type:'wx',v:'Deco_E'}] },
     { name:'董立彬', role:'数据组 · DATA',      initial:'董', handles:[] },
     { name:'靳江山', role:'数据组 / 运维组 · DATA / DEVOPS', initial:'江', handles:[] },
-    { name:'杰哥',   role:'球队经理 · MANAGER', initial:'杰', handles:[], noLink:true },
+    { name:'洁哥',   role:'球队经理 · MANAGER', initial:'洁', handles:[], noLink:true },
   ];
+  const handleLabel = type => ({ wx:'微信', xhs:'小红书', mail:'邮箱' }[type] || '联系');
   host.innerHTML = people.map(p => {
     const player = !p.noLink ? DB.getPlayerByName(p.name) : null;
     const hasOwnPhoto = !!(player && player.photo);
@@ -728,7 +730,7 @@ buildNav('home');
       ? `<a class="cp-avatar-link" href="dashboard.html?player=${encodeURIComponent(p.name)}" title="查看 ${p.name} 的球员主页">${avatarInner}</a>`
       : avatarInner;
     const tags = p.handles.length
-      ? `<div class="cp-handles">${p.handles.map(h=>`<span class="cp-tag ${h.type}">${h.type==='wx'?'微信':'小红书'} ${h.v}</span>`).join('')}</div>`
+      ? `<div class="cp-handles">${p.handles.map(h=>`<span class="cp-tag ${h.type}">${handleLabel(h.type)} ${h.v}</span>`).join('')}</div>`
       : '';
     return `<div class="contact-person">
       ${avatar}

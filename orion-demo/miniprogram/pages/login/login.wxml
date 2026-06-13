@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="login-hero card panel">
+    <image class="login-logo" src="/assets/logo.jpg" mode="aspectFill" />
+    <view class="eyebrow">Orion Account</view>
+    <view class="title">微信登录</view>
+    <view class="subtle">登录后直接申请绑定正式球员档案，用于活动报名、一键签到和积分同步。</view>
+  </view>
+
+  <view class="section card panel stack">
+    <view>
+      <view class="field-label">队内昵称</view>
+      <input class="input" placeholder="例如 江山 / XuTe" value="{{displayName}}" bindinput="onNameInput" />
+      <view class="subtle tip">首次登录会先创建试训队员账号；登录成功后可直接选择自己的正式球员档案提交绑定申请。</view>
+    </view>
+
+    <view class="legal-card">
+      <view class="legal-title">协议与个人信息保护</view>
+      <view class="subtle">
+        请先阅读官网同一份
+        <navigator class="legal-link" url="{{legalPageUrl}}" hover-class="legal-link-hover">用户协议、隐私政策和个人信息处理规则</navigator>
+        ，再勾选确认。
+      </view>
+      <checkbox-group class="consent-list" bindchange="onConsentChange">
+        <label class="consent-row">
+          <checkbox value="terms" color="#c9a961" />
+          <text>我已阅读并同意《用户协议》《隐私政策》及《个人信息处理规则》。</text>
+        </label>
+        <label class="consent-row">
+          <checkbox value="personal-info" color="#c9a961" />
+          <text>我单独同意为账号注册、球队管理、绑定审核、赛事数据展示和安全维护处理必要个人信息。</text>
+        </label>
+        <label class="consent-row">
+          <checkbox value="guardian" color="#c9a961" />
+          <text>我确认本人已满 14 周岁；如未满 14 周岁，已由监护人阅读并同意。</text>
+        </label>
+      </checkbox-group>
+    </view>
+
+    <button class="btn btn-primary" loading="{{loading}}" disabled="{{loading}}" bindtap="login">微信一键登录</button>
+  </view>
+</view>

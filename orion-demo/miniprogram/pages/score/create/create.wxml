@@ -1,0 +1,166 @@
+<view class="page score-create-page">
+  <view class="score-create-hero card">
+    <view>
+      <view class="eyebrow">⚾ 比赛</view>
+      <view class="title">发起比赛</view>
+      <view class="subtle">先确认比赛信息和出场名单，再进入中文现场记录。</view>
+    </view>
+    <view class="hero-metrics">
+      <view class="hero-metric">
+        <text class="metric-value">{{lineup.length}}</text>
+        <text class="metric-label">出场</text>
+      </view>
+      <view class="hero-metric">
+        <text class="metric-value">{{sportLabel}}</text>
+        <text class="metric-label">{{date}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between block-head">
+      <view>
+        <view class="eyebrow">🧾 基础</view>
+        <view class="card-title">基础信息</view>
+      </view>
+      <view class="pill">{{venueLabel}}</view>
+    </view>
+    <view class="setup-grid">
+      <view class="form-cell">
+        <view class="label">比赛项目</view>
+        <picker mode="selector" range="{{sports}}" range-key="label" value="{{sportIndex}}" bindchange="onSportChange">
+          <view class="picker-like">{{sportLabel}}</view>
+        </picker>
+      </view>
+      <view class="form-cell">
+        <view class="label">主客场</view>
+        <picker mode="selector" range="{{venues}}" range-key="label" value="{{venueIndex}}" bindchange="onVenueChange">
+          <view class="picker-like">{{venueLabel}}</view>
+        </picker>
+      </view>
+      <view class="form-cell form-cell-wide">
+        <view class="label">对手</view>
+        <input class="input" placeholder="对手队名" value="{{opponent}}" bindinput="onOpponentInput" />
+      </view>
+      <view class="form-cell">
+        <view class="label">日期</view>
+        <picker mode="date" value="{{date}}" bindchange="onDateChange">
+          <view class="picker-like">{{date}}</view>
+        </picker>
+      </view>
+      <view class="form-cell">
+        <view class="label">所属赛事</view>
+        <picker mode="selector" range="{{tournamentOptions}}" range-key="name" value="{{tournamentIndex}}" bindchange="onTournamentChange">
+          <view class="picker-like ellipsis">{{tournamentLabel}}</view>
+        </picker>
+        <button wx:if="{{tournamentHasMore}}" class="btn btn-ghost tournament-more" loading="{{loadingMoreTournaments}}" bindtap="loadMoreTournaments">加载更多赛事候选</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between block-head">
+      <view>
+        <view class="eyebrow">👥 名单</view>
+        <view class="card-title">阵容来源</view>
+      </view>
+      <view class="pill">{{lineup.length}} 人</view>
+    </view>
+    <view class="setup-grid compact-grid">
+      <view class="form-cell form-cell-wide">
+        <view class="label">出场名单来源</view>
+        <picker mode="selector" range="{{rosterSources}}" range-key="label" value="{{rosterSourceIndex}}" bindchange="onRosterSourceChange">
+          <view class="picker-like">{{rosterSourceLabel}}</view>
+        </picker>
+      </view>
+    </view>
+    <view wx:if="{{relayMode}}" class="relay-box">
+      <view class="label">接龙活动</view>
+      <picker mode="selector" range="{{rosterEventOptions}}" range-key="title" value="{{rosterEventIndex}}" bindchange="onRosterEventChange">
+        <view class="picker-like">{{rosterEventLabel}}</view>
+      </picker>
+      <button wx:if="{{rosterEventsHasMore}}" class="btn btn-ghost relay-more" loading="{{loadingMoreRosterEvents}}" bindtap="loadMoreRosterEvents">加载更多接龙候选</button>
+      <view class="relay-summary">{{relaySummary}}</view>
+      <view wx:for="{{relaySignups}}" wx:key="id" class="relay-row">
+        <view>
+          <view class="relay-name">{{item.displayName}}</view>
+          <view class="subtle">{{item.statusLabel}} · {{item.note || '无备注'}}</view>
+        </view>
+        <view class="relay-state {{item.bindClass}}">{{item.bindState}}</view>
+      </view>
+      <button class="btn btn-ghost relay-refresh" bindtap="refreshRelayRoster">刷新接龙名单</button>
+      <view wx:if="{{relayUnmatchedNames.length}}" class="warning-box">
+        <view>以下接龙成员没有绑定球员档案，需要管理员手动添加：</view>
+        <view wx:for="{{relayUnmatchedNames}}" wx:key="*this">{{item}}</view>
+      </view>
+    </view>
+    <view class="roster-note">
+      <view class="subtle">管理员可以在接龙导入后继续勾选/取消球员，并调整棒次和守位。</view>
+      <view class="selected-count">{{lineup.length}} / {{players.length}}</view>
+    </view>
+    <view class="player-search-row">
+      <input class="input player-search-input" placeholder="搜索姓名 / 背号 / 守位" value="{{playerQuery}}" bindinput="onPlayerSearchInput" confirm-type="search" bindconfirm="searchPlayers" />
+      <button class="btn btn-ghost player-search-btn" loading="{{loadingPlayers}}" bindtap="searchPlayers">搜索</button>
+      <button class="btn btn-ghost player-clear-btn" loading="{{loadingPlayers}}" bindtap="clearPlayerSearch">重置</button>
+    </view>
+    <checkbox-group bindchange="onRosterChange">
+      <scroll-view scroll-y class="roster-list">
+        <label wx:for="{{players}}" wx:key="id" class="player-row {{item.checked ? 'checked' : ''}}">
+          <checkbox value="{{item.id}}" checked="{{item.checked}}" color="#c9a961" />
+          <view class="player-main">
+            <text class="player-name">#{{item.number || '-'}} {{item.name}}</text>
+            <text class="subtle">{{item.position || '未设守位'}}</text>
+          </view>
+        </label>
+      </scroll-view>
+    </checkbox-group>
+    <button wx:if="{{playersHasMore}}" class="btn btn-ghost player-more" loading="{{loadingMorePlayers}}" bindtap="loadMorePlayers">加载更多球员</button>
+  </view>
+
+  <view wx:if="{{lineup.length}}" class="section card panel">
+    <view class="row between block-head">
+      <view>
+        <view class="eyebrow">🧢 阵容</view>
+        <view class="card-title">阵容工作台</view>
+        <view class="subtle">拖动球员块上下调整棒次；选中或拖到场地图位置可改守位。</view>
+      </view>
+      <view wx:if="{{selectedLineupName}}" class="pill">{{selectedLineupName}}</view>
+    </view>
+    <view class="lineup-workbench">
+      <view class="lineup-panel">
+        <view class="panel-label">棒次 / 守位</view>
+        <view wx:for="{{lineup}}" wx:key="id" class="lineup-row {{selectedLineupIndex == index ? 'is-selected' : ''}} {{item.id == draggingId ? 'is-dragging' : ''}}" bindtap="onLineupTap" catchtouchstart="onLineupTouchStart" catchtouchmove="onLineupTouchMove" catchtouchend="onLineupTouchEnd" data-index="{{index}}">
+          <text class="order">{{index + 1}}</text>
+          <text class="lineup-name">{{item.name}}</text>
+          <view class="order-tools">
+            <button class="order-btn" catchtap="moveLineupUp" data-index="{{index}}">↑</button>
+            <button class="order-btn" catchtap="moveLineupDown" data-index="{{index}}">↓</button>
+          </view>
+          <picker mode="selector" range="{{positions}}" value="{{item.slotIndex}}" data-index="{{index}}" bindchange="onSlotChange">
+            <view class="slot">{{item.slot}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="field-panel">
+        <view class="panel-label">场上排布</view>
+        <view class="field-board">
+          <view class="diamond diamond-outer"></view>
+          <view class="diamond diamond-inner"></view>
+          <view wx:for="{{fieldSlots}}" wx:key="slot" class="field-marker {{item.className}} {{item.stateClass}}" bindtap="onFieldMarkerTap" data-slot="{{item.slot}}">
+            <view class="slot-code">{{item.slot}}</view>
+            <view class="field-name">{{item.name}}</view>
+            <view class="field-label">{{item.label}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{benchSlots.length}}" class="bench-row">
+      <view wx:for="{{benchSlots}}" wx:key="id" class="bench-pill">#{{item.number || '-'}} {{item.name}} · {{item.slot}}</view>
+    </view>
+    <view wx:if="{{positionWarnings.length}}" class="warning-box">
+      <view wx:for="{{positionWarnings}}" wx:key="*this">{{item}}</view>
+    </view>
+  </view>
+
+  <button class="btn btn-primary save" bindtap="startGame">进入比赛记录</button>
+</view>

@@ -1,0 +1,68 @@
+<view class="page audit-page">
+  <view class="card panel stack">
+    <view>
+      <view class="eyebrow">🧭 审计</view>
+      <view class="title">审计日志</view>
+      <view class="subtle">{{scopeText || '按权限查看后台操作记录'}}</view>
+    </view>
+    <view class="filter-row">
+      <picker mode="selector" range="{{targetFilters}}" range-key="label" value="{{targetIndex}}" bindchange="onTargetChange">
+        <view class="picker-like compact-picker">{{targetLabel}}</view>
+      </picker>
+      <picker mode="selector" range="{{actionFilters}}" range-key="label" value="{{actionIndex}}" bindchange="onActionChange">
+        <view class="picker-like compact-picker">{{actionLabel}}</view>
+      </picker>
+    </view>
+    <view class="search-row">
+      <input class="input search-input" placeholder="搜索摘要、对象 ID、操作人" value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="search" />
+      <button class="btn btn-primary search-btn" bindtap="search">搜索</button>
+    </view>
+    <button class="btn btn-ghost" bindtap="clearFilters">清空筛选</button>
+  </view>
+
+  <view wx:if="{{!canReadAudit && !loading}}" class="section card panel stack">
+    <view class="card-title">暂无审计权限</view>
+    <view class="subtle">需要 A/B 管理员审计权限，或数据组比赛审计权限。</view>
+  </view>
+
+  <view wx:if="{{canReadAudit}}" class="section card panel stack">
+    <view class="row between">
+      <view>
+        <view class="card-title">记录列表</view>
+        <view class="subtle">{{resultText}}</view>
+      </view>
+      <button class="link" bindtap="load">刷新</button>
+    </view>
+
+    <view wx:for="{{logs}}" wx:key="id" class="audit-card" bindtap="openDetail" data-id="{{item.id}}">
+      <view class="audit-head">
+        <view class="audit-action">{{item.actionText}}</view>
+        <view class="audit-time">{{item.timeText}}</view>
+      </view>
+      <view class="audit-title">{{item.title}}</view>
+      <view class="subtle">{{item.targetText}}</view>
+      <view class="subtle">{{item.actorText}}</view>
+      <view wx:if="{{item.hasMetadata}}" class="detail-hint">查看详情</view>
+    </view>
+
+    <view wx:if="{{!logs.length && !loading}}" class="empty compact-empty">暂无匹配记录</view>
+    <button wx:if="{{hasMore}}" class="btn btn-ghost" loading="{{loadingMore}}" bindtap="loadMore">加载更多</button>
+  </view>
+
+  <view wx:if="{{detailOpen && selectedLog}}" class="detail-mask" catchtap="closeDetail">
+    <view class="detail-panel" catchtap="noop">
+      <view class="row between">
+        <view>
+          <view class="eyebrow">🧾 详情</view>
+          <view class="card-title">{{selectedLog.actionText}}</view>
+        </view>
+        <button class="link close-link" bindtap="closeDetail">关闭</button>
+      </view>
+      <view class="detail-line">{{selectedLog.title}}</view>
+      <view class="subtle">{{selectedLog.targetText}}</view>
+      <view class="subtle">{{selectedLog.actorText}} · {{selectedLog.timeText}}</view>
+      <view class="metadata-box">{{selectedLog.metadataText}}</view>
+      <button class="btn btn-ghost" bindtap="copyDetail">复制详情 JSON</button>
+    </view>
+  </view>
+</view>

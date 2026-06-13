@@ -1,0 +1,102 @@
+<view class="page tournament-detail-page">
+  <view wx:if="{{loadError && !summary}}" class="card empty load-error">
+    <view>赛事详情加载失败</view>
+    <button class="btn btn-ghost" bindtap="retryLoad">重新加载</button>
+  </view>
+  <view wx:if="{{summary}}" class="tournament-hero card">
+    <image class="hero-cover" src="{{summary.cover}}" mode="aspectFill" />
+    <view class="hero-shade"></view>
+    <view class="hero-content">
+      <view class="eyebrow">🏆 赛事</view>
+      <view class="hero-title">{{summary.title}}</view>
+      <view class="hero-meta">{{summary.typeText}} · {{summary.sportText}} · {{tournament.season || '赛季待定'}}</view>
+      <view class="hero-sub">{{summary.dateRange}} · {{summary.location}}</view>
+      <view wx:if="{{summary.description}}" class="hero-desc">{{summary.description}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{summary}}" class="summary-grid">
+    <view class="metric card">
+      <view class="metric-value">{{summary.recordText}}</view>
+      <view class="subtle">战绩</view>
+    </view>
+    <view class="metric card">
+      <view class="metric-value">{{summary.gamesText}}</view>
+      <view class="subtle">场次</view>
+    </view>
+    <view class="metric card">
+      <view class="metric-value">{{summary.runsText}}</view>
+      <view class="subtle">得失分</view>
+    </view>
+    <view class="metric card">
+      <view class="metric-value">{{summary.diffText}}</view>
+      <view class="subtle">净胜分</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">📅 场次</view>
+        <view class="title">全部场次</view>
+      </view>
+    </view>
+    <view wx:for="{{games}}" wx:key="id" class="game-row card panel" bindtap="openGame" data-id="{{item.id}}">
+      <view class="game-cover {{item.coverClass}}">
+        <image wx:if="{{item.cover}}" class="game-cover-img" src="{{item.cover}}" mode="aspectFill" lazy-load="{{true}}" />
+        <text wx:else class="game-cover-fallback">{{item.fallback}}</text>
+      </view>
+      <view class="game-main">
+        <view class="game-title">{{item.title}}</view>
+        <view class="subtle">{{item.meta}}</view>
+      </view>
+      <view class="game-score">{{item.scoreText}}</view>
+    </view>
+    <view wx:if="{{!games.length && !loading}}" class="card empty">该赛事暂无比赛</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">📊 排行</view>
+        <view class="title">打击排行榜</view>
+      </view>
+      <picker mode="selector" range="{{sortOptions}}" range-key="label" value="{{sortIndex}}" bindchange="onSortChange">
+        <view class="sort-picker">按 {{sortLabel}}</view>
+      </picker>
+    </view>
+    <view wx:for="{{batting}}" wx:key="key" class="leader-row card panel {{item.linkedClass}}" bindtap="openPlayer" data-player-id="{{item.playerId}}">
+      <view class="rank">{{item.rank}}</view>
+      <view class="leader-main">
+        <view class="leader-name {{item.nameClass}}">{{item.name}}</view>
+        <view class="subtle">{{item.statLine}}</view>
+      </view>
+      <view class="leader-stats">
+        <view class="ops">{{item.OPSText}}</view>
+        <view class="subtle">OPS</view>
+      </view>
+    </view>
+    <view wx:if="{{!batting.length && !loading}}" class="card empty">暂无打击数据</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">🎯 投手</view>
+        <view class="title">投手排行榜</view>
+      </view>
+    </view>
+    <view wx:for="{{pitching}}" wx:key="key" class="leader-row card panel {{item.linkedClass}}" bindtap="openPlayer" data-player-id="{{item.playerId}}">
+      <view class="rank">{{item.rank}}</view>
+      <view class="leader-main">
+        <view class="leader-name {{item.nameClass}}">{{item.name}}</view>
+        <view class="subtle">{{item.IPText}} IP · {{item.SO}} K · {{item.recordText}}</view>
+      </view>
+      <view class="leader-stats">
+        <view class="ops">{{item.ERAText}}</view>
+        <view class="subtle">ERA</view>
+      </view>
+    </view>
+    <view wx:if="{{!pitching.length && !loading}}" class="card empty">暂无投手数据</view>
+  </view>
+</view>

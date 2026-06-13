@@ -1,0 +1,27 @@
+<view class="page hof-page">
+  <view class="hero card panel">
+    <view class="eyebrow">🏛 名人堂</view>
+    <view class="title">猎户名人堂</view>
+    <view class="subtle">记录长期贡献、赛季荣誉和球队历史时刻。</view>
+  </view>
+
+  <view class="section">
+    <view wx:for="{{entries}}" wx:key="playerId" class="hof-card card panel" bindtap="openPlayer" data-id="{{item.playerId}}">
+      <view class="rank-mark">{{item.rank}}</view>
+      <image class="avatar hof-avatar {{item.avatarClass}}" src="{{item.avatar}}" mode="aspectFill" lazy-load="{{true}}" />
+      <view class="hof-main">
+        <view class="row between">
+          <view class="hof-name {{item.nameClass}}">{{item.displayName}}</view>
+          <view class="year-pill">{{item.yearText}}</view>
+        </view>
+        <view class="subtle">{{item.numberText}} · {{item.positionText}}</view>
+        <view class="reason">{{item.reasonText}}</view>
+      </view>
+    </view>
+    <button wx:if="{{hasMore}}" class="btn btn-ghost load-more" loading="{{loadingMore}}" bindtap="loadMore">加载更多名人堂</button>
+  </view>
+
+  <view wx:if="{{!entries.length && !loading}}" class="section card empty">
+    暂无名人堂记录
+  </view>
+</view>

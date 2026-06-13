@@ -8,11 +8,17 @@ npm-debug.log
 DEPLOY.md
 .env
 .env.local
+.secrets/
 # 一次性数据 / 备份 / 本地 dev 工具，不打进 image
 orion-data.json
 orion-data-*.json
 *.bak
 assets/js/*.legacy.js*
+design/
+docs/
+miniprogram/
+project.config.json
+project.private.config.json
 scripts/
 server/schema.sql
 package-lock.json

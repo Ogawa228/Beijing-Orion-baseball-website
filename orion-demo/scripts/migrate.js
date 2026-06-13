@@ -32,6 +32,7 @@ const players_map = {
 };
 const games_map = {
   tournamentId: 'tournament_id',
+  eventId: 'event_id',
   seasonName: 'season_name',
   homeScore: 'home_score',
   awayScore: 'away_score',
@@ -40,7 +41,9 @@ const games_map = {
   oppBatting: 'opp_batting',
   oppPitching: 'opp_pitching',
   mvpPlayerName: 'mvp_player_name',
+  mvpPlayerId: 'mvp_player_id',
   mvpNote: 'mvp_note',
+  gameLog: 'game_log',
   isAggregate: 'is_aggregate',
 };
 const tournaments_map = {
@@ -69,6 +72,13 @@ function rename(obj, mapping) {
 
 // JSON 字段：MySQL 接受 JSON.stringify 的字符串
 function jsonField(v) { return v == null ? null : JSON.stringify(v); }
+function objectField(v) {
+  if (!v) return {};
+  if (typeof v === 'string') {
+    try { return JSON.parse(v); } catch (_) { return {}; }
+  }
+  return v;
+}
 
 // 'throws' 是 MySQL 关键字，schema 里改名为 throws_
 function fixThrowsKey(p) {
@@ -190,18 +200,21 @@ async function main() {
   if (data.games?.length) {
     const rows = data.games.map(g => {
       const r = rename(g, games_map);
+      const metadata = objectField(r.metadata);
       return [
-        r.id, r.tournament_id || null, r.sport||'', r.season||'', r.season_name||'',
+        r.id, r.tournament_id || null, r.event_id || metadata.rosterEventId || metadata.relatedEventId || null,
+        r.sport||'', r.season||'', r.season_name||'',
         r.cover||null, r.date||null, r.venue||null, r.innings||null,
         r.home||'', r.away||'', r.home_score||null, r.away_score||null,
         jsonField(r.linescore), jsonField(r.home_totals), jsonField(r.away_totals),
         jsonField(r.batting), jsonField(r.opp_batting), jsonField(r.pitching), jsonField(r.opp_pitching),
-        r.mvp_player_name || '', r.mvp_note || '',
+        r.mvp_player_name || '', r.mvp_player_id || '', r.mvp_note || '',
+        jsonField(r.game_log), jsonField(metadata),
         r.is_aggregate ? 1 : 0,
       ];
     });
     await conn.query(
-      `INSERT INTO games (id, tournament_id, sport, season, season_name, cover, date, venue, innings, home, away, home_score, away_score, linescore, home_totals, away_totals, batting, opp_batting, pitching, opp_pitching, mvp_player_name, mvp_note, is_aggregate) VALUES ?`,
+      `INSERT INTO games (id, tournament_id, event_id, sport, season, season_name, cover, date, venue, innings, home, away, home_score, away_score, linescore, home_totals, away_totals, batting, opp_batting, pitching, opp_pitching, mvp_player_name, mvp_player_id, mvp_note, game_log, metadata, is_aggregate) VALUES ?`,
       [rows]
     );
     console.log(`  ✓ games: ${rows.length}`);

@@ -1,0 +1,247 @@
+page {
+  min-height: 100%;
+  color: #e8eefa;
+  background: #050b18;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+view, text, button, input, textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  line-height: 1.2;
+  background: transparent;
+  color: inherit;
+}
+
+button::after {
+  border: 0;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 28rpx 28rpx 56rpx;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(46, 107, 255, .24), transparent 34%),
+    linear-gradient(180deg, #050b18 0%, #0a1628 52%, #050b18 100%);
+}
+
+.section {
+  margin-top: 28rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.section-head > view:first-child {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: #c9a961;
+  font-size: 22rpx;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 8rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #f6f8ff;
+  overflow-wrap: anywhere;
+}
+
+.subtle {
+  color: #9aa9c4;
+  font-size: 24rpx;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.card {
+  border: 1rpx solid rgba(255, 255, 255, .1);
+  border-radius: 18rpx;
+  background: rgba(10, 22, 40, .82);
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, .22);
+}
+
+.panel {
+  padding: 24rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.between {
+  justify-content: space-between;
+}
+
+.between > view:first-child {
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.action-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 78rpx;
+  padding: 0 24rpx;
+  border-radius: 14rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.btn-primary {
+  color: #081120;
+  background: linear-gradient(135deg, #e4c77a, #8fb0ff);
+}
+
+.btn-ghost {
+  border: 1rpx solid rgba(255, 255, 255, .16);
+  color: #e8eefa;
+  background: rgba(255, 255, 255, .05);
+}
+
+.btn-danger {
+  color: #ffdddd;
+  border: 1rpx solid rgba(255, 138, 138, .38);
+  background: rgba(255, 138, 138, .1);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44rpx;
+  padding: 0 16rpx;
+  border: 1rpx solid rgba(201, 169, 97, .34);
+  border-radius: 999rpx;
+  color: #e4c77a;
+  font-size: 22rpx;
+  background: rgba(201, 169, 97, .08);
+}
+
+.input,
+.textarea,
+.picker-like {
+  width: 100%;
+  min-height: 78rpx;
+  padding: 0 22rpx;
+  border: 1rpx solid rgba(255, 255, 255, .12);
+  border-radius: 14rpx;
+  color: #f6f8ff;
+  background: rgba(255, 255, 255, .06);
+  font-size: 27rpx;
+  overflow: hidden;
+}
+
+.textarea {
+  min-height: 150rpx;
+  padding-top: 18rpx;
+  line-height: 1.5;
+}
+
+.divider {
+  height: 1rpx;
+  margin: 20rpx 0;
+  background: rgba(255, 255, 255, .08);
+}
+
+.empty {
+  padding: 52rpx 28rpx;
+  text-align: center;
+  color: #9aa9c4;
+}
+
+.skeleton-group {
+  padding: 20rpx 4rpx;
+}
+
+.skeleton-line {
+  height: 30rpx;
+  border-radius: 10rpx;
+  margin: 20rpx 0;
+  background: rgba(255, 255, 255, .07);
+  animation: skeleton-breathe 1.3s ease-in-out infinite;
+}
+
+.skeleton-line.short {
+  width: 56%;
+}
+
+.skeleton-line.tall {
+  height: 120rpx;
+}
+
+@keyframes skeleton-breathe {
+  0%, 100% { opacity: .5; }
+  50% { opacity: 1; }
+}
+
+.load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #0f1e38;
+}
+
+.identity-frosted-name {
+  filter: blur(3rpx);
+  opacity: .72;
+}
+
+.identity-frosted-avatar {
+  filter: blur(8rpx) saturate(.8) contrast(.92) brightness(.9);
+  opacity: .82;
+}
+
+.mono {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}

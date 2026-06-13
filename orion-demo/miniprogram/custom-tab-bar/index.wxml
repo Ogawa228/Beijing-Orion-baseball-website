@@ -1,0 +1,17 @@
+<view class="orion-tabbar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="pagePath"
+    class="orion-tabbar-item {{item.primary ? 'is-primary' : ''}} {{active === index ? 'is-active' : ''}}"
+    bindtap="onTabTap"
+    data-index="{{index}}"
+  >
+    <view wx:if="{{item.primary}}" class="orion-tabbar-big">
+      <text class="orion-tabbar-big-text">{{item.text}}</text>
+    </view>
+    <block wx:else>
+      <text class="orion-tabbar-icon">{{item.icon}}</text>
+      <text class="orion-tabbar-text">{{item.text}}</text>
+    </block>
+  </view>
+</view>

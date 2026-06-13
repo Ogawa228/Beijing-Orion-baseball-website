@@ -1,0 +1,65 @@
+<view class="page">
+  <view class="section-head game-list-head">
+    <view>
+      <view class="eyebrow">⚾ 比赛</view>
+      <view class="title">比赛记录</view>
+    </view>
+    <view class="game-list-actions">
+      <button wx:if="{{canImport}}" class="btn btn-ghost create-btn import-btn" bindtap="importPdf">导入</button>
+      <button class="btn btn-primary create-btn" bindtap="create">发起</button>
+    </view>
+  </view>
+
+  <view class="game-sport-tabs">
+    <view class="game-sport-chip game-sport-all {{allActive}}" hover-class="game-sport-chip-hover" data-sport="all" bindtap="setSport">全部</view>
+    <view class="game-sport-chip game-sport-named {{softballActive}}" hover-class="game-sport-chip-hover" data-sport="softball" bindtap="setSport">🥎 慢垒</view>
+    <view class="game-sport-chip game-sport-named {{baseballActive}}" hover-class="game-sport-chip-hover" data-sport="baseball" bindtap="setSport">⚾ 棒球</view>
+  </view>
+
+  <view class="section compact-section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">🏆 赛事</view>
+        <view class="title">赛事 / 赛季</view>
+      </view>
+    </view>
+    <scroll-view scroll-x class="tournament-scroll">
+      <view class="tournament-track">
+        <view wx:for="{{tournaments}}" wx:key="id" class="tournament-card card {{item.active ? 'active' : ''}}" data-id="{{item.id}}" bindtap="setTournament">
+          <text class="tournament-name">{{item.displayName || item.shortName || item.name}}</text>
+          <text class="subtle tournament-meta">{{item.meta}}</text>
+          <view class="tournament-card-foot">
+            <text class="tournament-count">{{item.countText}}</text>
+            <text wx:if="{{item.id}}" class="tournament-detail-link" data-id="{{item.id}}" catchtap="openTournament">详情</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{tournamentHasMore}}" class="tournament-load-more" bindtap="loadMoreTournaments">
+      <text>{{loadingMoreTournaments ? '加载中...' : '加载更多赛事'}}</text>
+    </view>
+  </view>
+
+  <view wx:for="{{visibleGames}}" wx:key="id" class="game-card card panel" bindtap="open" data-id="{{item.id}}">
+    <view class="game-card-grid">
+      <view class="game-cover {{item.coverClass}}">
+        <image wx:if="{{item.cover}}" class="game-cover-img" mode="aspectFill" lazy-load="{{true}}" src="{{item.cover}}" />
+        <text wx:else class="game-cover-fallback">{{item.sportLabel || '⚾🥎'}}</text>
+      </view>
+      <view class="game-card-main">
+        <view class="row between">
+          <view class="pill">{{item.sportLabel || '⚾🥎 综合'}}</view>
+          <view class="score">{{item.awayScore}} : {{item.homeScore}}</view>
+        </view>
+        <view class="teams">{{item.away}} vs {{item.home}}</view>
+        <view class="subtle">{{item.date}} · {{item.tournamentLabel || item.seasonName || item.season}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{hasMore && !loading}}" class="load-more" bindtap="loadMore">
+    <text>{{loadingMore ? '加载中...' : '加载更多比赛'}}</text>
+  </view>
+
+  <view wx:if="{{!visibleGames.length && !loading}}" class="card empty">{{emptyText}}</view>
+</view>

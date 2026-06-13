@@ -9,18 +9,41 @@
 
 const SLOGAN_MAX = 14;
 const DEFAULT_PUBLIC_PLAYER_AVATAR = 'assets/img/generated/orion-default-player-avatar.png?v=4';
+const WEB_SESSION_STORAGE_KEY = 'orion_web_session';
+
+function _storedSessionToken() {
+  try { return localStorage.getItem(WEB_SESSION_STORAGE_KEY) || ''; }
+  catch (_) { return ''; }
+}
+
+function _storeSessionToken(token) {
+  try {
+    const v = String(token || '').trim();
+    if (v) localStorage.setItem(WEB_SESSION_STORAGE_KEY, v);
+  } catch (_) {}
+}
+
+function _clearStoredSessionToken() {
+  try { localStorage.removeItem(WEB_SESSION_STORAGE_KEY); } catch (_) {}
+}
 
 // ============== fetch helper ==============
 async function _api(method, url, body) {
+  const headers = {};
+  const sessionToken = _storedSessionToken();
+  if (sessionToken) headers['X-Orion-Session'] = sessionToken;
+  if (body) headers['Content-Type'] = 'application/json';
   const r = await fetch(url, {
     method,
     credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json' } : {},
+    cache: 'no-store',
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   let data = {};
   try { data = await r.json(); } catch (_) {}
   if (!r.ok) {
+    if (r.status === 401) _clearStoredSessionToken();
     const err = new Error(data.message || data.error || r.statusText || '请求失败');
     err.code = data.error;
     err.status = r.status;
@@ -139,7 +162,14 @@ const DB = {
     _cache._lastLoadAt = Date.now();
   },
 
-  async reload() { return DB.preload(true); },
+  reload() {
+    DB._preloadPromise = DB.preload(true).catch(e => {
+      console.error('[DB.reload]', e);
+      window._dbPreloadError = e;
+      throw e;
+    });
+    return DB._preloadPromise;
+  },
 
   // ==================== Helpers ====================
   isOrionTeam(teamName) {
@@ -737,6 +767,7 @@ const DB = {
   findUserByEmail(_email) { /* 老 API：服务器端校验，前端无需 */ return null; },
   async register(payload) {
     const r = await _api('POST', '/api/auth/register', payload);
+    if (r.sessionToken) _storeSessionToken(r.sessionToken);
     _cache.user = r.user;
     if (r.player) {
       _cache.player = r.player;
@@ -747,17 +778,25 @@ const DB = {
   },
   async linkEmail({ code, email, password, displayName }) {
     const r = await _api('POST', '/api/auth/link-email', { code, email, password, displayName });
+    if (r.sessionToken) _storeSessionToken(r.sessionToken);
     _cache.user = r.user;
     await DB.reload();
     return r.user;
   },
+  // 当前登录账号自助生成一次性关联码（30 分钟有效）。
+  // 网页先注册的用户拿它去小程序登录页"关联微信"，把微信身份挂到同一账号。
+  async createAppConnectCode() {
+    return _api('POST', '/api/auth/app-connect-code', {});
+  },
   async login(email, password) {
     const r = await _api('POST', '/api/auth/login', { email, password });
+    if (r.sessionToken) _storeSessionToken(r.sessionToken);
     _cache.user = r.user;
     return r.user;
   },
   async logout() {
     try { await _api('POST', '/api/auth/logout'); } catch (_) {}
+    _clearStoredSessionToken();
     _cache.user = null;
     _cache.player = null;
   },

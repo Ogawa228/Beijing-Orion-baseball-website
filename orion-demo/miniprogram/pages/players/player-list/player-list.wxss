@@ -1,0 +1,146 @@
+.players-page {
+  padding-top: 20rpx;
+}
+
+.small {
+  width: 132rpx;
+  min-height: 64rpx;
+  font-size: 24rpx;
+}
+
+.roster-metrics {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+}
+
+.metric {
+  flex: 1;
+  min-width: 0;
+  padding: 18rpx;
+}
+
+.metric-value {
+  display: block;
+  color: #f6f8ff;
+  font-size: 34rpx;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-row {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.clear-btn {
+  width: 112rpx;
+  min-height: 78rpx;
+  padding: 0 18rpx;
+  font-size: 24rpx;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 16rpx;
+}
+
+.player-avatar {
+  flex: 0 0 86rpx;
+  width: 86rpx;
+  height: 86rpx;
+  border: 2rpx solid rgba(228, 199, 122, .42);
+}
+
+.player-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.player-name {
+  min-width: 0;
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-number {
+  flex: 0 0 auto;
+  color: #e4c77a;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.player-meta {
+  margin-top: 8rpx;
+  color: #9aa9c4;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.slogan {
+  margin-top: 8rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.title-pill {
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.points-box {
+  flex: 0 0 94rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2rpx;
+}
+
+.points {
+  color: #e4c77a;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.rank {
+  color: #8fb0ff;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.load-more {
+  width: 100%;
+  margin: 12rpx 0 24rpx;
+}

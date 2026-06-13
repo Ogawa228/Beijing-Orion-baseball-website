@@ -1,0 +1,90 @@
+<view class="page home-page">
+  <view class="hero card">
+    <image class="hero-bg" src="/assets/moon-earthrise.jpg" mode="aspectFill" />
+    <view class="hero-shade"></view>
+    <view class="hero-content">
+      <image class="logo" src="/assets/logo.jpg" mode="aspectFill" />
+      <view class="hero-text">
+        <view class="eyebrow">Beijing Orion Baseball Club</view>
+        <view class="hero-title">北京猎户座</view>
+      </view>
+      <view wx:if="{{user}}" class="hero-chip" bindtap="goProfile">{{user.displayName}}</view>
+      <view wx:else class="hero-chip hero-chip-login" bindtap="goLogin">登录</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title-block">
+        <view class="eyebrow">📌 接龙</view>
+        <view class="title">近期活动</view>
+      </view>
+      <navigator class="link" url="/pages/events/event-list/event-list" open-type="switchTab" hover-class="link-hover">活动中心</navigator>
+    </view>
+    <view wx:if="{{loading && !nextEvent}}" class="card panel skeleton-group">
+      <view class="skeleton-line short"></view>
+      <view class="skeleton-line"></view>
+    </view>
+    <view wx:elif="{{nextEvent}}" class="card panel event-card" bindtap="openEvent" data-id="{{nextEvent.id}}">
+      <view class="pill">{{nextEvent.tagLabel || '📅 活动'}}</view>
+      <view class="card-title">{{nextEvent.title}}</view>
+      <view class="subtle">{{nextEvent.date}} · {{nextEvent.location}}</view>
+    </view>
+    <view wx:else class="card empty">暂无活动</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title-block">
+        <view class="eyebrow">🏆 积分</view>
+        <view class="title">积分榜 Top 3</view>
+      </view>
+      <navigator class="link" url="/pages/points/points" open-type="switchTab" hover-class="link-hover">全部</navigator>
+    </view>
+    <view class="card panel">
+      <view wx:for="{{leaders}}" wx:key="playerId" class="leader-row touch-row" hover-class="touch-row-hover" bindtap="openPlayer" data-id="{{item.playerId}}">
+        <text class="leader-rank">{{item.rank}}</text>
+        <text class="leader-name {{item.nameClass}}">{{item.displayName}}</text>
+        <text class="leader-score">{{item.total}} 分</text>
+      </view>
+      <view wx:if="{{loading && !leaders.length}}" class="skeleton-group">
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line short"></view>
+      </view>
+      <view wx:elif="{{!leaders.length}}" class="empty">暂无积分数据</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title-block">
+        <view class="eyebrow">⚾ 比赛</view>
+        <view class="title">最近比赛</view>
+      </view>
+      <navigator class="link" url="/pages/games/game-list/game-list" hover-class="link-hover">比赛中心</navigator>
+    </view>
+    <view class="card panel">
+      <view wx:for="{{games}}" wx:key="id" class="game-row" bindtap="openGame" data-id="{{item.id}}">
+        <view>
+          <view class="card-title">{{item.away}} vs {{item.home}}</view>
+          <view class="subtle">{{item.date}} · {{item.sportLabel}}</view>
+        </view>
+        <view class="score">{{item.awayScore}}:{{item.homeScore}}</view>
+      </view>
+      <view wx:if="{{loading && !games.length}}" class="skeleton-group">
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line short"></view>
+      </view>
+      <view wx:elif="{{!games.length}}" class="empty">暂无比赛</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="card panel quick-links">
+      <navigator class="quick-link" url="/pages/players/player-list/player-list" hover-class="link-hover">⭐ 球员阵容</navigator>
+      <navigator class="quick-link" url="/pages/hall-of-fame/hall-of-fame" hover-class="link-hover">🏛 名人堂</navigator>
+      <navigator class="quick-link" url="/pages/highlights/highlights" hover-class="link-hover">📸 精彩时刻</navigator>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,345 @@
+# 微信小程序地理位置接口申请材料
+
+更新时间：2026-06-12
+
+适用小程序：北京猎户座棒垒球俱乐部小程序
+
+AppID：`wx8ad6ccfa1b8f040a`
+
+参考材料：微信官方《MP接口申请-申请成功案例参考》PDF（用户提供链接）
+
+## 0. 申请前结论
+
+本次建议申请两个接口：
+
+- `wx.getLocation`：队员在训练、比赛或活动接龙中主动点击“定位并签到”时，获取当前位置，用于与管理员设置的打卡点做距离校验，并生成签到、出勤和积分流水。
+- `wx.chooseLocation`：管理员在发起或编辑训练、比赛、活动接龙时，从地图选择本次打卡点，保存地点名称、地址和经纬度，作为队员签到校验目标。
+
+当前代码状态需要注意：
+
+- 现有小程序 `app.json` 声明的是 `chooseLocation` + `getFuzzyLocation`。
+- 现有签到页 `pages/checkin/checkin` 只调用 `wx.getFuzzyLocation`，页面文案也是“使用微信模糊定位签到”。
+- 微信编译曾提示 `getLocation` 与 `getFuzzyLocation` 互斥，因此申请 `wx.getLocation` 并准备上线精确定位签到时，应改为 `chooseLocation` + `getLocation`，不要同时声明 `getFuzzyLocation`。
+- 本材料先用于接口申请；申请通过后，再改代码与隐私声明。
+
+## 1. wx.getLocation 申请材料
+
+### 1.1 申请原因（短版，可直接粘贴）
+
+因当前业务涉及球队训练、比赛和活动接龙签到，队员到达接龙指定场地后，需要获取用户当前地理位置，与管理员预先设置的打卡点进行距离校验，用于确认队员实际到场、避免异地代签到或误签到，并据此生成出勤记录和积分流水，完成“接龙报名 - 到场签到 - 积分统计”的业务闭环。故申请 `wx.getLocation` 接口，用于队员主动点击“定位并签到”时获取当前位置并完成到场签到校验。
+
+### 1.2 申请原因（详细版，备用）
+
+北京猎户座棒垒球俱乐部小程序面向队内训练、比赛和活动管理。用户在小程序内报名训练、比赛或活动接龙后，实际到达活动场地时，需要在“接龙签到”页面主动点击“定位并签到”。小程序需要调用 `wx.getLocation` 获取用户当前位置，并与管理员在发起接龙时设置的打卡点进行距离比对，以确认该用户是否已到达本次训练、比赛或活动现场。
+
+该定位信息仅用于本次主动签到，不用于后台持续定位、不采集运动轨迹、不用于广告或非签到场景。签到成功后，系统会生成对应的训练或活动出勤记录，并根据后端积分规则更新用户积分、试训进度和活动参与流水。没有该接口时，系统无法可靠确认用户是否到达管理员指定地点，容易产生异地代签到、误签到和出勤积分错误。
+
+故申请 `wx.getLocation` 接口，用于队员主动签到时获取当前位置，并完成活动到场校验、出勤留痕和积分统计。
+
+### 1.3 使用路径
+
+建议在申请表“使用场景 / 功能路径 / 辅助说明”中填写：
+
+```text
+用户登录小程序 -> 首页点击“接龙签到” -> 选择本次训练/比赛/活动接龙 -> 点击“定位并签到” -> 小程序获取当前位置，与本次接龙的打卡点进行距离校验 -> 校验通过后生成签到记录、积分流水和试训进度。
+```
+
+对应页面路径：
+
+```text
+pages/home/home
+pages/checkin/checkin
+```
+
+后端接口：
+
+```text
+POST /api/checkins/direct
+```
+
+数据写入位置：
+
+```text
+attendances.metadata.location
+attendances.metadata.relay.targetLocation
+```
+
+### 1.4 辅助图片建议
+
+建议上传 2 张图，按官方成功案例的方式，展示“入口 - 功能页 - 用户主动触发定位”。
+
+图片 1：首页入口
+
+- 页面：`pages/home/home`
+- 截图文件：`docs/wechat-location-screenshots/01_home_checkin_entry.png`
+- 截图内容：显示“签到 / 接龙签到 / 按接龙定位签到”入口。
+- 标注建议：队员从首页进入签到功能。
+
+图片 2：签到页定位按钮
+
+- 页面：`pages/checkin/checkin`
+- 截图文件：`docs/wechat-location-screenshots/02_checkin_get_location_button.png`
+- 截图内容：显示“签到接龙”选择器、备注输入框、“定位并签到”按钮和位置展示区域。
+- 标注建议：用户主动点击按钮后才获取当前位置。
+
+申请 `wx.getLocation` 前，建议将当前页面文案从“使用微信模糊定位签到”调整为“使用微信定位确认到场签到”，避免辅助图片与申请接口名称不一致。
+
+### 1.5 隐私与权限说明文案
+
+建议用于 `app.json` / 隐私弹窗 / 页面说明：
+
+```text
+用于训练、比赛和活动签到时确认是否到达管理员设置的打卡点。
+```
+
+更完整的用户说明：
+
+```text
+你点击“定位并签到”后，小程序会获取当前位置，用于判断是否到达本次接龙的打卡点，并生成签到、出勤和积分记录。小程序不会后台持续定位，也不会记录运动轨迹。
+```
+
+## 2. wx.chooseLocation 申请材料
+
+### 2.1 申请原因（短版，可直接粘贴）
+
+因当前业务涉及球队训练、比赛和活动接龙管理，管理员发起或编辑接龙时，需要在地图中选择本次活动的打卡点，并保存地点名称、地址和经纬度，作为队员后续签到时的目标位置。该地点用于完成“管理员设置打卡点 - 队员到场签到 - 出勤和积分统计”的业务闭环。故申请 `wx.chooseLocation` 接口，用于管理员发起或编辑活动接龙时选择打卡点。
+
+### 2.2 申请原因（详细版，备用）
+
+北京猎户座棒垒球俱乐部小程序支持管理员创建训练、比赛和活动接龙。管理员在发起或编辑接龙时，需要明确本次活动的集合地点或打卡点。为避免手动输入地点不准确、无法保存经纬度、队员签到时无法进行到场校验，小程序需要调用 `wx.chooseLocation`，让管理员从微信地图中选择地点。
+
+选点完成后，小程序会保存地点名称、地址、纬度和经度，写入该条接龙的 `metadata.location`。队员后续在“接龙签到”页面点击定位签到时，系统会使用该打卡点作为目标位置，用于判断用户是否到达本次活动现场，并完成出勤和积分统计。该接口仅限管理员在发起或编辑接龙时主动调用，不会获取普通用户当前位置。
+
+故申请 `wx.chooseLocation` 接口，用于管理员设置训练、比赛和活动接龙的打卡点。
+
+### 2.3 使用路径
+
+建议在申请表“使用场景 / 功能路径 / 辅助说明”中填写：
+
+```text
+管理员登录小程序 -> 首页或管理入口进入“发起接龙” -> 填写活动标题、分类、时间 -> 在“地点”区域点击“地图选择” -> 从地图选择训练、比赛或活动打卡点 -> 保存接龙 -> 队员在该接龙下进行定位签到。
+```
+
+对应页面路径：
+
+```text
+pages/events/event-create/event-create
+pages/events/event-detail/event-detail
+pages/checkin/checkin
+```
+
+后端接口：
+
+```text
+POST /api/events
+PATCH /api/events/:id
+```
+
+数据写入位置：
+
+```text
+events.location
+events.metadata.location.name
+events.metadata.location.address
+events.metadata.location.latitude
+events.metadata.location.longitude
+events.metadata.location.source = wx.chooseLocation
+```
+
+### 2.4 辅助图片建议
+
+建议上传 2 张图，展示“管理员进入发起接龙页面 - 主动点击地图选择”的流程。
+
+图片 1：发起接龙页面
+
+- 页面：`pages/events/event-create/event-create`
+- 截图文件：`docs/wechat-location-screenshots/03_event_create_top.png`
+- 截图内容：显示活动标题、分类、时间、地点区域。
+- 标注建议：管理员创建训练、比赛或活动接龙。
+
+图片 2：地点区域“地图选择”按钮
+
+- 页面：`pages/events/event-create/event-create`
+- 截图文件：`docs/wechat-location-screenshots/04_event_choose_location_button.png`
+- 截图内容：显示地点输入框和“地图选择”按钮。
+- 标注建议：管理员主动点击地图选点，不是后台定位。
+
+如果微信后台要求补充更完整链路，再补截原生地图选择页和选点后回填页；这些页面涉及地图原生界面和登录/权限状态，当前未在本地模拟器中强行触发。
+
+### 2.5 隐私与权限说明文案
+
+建议用于 `app.json` / 页面说明：
+
+```text
+用于管理员发起或编辑训练、比赛、活动接龙时选择打卡点。
+```
+
+更完整的用户说明：
+
+```text
+管理员点击“地图选择”后，可从微信地图选择本次训练、比赛或活动的打卡点。小程序会保存地点名称、地址和经纬度，用于队员后续签到校验。
+```
+
+## 3. 微信后台申请界面填写稿
+
+如果申请界面要求按接口逐项填写，可直接使用以下内容。
+
+### 3.1 wx.getLocation
+
+接口名称：
+
+```text
+wx.getLocation
+```
+
+使用场景：
+
+```text
+队员在训练、比赛或活动接龙中进行到场签到。
+```
+
+申请原因：
+
+```text
+因当前业务涉及球队训练、比赛和活动接龙签到，队员到达接龙指定场地后，需要获取用户当前地理位置，与管理员预先设置的打卡点进行距离校验，用于确认队员实际到场、避免异地代签到或误签到，并据此生成出勤记录和积分流水，完成“接龙报名 - 到场签到 - 积分统计”的业务闭环。故申请 wx.getLocation 接口，用于队员主动点击“定位并签到”时获取当前位置并完成到场签到校验。
+```
+
+页面路径：
+
+```text
+pages/checkin/checkin
+```
+
+用户触发方式：
+
+```text
+用户主动点击“定位并签到”按钮后触发。
+```
+
+是否后台持续定位：
+
+```text
+否。仅在用户主动点击签到按钮时获取一次当前位置，不后台持续定位，不记录运动轨迹。
+```
+
+### 3.2 wx.chooseLocation
+
+接口名称：
+
+```text
+wx.chooseLocation
+```
+
+使用场景：
+
+```text
+管理员发起或编辑训练、比赛、活动接龙时，在地图中选择本次接龙的打卡点。
+```
+
+申请原因：
+
+```text
+因当前业务涉及球队训练、比赛和活动接龙管理，管理员发起或编辑接龙时，需要在地图中选择本次活动的打卡点，并保存地点名称、地址和经纬度，作为队员后续签到时的目标位置。该地点用于完成“管理员设置打卡点 - 队员到场签到 - 出勤和积分统计”的业务闭环。故申请 wx.chooseLocation 接口，用于管理员发起或编辑活动接龙时选择打卡点。
+```
+
+页面路径：
+
+```text
+pages/events/event-create/event-create
+```
+
+用户触发方式：
+
+```text
+管理员主动点击“地图选择”按钮后触发。
+```
+
+是否获取普通用户当前位置：
+
+```text
+否。该接口用于管理员选择活动打卡点，不用于获取普通用户当前位置。
+```
+
+## 4. 申请辅助图片命名建议
+
+为了和申请材料对应，建议截图文件按以下方式命名：
+
+```text
+01_home_checkin_entry.png
+02_checkin_get_location_button.png
+03_event_create_top.png
+04_event_choose_location_button.png
+```
+
+上述 4 张截图已生成在 `docs/wechat-location-screenshots/`。如果微信后台要求补充更完整链路，再补截原生地图选择页、签到成功页和选点后回填页；这些页面涉及位置权限或登录态，当前未在本地模拟器中强行触发。
+
+上传辅助图片时，可以按接口拆分：
+
+- `wx.getLocation`：上传 `01_home_checkin_entry.png`、`02_checkin_get_location_button.png`。
+- `wx.chooseLocation`：上传 `03_event_create_top.png`、`04_event_choose_location_button.png`。
+
+## 5. 申请通过后的代码调整清单
+
+申请通过 `wx.getLocation` 后，再进行代码调整：
+
+1. `miniprogram/app.json`
+
+```json
+"requiredPrivateInfos": [
+  "chooseLocation",
+  "getLocation"
+],
+"permission": {
+  "scope.userLocation": {
+    "desc": "用于训练、比赛和活动签到时确认是否到达管理员设置的打卡点"
+  }
+}
+```
+
+2. `miniprogram/pages/checkin/checkin.js`
+
+- 将 `getBestLocation()` 从 `wx.getFuzzyLocation` 切换为 `wx.getLocation`。
+- `source` 写为 `wx.getLocation`。
+- `type` 写为 `precise`。
+- 保留能力检测和错误提示：接口未开通、用户拒绝授权、定位失败。
+
+3. `miniprogram/pages/checkin/checkin.wxml`
+
+- 将“使用微信模糊定位签到”改为“使用微信定位确认到场签到”。
+
+4. `scripts/verify-miniprogram-preflight.js`
+
+- 移除“不得声明 getLocation”的旧断言。
+- 改为断言 `requiredPrivateInfos` 包含 `chooseLocation` 和 `getLocation`，且不再包含 `getFuzzyLocation`。
+
+5. `scripts/test-miniprogram-flows.js`
+
+- 将签到测试期望从 `wx.getFuzzyLocation` / `fuzzy` 改为 `wx.getLocation` / `precise`。
+
+## 6. 后台申请时避免的表述
+
+建议避免：
+
+- “实时监控用户位置”
+- “持续定位”
+- “后台定位”
+- “统计用户活动轨迹”
+- “用于运营分析”
+
+建议使用：
+
+- “用户主动点击签到时获取一次当前位置”
+- “用于到场签到校验”
+- “与管理员设置的打卡点进行距离校验”
+- “生成出勤记录和积分流水”
+- “不后台持续定位，不记录运动轨迹”
+
+## 7. 事实待确认项
+
+以下字段如微信后台显示不同，提交前替换为后台实际值：
+
+- 小程序名称：北京猎户座棒垒球俱乐部小程序
+- 小程序 AppID：`wx8ad6ccfa1b8f040a`
+- 业务类目：以微信公众平台后台当前类目为准
+- 申请主体：以微信公众平台后台认证主体为准
+- 实际打卡距离阈值：目前材料未写具体数值；如申请界面要求，可写“以后台规则配置为准，例如活动场地周边合理范围内”

@@ -7,6 +7,13 @@
    5. requireAuth(role)          — redirect guard for protected pages
 */
 
+(function enforceHttpsForCustomDomain(){
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (window.location.protocol === 'http:' && /^(www\.)?xn--4gsr8nf4ck7ihxnemb\.cn$/.test(host)) {
+    window.location.replace(`https://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`);
+  }
+})();
+
 // ---- Shared nav builder ----
 // Auto-builds a consistent nav bar. Call buildNav(activeKey) once per page.
 // activeKey: 'home' | 'events' | 'players' | 'games' | 'hof' | 'contact' | 'admin' | 'dashboard'
@@ -78,7 +85,7 @@ window.buildNav = function(activeKey) {
   `;
   const nav = document.querySelector('nav.nav');
   if (nav) {
-    nav.classList.remove('auth-ready');
+    nav.classList.remove('auth-ready', 'auth-state-guest', 'auth-state-authed', 'auth-state-admin', 'auth-state-player');
     nav.innerHTML = html;
   }
   if (typeof renderAuthNav === 'function') renderAuthNav();
@@ -126,7 +133,16 @@ async function renderAuthNav(){
   const nameEl = document.getElementById('navUserName');
   if (nameEl) nameEl.textContent = u ? u.displayName : '';
   const nav = document.querySelector('nav.nav');
-  if (nav) nav.classList.add('auth-ready');
+  if (nav) {
+    nav.classList.toggle('auth-state-guest', !u);
+    nav.classList.toggle('auth-state-authed', !!u);
+    nav.classList.toggle('auth-state-admin', !!(u && isAdmin));
+    nav.classList.toggle('auth-state-player', !!(u && !isAdmin));
+    nav.dataset.authState = u ? 'authed' : 'guest';
+    nav.classList.add('auth-ready');
+  }
+  const helloEl = document.querySelector('.nav-hello');
+  if (helloEl) helloEl.title = u ? `已登录：${u.displayName}` : '';
 }
 window.renderAuthNav = renderAuthNav;
 document.addEventListener('DOMContentLoaded', renderAuthNav);
@@ -152,7 +168,16 @@ window.showForgotPwdHint = function() {
 // Require role — redirect if not authorized
 async function requireAuth(role){
   if (window.dbReady) await window.dbReady();
-  const u = DB.currentUser();
+  let u = DB.currentUser();
+  // Login may have happened just before this page loaded while the initial
+  // guest preload was still cached/in flight. Refresh once before redirecting.
+  if (!u && DB.reload) {
+    try {
+      await DB.reload();
+      u = DB.currentUser();
+      if (typeof renderAuthNav === 'function') await renderAuthNav();
+    } catch (_) {}
+  }
   if (!u) { toast('请先登录','error'); setTimeout(()=>window.location.href='index.html',800); return null; }
   if (role === 'admin') {
     const isAdmin = !!(u.adminLevel || (u.adminPermissionGroups || []).length || u.role === 'admin');
@@ -328,12 +353,12 @@ window.ensureAuthModal = function ensureAuthModal(){
       <!-- Existing mini-program account → email identity -->
       <div data-mpanel="link-email" style="display:none">
         <h3>关联网页邮箱</h3>
-        <p class="modal-sub">如果你已经在小程序注册过，请输入管理员给你的一次性关联码。系统会给原账号增加邮箱登录，不会新建第二个试训档案。</p>
+        <p class="modal-sub">如果你已经在小程序注册过，请输入一次性关联码。系统会给原账号增加邮箱登录，不会新建第二个试训档案。</p>
         <form class="form" onsubmit="handleLinkEmail(event)" style="margin-top:0">
           <div class="field">
             <label>一次性关联码</label>
             <input type="text" id="linkCode" required placeholder="APP-XXXXXX-XXXX" style="text-transform:uppercase;letter-spacing:.08em">
-            <div class="hint">关联码 30 分钟内有效，可向管理员索取。</div>
+            <div class="hint">关联码 30 分钟内有效；在小程序「个人」页点“网页关联码”可自助生成，也可向管理员索取。</div>
           </div>
           <div class="field">
             <label>邮箱</label>

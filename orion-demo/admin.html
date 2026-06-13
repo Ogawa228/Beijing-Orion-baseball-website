@@ -21,7 +21,7 @@
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=33">
-<script src="assets/js/db.js?v=24"></script>
+<script src="assets/js/db.js?v=27"></script>
 <!-- Real parsers: pdf.js for GameChanger PDF exports, SheetJS for Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
@@ -1040,7 +1040,7 @@
   <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=20"></script>
+<script src="assets/js/auth.js?v=23"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -1285,8 +1285,9 @@ function renderBindRequests() {
     const target = `${escapeHtml(r.requestedPlayerName || '目标球员')}${r.requestedPlayerNumber ? ' · #'+escapeHtml(r.requestedPlayerNumber) : ''}`;
     const created = r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN', { hour12:false }).slice(5,16) : '—';
     const verifyLine = [
+      r.hasWxIdentity ? '微信登录已关联' : '',
       r.nickname ? '队内昵称 '+r.nickname : '',
-      r.contactTail ? '微信号 '+r.contactTail : '',
+      r.contactTail ? '核验信息 '+r.contactTail : '',
       r.note ? '验证信息 '+r.note : ''
     ].filter(Boolean).join(' · ') || '未填';
     return `<div class="people-row" style="align-items:flex-start">

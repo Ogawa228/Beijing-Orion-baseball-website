@@ -1,0 +1,219 @@
+.hero {
+  margin-top: 6rpx;
+}
+
+.event-cover-hero {
+  width: 100%;
+  height: 280rpx;
+  margin-bottom: 18rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .08);
+}
+
+.source-link-btn {
+  min-height: 68rpx;
+  margin-top: 18rpx;
+  font-size: 24rpx;
+}
+
+.body-text {
+  color: #dbe5f8;
+  font-size: 27rpx;
+  line-height: 1.7;
+}
+
+.event-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.event-gallery-image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .08);
+}
+
+.card-title {
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 750;
+}
+
+.count {
+  color: #e4c77a;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.link {
+  color: #8fb0ff;
+  font-size: 24rpx;
+}
+
+.signup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.signup-actions .btn {
+  flex: 1 1 calc((100% - 24rpx) / 3);
+  min-width: 148rpx;
+  min-height: 72rpx;
+  padding: 0 10rpx;
+  font-size: 24rpx;
+}
+
+.signup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 88rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, .08);
+}
+
+.signup-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.signup-row:last-child {
+  border-bottom: 0;
+}
+
+.signup-name {
+  color: #f6f8ff;
+  font-size: 28rpx;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signup-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+  flex: 0 0 auto;
+}
+
+.signup-admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.tiny-link {
+  min-width: 52rpx;
+  min-height: 42rpx;
+  padding: 0;
+  font-size: 22rpx;
+}
+
+.danger-link {
+  color: #ffb7b7;
+}
+
+.linked-game-list {
+  display: grid;
+  gap: 12rpx;
+}
+
+.linked-game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  min-height: 92rpx;
+  padding: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, .10);
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .035);
+}
+
+.linked-game-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.linked-game-title {
+  color: #f6f8ff;
+  font-size: 27rpx;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linked-game-score {
+  flex: 0 0 auto;
+  color: #e4c77a;
+  font-size: 30rpx;
+  font-weight: 850;
+}
+
+.linked-game-more {
+  min-height: 70rpx;
+  font-size: 24rpx;
+}
+
+.manual-player-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116rpx 116rpx;
+  gap: 12rpx;
+  align-items: center;
+}
+
+.manual-player-search-input {
+  min-width: 0;
+}
+
+.manual-player-search-btn,
+.manual-player-clear-btn,
+.manual-player-more {
+  min-height: 70rpx;
+  padding: 0 12rpx;
+  font-size: 24rpx;
+}
+
+.compact-empty {
+  min-height: 86rpx;
+  padding: 22rpx;
+}
+
+.compact {
+  min-height: 96rpx;
+}
+
+.relay-import {
+  min-height: 220rpx;
+}
+
+.relay-import-actions {
+  display: flex;
+  gap: 14rpx;
+}
+
+.relay-import-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 78rpx;
+  padding: 0 14rpx;
+  font-size: 25rpx;
+}
+
+.import-summary {
+  color: #9af1bd;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.danger-zone {
+  display: grid;
+  gap: 12rpx;
+}

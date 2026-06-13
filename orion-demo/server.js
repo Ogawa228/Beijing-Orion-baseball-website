@@ -7,14 +7,50 @@
 // 配置通过云托管控制台「环境变量」注入
 
 const path = require('path');
+const { domainToASCII } = require('url');
 // dotenv 用绝对路径，避免 cwd 不在 orion-demo/ 时找不到 .env
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const db = require('./server/db');
 const { attachUser, errorHandler, wrap } = require('./server/middleware');
+const { getTeamInfo } = require('./server/team-info');
 
 const app = express();
 const port = process.env.PORT || 80;
+const CUSTOM_SITE_DOMAIN = 'xn--4gsr8nf4ck7ihxnemb.cn';
+
+app.set('trust proxy', true);
+
+function normalizeHost(req) {
+  const raw = String(req.headers.host || '').split(',')[0].trim().toLowerCase();
+  if (!raw) return '';
+  const withoutPort = raw.startsWith('[')
+    ? raw.slice(1, raw.indexOf(']') > 0 ? raw.indexOf(']') : undefined)
+    : raw.replace(/:\d+$/, '');
+  return domainToASCII(withoutPort) || withoutPort;
+}
+
+function requestScheme(req) {
+  const forwarded = String(
+    req.headers['x-forwarded-proto'] ||
+    req.headers['x-forwarded-protocol'] ||
+    req.headers['x-forwarded-scheme'] ||
+    ''
+  ).split(',')[0].trim().toLowerCase();
+  if (forwarded) return forwarded;
+  const ssl = String(req.headers['x-forwarded-ssl'] || req.headers['front-end-https'] || '').toLowerCase();
+  if (ssl === 'on' || ssl === 'https') return 'https';
+  return req.secure ? 'https' : '';
+}
+
+app.use((req, res, next) => {
+  const host = normalizeHost(req);
+  const isCustomDomain = host === CUSTOM_SITE_DOMAIN || host === `www.${CUSTOM_SITE_DOMAIN}`;
+  if (isCustomDomain && requestScheme(req) === 'http') {
+    return res.redirect(308, `https://${req.headers.host}${req.originalUrl}`);
+  }
+  next();
+});
 
 // JSON body parser，限制 20MB 处理大 base64 图片
 app.use(express.json({ limit: '20mb' }));
@@ -24,6 +60,16 @@ app.use(attachUser);
 
 // ============== API 路由 ==============
 const api = express.Router();
+
+// Auth-sensitive JSON must never be reused across login boundaries. Without
+// this, /api/auth/me can stay cached as { user: null } after a successful login.
+api.use((_req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
 
 // 健康检查（同时被云托管负载均衡器周期性请求）
 api.get('/health', wrap(async (_req, res) => {
@@ -47,13 +93,19 @@ api.get('/db/info', wrap(async (_req, res) => {
   res.json({ version: version.version, dbName: process.env.DB_NAME, tables });
 }));
 
+api.get('/team-info', (_req, res) => {
+  res.json({ teamInfo: getTeamInfo() });
+});
+
 // Mount 业务路由
 api.use('/auth',         require('./server/routes/auth'));
 api.use('/players',      require('./server/routes/players').router);
 api.use('/tournaments',  require('./server/routes/tournaments').router);
 api.use('/games',        require('./server/routes/games').router);
 api.use('/events',       require('./server/routes/events').router);
+api.use('/event-signups', require('./server/routes/event-signups').router);
 api.use('/attendances',  require('./server/routes/attendances').router);
+api.use('/checkins',     require('./server/routes/checkins').router);
 api.use('/points-adjustments', require('./server/routes/adjustments').router);
 api.use('/bind-codes',   require('./server/routes/bindcodes').router);
 api.use('/bind-requests', require('./server/routes/bind-requests').router);

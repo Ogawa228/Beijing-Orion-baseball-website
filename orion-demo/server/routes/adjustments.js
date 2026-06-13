@@ -16,12 +16,37 @@ function rowToAdjustment(r) {
   };
 }
 
+function parseLimit(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), 100);
+}
+
+function parseOffset(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.floor(n);
+}
+
+// 不传 limit 时保持旧版全量返回,兼容网页端整表读取
 router.get('/', wrap(async (req, res) => {
+  const limit = parseLimit(req.query.limit);
+  const offset = parseOffset(req.query.offset);
   const filters = [], params = [];
   if (req.query.playerId) { filters.push('player_id = ?'); params.push(req.query.playerId); }
   const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
-  const rows = await db.q(`SELECT * FROM points_adjustments ${where} ORDER BY created_at DESC`, params);
-  res.json({ adjustments: rows.map(rowToAdjustment) });
+  const queryLimit = limit ? limit + 1 : 0;
+  const rows = await db.q(
+    `SELECT * FROM points_adjustments ${where} ORDER BY created_at DESC${limit ? ' LIMIT ? OFFSET ?' : ''}`,
+    limit ? params.concat([queryLimit, offset]) : params
+  );
+  const pageRows = limit ? rows.slice(0, limit) : rows;
+  const payload = { adjustments: pageRows.map(rowToAdjustment) };
+  if (limit) {
+    payload.hasMore = rows.length > limit;
+    payload.nextOffset = offset + pageRows.length;
+  }
+  res.json(payload);
 }));
 
 router.post('/', requirePermission('points:write'), wrap(async (req, res) => {

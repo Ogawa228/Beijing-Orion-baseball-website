@@ -1,0 +1,243 @@
+<view class="page player-detail-page">
+  <view wx:if="{{player}}" class="profile-card card">
+    <image class="profile-bg" src="/assets/moon-earthrise.jpg" mode="aspectFill" />
+    <view class="profile-shade"></view>
+    <view class="profile-content">
+      <image class="avatar profile-avatar {{player.avatarClass}}" src="{{player.avatar}}" mode="aspectFill" />
+      <view class="profile-main">
+        <view class="eyebrow">👤 球员</view>
+        <view class="profile-name {{player.nameClass}}">{{player.displayName}}</view>
+        <view class="profile-meta">
+          <text>{{player.numberText}}</text>
+          <text> · {{player.positionText}}</text>
+          <text wx:if="{{player.handText}}"> · {{player.handText}}</text>
+        </view>
+        <view wx:if="{{player.joinText}}" class="subtle">{{player.joinText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{player && player.slogan}}" class="card panel slogan-card">
+    <view class="eyebrow">💬 口号</view>
+    <view class="slogan">{{player.slogan}}</view>
+  </view>
+
+  <view wx:if="{{player && player.titles.length}}" class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">🏅 荣誉</view>
+        <view class="title">荣誉标签</view>
+      </view>
+    </view>
+    <view class="title-row">
+      <text wx:for="{{player.titles}}" wx:key="*this" class="pill honor-pill">{{item}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{canEditDisplay}}" class="section card panel stack admin-edit-card">
+    <view>
+      <view class="eyebrow">🛠 管理</view>
+      <view class="card-title">球员档案</view>
+      <view class="subtle">别名用于历史比赛统计归并，不改写原始比赛记录。</view>
+    </view>
+    <view class="display-profile-box official-photo-box">
+      <view class="card-title compact-title">真实球员照片</view>
+      <view class="subtle">用于管理员、本人与数据匹配场景；公开展示可另设公开头像。</view>
+      <view class="display-preview">
+        <image class="avatar display-preview-avatar" src="{{editPhoto || player.photo || player.avatar}}" mode="aspectFill" />
+        <view class="display-preview-main">
+          <view class="display-preview-name">{{player.name}}</view>
+          <view class="subtle">{{editPhoto ? '已设置真实球员照片' : '未设置真实照片时使用默认头像'}}</view>
+        </view>
+      </view>
+      <input class="input" placeholder="真实球员照片 URL，可粘贴或选择图片上传" value="{{editPhoto}}" bindinput="onEditPhotoInput" />
+      <view class="photo-action-row">
+        <button class="btn btn-ghost small-action" loading="{{uploadingPlayerPhoto}}" bindtap="choosePlayerPhoto">上传真实照片</button>
+        <button class="btn btn-ghost small-action" disabled="{{uploadingPlayerPhoto}}" bindtap="clearPlayerPhoto">清空照片</button>
+      </view>
+      <view wx:if="{{playerPhotoUploadText}}" class="subtle">{{playerPhotoUploadText}}</view>
+    </view>
+    <view class="display-profile-box">
+      <view class="card-title compact-title">公开展示资料</view>
+      <view class="subtle">用于球员页、积分榜、比赛详情和名人堂公开展示。</view>
+      <view class="display-preview">
+        <image class="avatar display-preview-avatar" src="{{editPublicAvatar || player.avatar}}" mode="aspectFill" />
+        <view class="display-preview-main">
+          <view class="display-preview-name">{{editPublicDisplayName || player.name}}</view>
+          <view class="subtle">{{editPublicAvatar ? '已设置公开头像' : '未设置公开头像时使用档案照'}}</view>
+        </view>
+      </view>
+      <input class="input" placeholder="公开展示名，可留空使用真实档案名" value="{{editPublicDisplayName}}" bindinput="onEditPublicDisplayNameInput" />
+      <input class="input" placeholder="公开头像 URL，可粘贴或选择图片上传" value="{{editPublicAvatar}}" bindinput="onEditPublicAvatarInput" />
+      <button class="btn btn-ghost small-action" loading="{{uploadingDisplayAvatar}}" bindtap="choosePublicAvatar">选择公开头像</button>
+      <view wx:if="{{displayAvatarUploadText}}" class="subtle">{{displayAvatarUploadText}}</view>
+    </view>
+    <view wx:if="{{canEditPlayer}}" class="form-grid">
+      <input class="input" placeholder="姓名" value="{{editName}}" bindinput="onEditNameInput" />
+      <input class="input" placeholder="背号" value="{{editNumber}}" bindinput="onEditNumberInput" />
+      <input class="input" placeholder="守位，例如 CF / P" value="{{editPosition}}" bindinput="onEditPositionInput" />
+      <input class="input" placeholder="打席 R / L / S" value="{{editBats}}" bindinput="onEditBatsInput" />
+      <input class="input" placeholder="投球 R / L" value="{{editThrows}}" bindinput="onEditThrowsInput" />
+      <input class="input" type="number" placeholder="入队年份" value="{{editJoinYear}}" bindinput="onEditJoinYearInput" />
+    </view>
+    <textarea class="textarea compact" maxlength="24" placeholder="个人口号" value="{{editSlogan}}" bindinput="onEditSloganInput" />
+    <textarea wx:if="{{canEditPlayer}}" class="textarea compact" placeholder="荣誉标签，用顿号或逗号分隔" value="{{editTitles}}" bindinput="onEditTitlesInput" />
+    <textarea wx:if="{{canEditPlayer}}" class="textarea compact" placeholder="别名，用顿号或逗号分隔，例如 PDF 里的简称" value="{{editAliases}}" bindinput="onEditAliasesInput" />
+    <view class="edit-actions">
+      <button class="btn btn-primary small-action" loading="{{savingProfile}}" bindtap="savePlayerProfile">保存档案</button>
+      <button wx:if="{{canUpgradePlayer}}" class="btn btn-ghost small-action" loading="{{savingProfile}}" bindtap="upgradePlayer">升级正式球员</button>
+    </view>
+    <view wx:if="{{canDeletePlayer}}" class="danger-zone">
+      <view class="danger-title">危险操作</view>
+      <view class="subtle">删除球员会移除球员档案；如果只是重复档案，优先在管理台合并球员。</view>
+      <input class="input" placeholder="输入“删除球员”确认" value="{{deleteConfirmText}}" bindinput="onDeleteConfirmInput" />
+      <button class="btn btn-danger small-action" loading="{{savingProfile}}" bindtap="deletePlayer">删除球员</button>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">🏆 积分</view>
+        <view class="title">积分概览</view>
+      </view>
+      <view class="total-points">{{points ? points.total : 0}}</view>
+    </view>
+    <view class="breakdown-grid">
+      <view wx:for="{{breakdown}}" wx:key="label" class="metric card">
+        <text class="metric-value">{{item.value}}</text>
+        <text class="subtle">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{capability && capability.hasStats}}" class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">📊 能力</view>
+        <view class="title">能力概览</view>
+      </view>
+      <view class="ops-badge">OPS {{capability.OPS}}</view>
+    </view>
+    <view class="card panel capability-card">
+      <view class="slash-line">{{capability.slash}}</view>
+      <view class="subtle">AVG / OBP / SLG · {{capability.games}} 场 · {{capability.atBats}} 打数</view>
+
+      <view class="rate-grid">
+        <view wx:for="{{capability.rateCards}}" wx:key="label" class="rate-card">
+          <view class="rate-value">{{item.value}}</view>
+          <view class="cap-label">{{item.label}}</view>
+          <view class="subtle">{{item.sub}}</view>
+        </view>
+      </view>
+
+      <view class="axis-list">
+        <view wx:for="{{capability.axes}}" wx:key="code" class="axis-row {{item.pending ? 'pending' : ''}}">
+          <view class="axis-label">{{item.label}} <text>{{item.code}}</text></view>
+          <view class="axis-track">
+            <view class="axis-fill" style="width: {{item.width}}%;"></view>
+          </view>
+          <view class="axis-value">{{item.value}} · {{item.pct}}</view>
+        </view>
+      </view>
+
+      <view class="section-subtitle">核心数据</view>
+      <view class="capability-grid">
+        <view wx:for="{{capability.metrics}}" wx:key="label" class="cap-metric">
+          <view class="cap-value">{{item.value}}</view>
+          <view class="cap-label">{{item.label}}</view>
+          <view class="subtle">{{item.sub}}</view>
+        </view>
+      </view>
+
+      <view class="section-subtitle">进阶指标</view>
+      <view class="capability-grid compact-stats-grid">
+        <view wx:for="{{capability.advanced}}" wx:key="label" class="cap-metric">
+          <view class="cap-value small-cap-value">{{item.value}}</view>
+          <view class="cap-label">{{item.label}}</view>
+          <view class="subtle">{{item.sub}}</view>
+        </view>
+      </view>
+
+      <view class="section-subtitle">近场趋势</view>
+      <view class="trend-list">
+        <view wx:for="{{capability.trend}}" wx:key="id" class="trend-row" bindtap="openGame" data-id="{{item.id}}">
+          <view class="trend-main">
+            <view class="trend-line">
+              <view class="trend-label">{{item.label}}</view>
+              <view class="trend-avg">AVG {{item.singleAvgText}}</view>
+            </view>
+            <view class="trend-bar"><view class="trend-fill" style="width: {{item.barWidth}}%;"></view></view>
+            <view class="subtle">{{item.meta}} · 累计 {{item.rollingAvgText}}</view>
+          </view>
+          <view class="trend-arrow">详情</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">📸 时刻</view>
+        <view class="title">球员精彩时刻</view>
+      </view>
+      <button class="link" bindtap="submitPlayerHighlight">投稿</button>
+    </view>
+    <view wx:if="{{highlights.length}}" class="highlight-grid">
+      <view wx:for="{{highlights}}" wx:key="id" class="highlight-card card panel">
+        <image class="highlight-image" src="{{item.image}}" mode="aspectFill" lazy-load="{{true}}" bindtap="previewHighlight" data-image="{{item.image}}" />
+        <view class="highlight-body">
+          <view class="highlight-title">{{item.title}}</view>
+          <view wx:if="{{item.meta}}" class="subtle {{item.metaClass}}">{{item.meta}}</view>
+          <button wx:if="{{item.bilibiliUrl}}" class="copy-link" bindtap="copyHighlightLink" data-url="{{item.bilibiliUrl}}">复制B站链接</button>
+        </view>
+      </view>
+    </view>
+    <view wx:elif="{{!loading}}" class="card empty compact-empty">暂无球员精彩时刻</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">🧾 流水</view>
+        <view class="title">最近积分流水</view>
+      </view>
+    </view>
+    <view class="card panel">
+      <view wx:for="{{timeline}}" wx:key="refId" class="timeline-row {{item.rowClass}}" hover-class="{{item.targetId ? 'timeline-row-hover' : 'none'}}" bindtap="openTimelineItem" data-target-type="{{item.targetType}}" data-target-id="{{item.targetId}}">
+        <view class="timeline-main">
+          <view class="timeline-label">{{item.label || item.source || '积分记录'}}</view>
+          <view class="subtle">{{item.date}}</view>
+          <view wx:if="{{item.detailText}}" class="timeline-detail">{{item.detailText}}</view>
+        </view>
+        <view class="timeline-side">
+          <view class="delta {{item.deltaClass}}">{{item.deltaText}}</view>
+          <view wx:if="{{item.targetLabel}}" class="timeline-action">{{item.targetLabel}}</view>
+        </view>
+      </view>
+      <view wx:if="{{!timeline.length && !loading}}" class="empty compact-empty">暂无积分流水</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head compact-head">
+      <view>
+        <view class="eyebrow">⚾ 比赛</view>
+        <view class="title">相关比赛</view>
+      </view>
+    </view>
+    <view wx:if="{{gameLoadedSummary}}" class="subtle game-loaded-summary">{{gameLoadedSummary}}</view>
+    <view wx:for="{{games}}" wx:key="id" class="game-card card panel" bindtap="openGame" data-id="{{item.id}}">
+      <view class="game-head">
+        <view class="game-title">{{item.title}}</view>
+        <view class="game-score">{{item.score}}</view>
+      </view>
+      <view class="subtle">{{item.meta}}</view>
+      <view wx:if="{{item.battingText}}" class="game-stat">{{item.battingText}}</view>
+      <view wx:if="{{item.pitchingText}}" class="game-stat">{{item.pitchingText}}</view>
+    </view>
+    <button wx:if="{{gamesHasMore}}" class="btn btn-ghost load-more-games" loading="{{loadingMoreGames}}" bindtap="loadMorePlayerGames">加载更多相关比赛</button>
+    <view wx:if="{{!games.length && !loading}}" class="card empty">暂无相关比赛</view>
+  </view>
+</view>

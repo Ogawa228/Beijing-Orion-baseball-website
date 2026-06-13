@@ -9,6 +9,23 @@
     "initdb": "node scripts/initdb.js",
     "migrate": "node scripts/migrate.js",
     "test:gamechanger": "node scripts/gamechanger-pdf-regression.js",
+    "test:gamechanger-server": "node scripts/test-gamechanger-server-import.js",
+    "test:events-audit": "node scripts/test-events-audit-route.js",
+    "test:tournaments-audit": "node scripts/test-tournaments-audit-route.js",
+    "test:highlights-route": "node scripts/test-highlights-route.js",
+    "test:hof-route": "node scripts/test-hof-route.js",
+    "test:leaderboard-route": "node scripts/test-leaderboard-route.js",
+    "test:notifications-route": "node scripts/test-notifications-route.js",
+    "test:admin-users-route": "node scripts/test-admin-users-route.js",
+    "test:records-pagination": "node scripts/test-records-pagination-route.js",
+    "test:auth-link-wechat": "node scripts/test-auth-link-wechat-route.js",
+    "test:games-linkage": "node scripts/test-games-linkage-route.js",
+    "test:players-import": "node scripts/test-players-import-route.js",
+    "test:miniprogram-request": "node scripts/test-miniprogram-request.js",
+    "test:miniprogram-flows": "node scripts/test-miniprogram-flows.js",
+    "test:miniprogram-score": "node scripts/test-miniprogram-score.js",
+    "test:miniprogram-preflight": "node scripts/verify-miniprogram-preflight.js",
+    "test:miniprogram-ci": "node scripts/verify-miniprogram-ci.js && npm run test:miniprogram-preflight && npm run test:miniprogram-request && npm run test:events-audit && npm run test:tournaments-audit && npm run test:highlights-route && npm run test:hof-route && npm run test:leaderboard-route && npm run test:notifications-route && npm run test:admin-users-route && npm run test:records-pagination && npm run test:auth-link-wechat && npm run test:games-linkage && npm run test:players-import && npm run test:miniprogram-flows && npm run test:miniprogram-score",
     "deploy": "wxcloud run:deploy -e prod-d5gtkxdyu7263e95b -s express-knlw --noConfirm --remark \"orion-demo update\"",
     "deploy:verify": "node scripts/verify-wxcloud-deploy.js",
     "deploy:detach": "wxcloud run:deploy -e prod-d5gtkxdyu7263e95b -s express-knlw --noConfirm --detach"
@@ -23,6 +40,10 @@
     "express": "^4.19.2",
     "multer": "^2.1.1",
     "mysql2": "^3.11.0",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "miniprogram-ci": "^2.1.31"
   }
 }

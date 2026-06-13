@@ -1,0 +1,73 @@
+<view class="page">
+  <view class="section-head">
+    <view>
+      <view class="eyebrow">⭐ 积分</view>
+      <view class="title">积分榜</view>
+    </view>
+    <picker wx:if="{{seasonOptions.length > 1}}" mode="selector" range="{{seasonOptions}}" range-key="label" value="{{seasonIndex}}" bindchange="onSeasonChange">
+      <view class="season-picker">{{seasonLabel}}</view>
+    </picker>
+  </view>
+
+  <view wx:if="{{mine}}" class="card panel mine">
+    <view class="subtle">我的积分 · {{seasonLabel}}</view>
+    <view class="mine-score">{{mine.total}}</view>
+    <view class="subtle">基础 {{mine.breakdown.base || 0}} · 表现 {{mine.breakdown.performance || 0}} · 荣誉 {{mine.breakdown.awards || 0}} · 调整 {{mine.breakdown.manual || 0}}</view>
+  </view>
+
+  <view wx:if="{{timelineAll.length}}" class="section card panel">
+    <view class="card-title">我的积分流水</view>
+    <view class="filter-chip-row">
+      <button wx:for="{{timelineFilterOptions}}" wx:key="value" class="filter-chip {{item.activeClass}}" bindtap="setTimelineFilter" data-source="{{item.value}}">{{item.text}}</button>
+    </view>
+    <view wx:for="{{timeline}}" wx:key="refId" class="timeline-row {{item.rowClass}}" hover-class="{{item.targetId ? 'timeline-row-hover' : 'none'}}" bindtap="openTimelineItem" data-target-type="{{item.targetType}}" data-target-id="{{item.targetId}}">
+      <view>
+        <view class="timeline-title">{{item.label}}</view>
+        <view class="subtle">{{item.date || '无日期'}}</view>
+        <view wx:if="{{item.detailText}}" class="timeline-detail">{{item.detailText}}</view>
+      </view>
+      <view class="timeline-side">
+        <view class="delta {{item.deltaClass}}">{{item.deltaText}}</view>
+        <view wx:if="{{item.targetLabel}}" class="timeline-action">{{item.targetLabel}}</view>
+      </view>
+    </view>
+    <view wx:if="{{!timeline.length}}" class="empty compact-empty">这个分类暂无流水</view>
+  </view>
+
+  <view wx:if="{{rulesCards.length}}" class="section card panel rules-panel">
+    <view class="card-title">积分规则</view>
+    <view class="subtle">以下数值来自服务器当前积分规则。</view>
+    <view class="rules-grid">
+      <view wx:for="{{rulesCards}}" wx:key="title" class="rules-group">
+        <view class="rules-title">{{item.title}}</view>
+        <view wx:for="{{item.items}}" wx:for-item="rule" wx:key="key" class="rule-row">
+          <text class="rule-label">{{rule.label}}</text>
+          <text class="rule-delta {{rule.deltaClass}}">{{rule.value}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="card-title">球队排行 · {{seasonLabel}}</view>
+    <view wx:for="{{leaderboard}}" wx:key="playerId" class="rank-row" hover-class="rank-row-hover" bindtap="openPlayer" data-id="{{item.playerId}}">
+      <text class="rank">{{item.rank}}</text>
+      <view>
+        <view class="name {{item.nameClass}}">{{item.displayName}}</view>
+        <view wx:if="{{item.meta}}" class="subtle">{{item.meta}}</view>
+      </view>
+      <text class="score">{{item.total}}</text>
+    </view>
+    <view wx:if="{{loading && !leaderboard.length}}" class="skeleton-group">
+      <view class="skeleton-line"></view>
+      <view class="skeleton-line"></view>
+      <view class="skeleton-line short"></view>
+    </view>
+    <view wx:elif="{{loadError && !leaderboard.length}}" class="empty load-error">
+      <view>积分加载失败</view>
+      <button class="btn btn-ghost" bindtap="retryLoad">重新加载</button>
+    </view>
+    <view wx:elif="{{!leaderboard.length}}" class="empty">暂无积分</view>
+    <button wx:if="{{leaderboardHasMore}}" class="btn btn-ghost load-more" loading="{{loadingMoreLeaderboard}}" disabled="{{loadingMoreLeaderboard}}" bindtap="loadMoreLeaderboard">加载更多排行</button>
+  </view>
+</view>

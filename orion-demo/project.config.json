@@ -1,0 +1,132 @@
+{
+  "description": "北京猎户座棒球队微信小程序",
+  "appid": "wx8ad6ccfa1b8f040a",
+  "projectname": "orion-miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "coverView": true,
+    "nodeModules": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "首页",
+          "pathName": "pages/home/home",
+          "query": ""
+        },
+        {
+          "name": "协议",
+          "pathName": "pages/legal/legal",
+          "query": ""
+        },
+        {
+          "name": "联系我们",
+          "pathName": "pages/contact/contact",
+          "query": ""
+        },
+        {
+          "name": "登录",
+          "pathName": "pages/login/login",
+          "query": ""
+        },
+        {
+          "name": "签到",
+          "pathName": "pages/checkin/checkin",
+          "query": ""
+        },
+        {
+          "name": "活动接龙",
+          "pathName": "pages/events/event-list/event-list",
+          "query": ""
+        },
+        {
+          "name": "球员阵容",
+          "pathName": "pages/players/player-list/player-list",
+          "query": ""
+        },
+        {
+          "name": "球员详情",
+          "pathName": "pages/players/player-detail/player-detail",
+          "query": "id=p_test"
+        },
+        {
+          "name": "名人堂",
+          "pathName": "pages/hall-of-fame/hall-of-fame",
+          "query": ""
+        },
+        {
+          "name": "高光图片",
+          "pathName": "pages/highlights/highlights",
+          "query": ""
+        },
+        {
+          "name": "发起比赛",
+          "pathName": "pages/score/create/create",
+          "query": ""
+        },
+        {
+          "name": "比赛记录",
+          "pathName": "pages/games/game-list/game-list",
+          "query": ""
+        },
+        {
+          "name": "赛事详情",
+          "pathName": "pages/tournaments/tournament-detail/tournament-detail",
+          "query": "id=t_test"
+        },
+        {
+          "name": "比赛修订",
+          "pathName": "pages/games/game-edit/game-edit",
+          "query": "id=g_test"
+        },
+        {
+          "name": "PDF 导入",
+          "pathName": "pages/games/game-import/game-import",
+          "query": ""
+        },
+        {
+          "name": "管理后台",
+          "pathName": "pages/admin/admin",
+          "query": ""
+        },
+        {
+          "name": "审计日志",
+          "pathName": "pages/admin/audit/audit",
+          "query": ""
+        }
+      ]
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

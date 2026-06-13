@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1280" viewBox="0 0 1920 1280" role="img" aria-labelledby="title desc">
+  <title id="title">北京猎户座小程序比赛流程设计稿</title>
+  <desc id="desc">覆盖比赛发起、阵容排布、现场记录和赛后保存回看四个小程序核心屏幕。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050b18"/>
+      <stop offset="0.48" stop-color="#0a1830"/>
+      <stop offset="1" stop-color="#031020"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#f4f1df"/>
+      <stop offset="0.55" stop-color="#c9d3e8"/>
+      <stop offset="1" stop-color="#6b7fa6"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2442" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#081322" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="goldBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e4c77a"/>
+      <stop offset="1" stop-color="#8fb0ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="24" stdDeviation="26" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <style>
+      .bgText { fill: rgba(255,255,255,.05); font: 900 150px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .headline { fill: #f6f8ff; font: 800 42px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .subhead { fill: #9aa9c4; font: 500 21px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .phone { fill: #07111f; stroke: rgba(255,255,255,.18); stroke-width: 2; filter: url(#shadow); }
+      .screen { fill: url(#bg); }
+      .panel { fill: url(#card); stroke: rgba(255,255,255,.12); stroke-width: 1.3; }
+      .miniPanel { fill: rgba(255,255,255,.055); stroke: rgba(255,255,255,.12); stroke-width: 1; }
+      .goldPanel { fill: rgba(228,199,122,.13); stroke: rgba(228,199,122,.42); stroke-width: 1; }
+      .label { fill: #9aa9c4; font: 600 14px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .body { fill: #dbe5f8; font: 500 16px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .bodyStrong { fill: #f6f8ff; font: 800 18px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .small { fill: #9aa9c4; font: 500 12px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .gold { fill: #e4c77a; }
+      .blue { fill: #8fb0ff; }
+      .darkText { fill: #07111f; font: 800 16px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .btnText { fill: #07111f; font: 800 17px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .ghostText { fill: #e8eefa; font: 800 15px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .mono { fill: #dbe5f8; font: 800 15px "SFMono-Regular", Consolas, monospace; letter-spacing: 0; }
+      .screenTitle { fill: #f6f8ff; font: 900 25px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+      .eyebrow { fill: #e4c77a; font: 800 12px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1280" fill="url(#bg)"/>
+  <circle cx="1580" cy="160" r="240" fill="url(#moon)" opacity="0.2"/>
+  <circle cx="134" cy="1096" r="320" fill="#2e6bff" opacity="0.14"/>
+  <text class="bgText" x="82" y="230">ORION</text>
+
+  <g transform="translate(80 58)">
+    <circle cx="48" cy="48" r="34" fill="#07111f" stroke="#e4c77a" stroke-width="3"/>
+    <text x="48" y="56" text-anchor="middle" fill="#e4c77a" font-family="-apple-system, BlinkMacSystemFont, PingFang SC, sans-serif" font-size="30" font-weight="900">O</text>
+    <text class="headline" x="104" y="42">北京猎户座小程序 · 比赛中心设计稿</text>
+    <text class="subhead" x="104" y="78">统一网站深海军蓝 / 香槟金 / 月球视觉；现场操作优先中文，关键数据保留棒垒球缩写。</text>
+  </g>
+
+  <g transform="translate(84 172)">
+    <rect x="0" y="0" width="392" height="912" rx="42" class="phone"/>
+    <clipPath id="clip1"><rect x="18" y="18" width="356" height="876" rx="30"/></clipPath>
+    <g clip-path="url(#clip1)">
+      <rect x="18" y="18" width="356" height="876" class="screen"/>
+      <circle cx="300" cy="66" r="104" fill="url(#moon)" opacity="0.18"/>
+      <rect x="42" y="44" width="308" height="148" rx="18" class="panel"/>
+      <text class="eyebrow" x="66" y="78">SCOREBOOK</text>
+      <text class="screenTitle" x="66" y="112">发起比赛</text>
+      <text class="small" x="66" y="142">先定项目、主客场、对手和赛事</text>
+      <rect x="66" y="158" width="112" height="26" rx="13" fill="#e4c77a"/>
+      <text class="darkText" x="122" y="177" text-anchor="middle">慢投垒球</text>
+      <rect x="188" y="158" width="74" height="26" rx="13" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.16)"/>
+      <text class="ghostText" x="225" y="177" text-anchor="middle">棒球</text>
+
+      <text class="label" x="42" y="232">对手</text>
+      <rect x="42" y="244" width="308" height="52" rx="14" class="miniPanel"/>
+      <text class="bodyStrong" x="62" y="277">朝阳 Sluggers</text>
+      <text class="label" x="42" y="328">日期 / 局数</text>
+      <rect x="42" y="340" width="146" height="52" rx="14" class="miniPanel"/>
+      <text class="body" x="62" y="373">2026-06-02</text>
+      <rect x="204" y="340" width="146" height="52" rx="14" class="miniPanel"/>
+      <text class="body" x="224" y="373">7 局</text>
+
+      <rect x="42" y="420" width="308" height="156" rx="18" class="panel"/>
+      <text class="label" x="66" y="454">所属赛事</text>
+      <text class="bodyStrong" x="66" y="486">OT 慢垒 2026 · 常规赛</text>
+      <line x1="66" y1="508" x2="326" y2="508" stroke="rgba(255,255,255,.1)"/>
+      <text class="label" x="66" y="536">权限提示</text>
+      <text class="body" x="66" y="562">保存比赛仍由后端数据组权限控制</text>
+
+      <rect x="42" y="604" width="308" height="186" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="638">快速选择出场球员</text>
+      <g transform="translate(66 662)">
+        <circle cx="10" cy="10" r="8" fill="#e4c77a"/><text class="body" x="28" y="16">#17 林立欣 · P/IF</text>
+        <circle cx="10" cy="44" r="8" fill="#e4c77a"/><text class="body" x="28" y="50">#09 大川 · C</text>
+        <circle cx="10" cy="78" r="8" fill="#e4c77a"/><text class="body" x="28" y="84">#23 小江 · SS</text>
+        <circle cx="10" cy="112" r="8" fill="rgba(255,255,255,.16)"/><text class="body" x="28" y="118">#11 阿文 · OF</text>
+      </g>
+
+      <rect x="42" y="820" width="308" height="52" rx="16" fill="url(#goldBlue)"/>
+      <text class="btnText" x="196" y="853" text-anchor="middle">下一步：排棒次和守位</text>
+    </g>
+    <text class="subhead" x="196" y="970" text-anchor="middle">01 · 比赛发起</text>
+  </g>
+
+  <g transform="translate(532 172)">
+    <rect x="0" y="0" width="392" height="912" rx="42" class="phone"/>
+    <clipPath id="clip2"><rect x="18" y="18" width="356" height="876" rx="30"/></clipPath>
+    <g clip-path="url(#clip2)">
+      <rect x="18" y="18" width="356" height="876" class="screen"/>
+      <text class="eyebrow" x="42" y="64">LINEUP</text>
+      <text class="screenTitle" x="42" y="98">阵容排布</text>
+      <text class="small" x="42" y="126">从球员库带出号码、姓名、位置，现场可调整。</text>
+
+      <rect x="42" y="150" width="308" height="260" rx="24" class="panel"/>
+      <path d="M196 184 L318 286 L196 388 L74 286 Z" fill="rgba(143,176,255,.08)" stroke="rgba(143,176,255,.38)" stroke-width="2"/>
+      <circle cx="196" cy="286" r="22" fill="#e4c77a"/><text class="darkText" x="196" y="292" text-anchor="middle">P</text>
+      <circle cx="196" cy="374" r="18" fill="rgba(255,255,255,.1)" stroke="#e4c77a"/><text class="ghostText" x="196" y="380" text-anchor="middle">C</text>
+      <circle cx="284" cy="286" r="18" fill="rgba(255,255,255,.1)" stroke="#8fb0ff"/><text class="ghostText" x="284" y="292" text-anchor="middle">1B</text>
+      <circle cx="196" cy="198" r="18" fill="rgba(255,255,255,.1)" stroke="#8fb0ff"/><text class="ghostText" x="196" y="204" text-anchor="middle">2B</text>
+      <circle cx="108" cy="286" r="18" fill="rgba(255,255,255,.1)" stroke="#8fb0ff"/><text class="ghostText" x="108" y="292" text-anchor="middle">3B</text>
+      <circle cx="150" cy="242" r="18" fill="rgba(255,255,255,.1)" stroke="#8fb0ff"/><text class="ghostText" x="150" y="248" text-anchor="middle">SS</text>
+      <text class="small" x="86" y="394">点位置可替换守位，支持 EH/SF</text>
+
+      <rect x="42" y="436" width="308" height="336" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="470">棒次 / 守位</text>
+      <g transform="translate(66 500)">
+        <rect x="0" y="0" width="260" height="42" rx="12" class="goldPanel"/>
+        <text class="gold" x="16" y="27" font-size="17" font-weight="900">1</text><text class="bodyStrong" x="44" y="27">林立欣</text><text class="mono" x="210" y="27">P</text>
+        <rect x="0" y="52" width="260" height="42" rx="12" class="miniPanel"/>
+        <text class="gold" x="16" y="79" font-size="17" font-weight="900">2</text><text class="bodyStrong" x="44" y="79">大川</text><text class="mono" x="210" y="79">C</text>
+        <rect x="0" y="104" width="260" height="42" rx="12" class="miniPanel"/>
+        <text class="gold" x="16" y="131" font-size="17" font-weight="900">3</text><text class="bodyStrong" x="44" y="131">小江</text><text class="mono" x="210" y="131">SS</text>
+        <rect x="0" y="156" width="260" height="42" rx="12" class="miniPanel"/>
+        <text class="gold" x="16" y="183" font-size="17" font-weight="900">4</text><text class="bodyStrong" x="44" y="183">阿文</text><text class="mono" x="210" y="183">LF</text>
+        <rect x="0" y="208" width="260" height="42" rx="12" class="miniPanel"/>
+        <text class="gold" x="16" y="235" font-size="17" font-weight="900">5</text><text class="bodyStrong" x="44" y="235">小北</text><text class="mono" x="210" y="235">EH</text>
+      </g>
+
+      <rect x="42" y="820" width="308" height="52" rx="16" fill="url(#goldBlue)"/>
+      <text class="btnText" x="196" y="853" text-anchor="middle">进入现场记录</text>
+    </g>
+    <text class="subhead" x="196" y="970" text-anchor="middle">02 · 人员阵容排布</text>
+  </g>
+
+  <g transform="translate(980 172)">
+    <rect x="0" y="0" width="392" height="912" rx="42" class="phone"/>
+    <clipPath id="clip3"><rect x="18" y="18" width="356" height="876" rx="30"/></clipPath>
+    <g clip-path="url(#clip3)">
+      <rect x="18" y="18" width="356" height="876" class="screen"/>
+      <rect x="42" y="44" width="308" height="146" rx="20" class="panel"/>
+      <text class="small" x="66" y="76">2026-06-02 · 慢垒</text>
+      <text class="bodyStrong" x="66" y="108">朝阳 Sluggers vs 猎户座</text>
+      <text x="196" y="166" text-anchor="middle" fill="#e4c77a" font-family="-apple-system, BlinkMacSystemFont, PingFang SC, sans-serif" font-size="50" font-weight="900">3 : 5</text>
+      <rect x="258" y="64" width="74" height="30" rx="15" class="miniPanel"/>
+      <text class="ghostText" x="295" y="85" text-anchor="middle">撤销</text>
+
+      <rect x="42" y="216" width="308" height="132" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="250">逐局记分 · 第 5 局</text>
+      <g transform="translate(66 270)">
+        <rect x="0" y="0" width="126" height="44" rx="13" class="miniPanel"/>
+        <text class="ghostText" x="63" y="29" text-anchor="middle">对手得分 +1</text>
+        <rect x="142" y="0" width="126" height="44" rx="13" fill="rgba(228,199,122,.18)" stroke="rgba(228,199,122,.44)"/>
+        <text class="ghostText" x="205" y="29" text-anchor="middle">猎户得分 +1</text>
+      </g>
+      <text class="mono" x="66" y="330">队伍  1 2 3 4 5  R</text>
+
+      <rect x="42" y="372" width="308" height="214" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="406">猎户打线</text>
+      <rect x="226" y="386" width="98" height="28" rx="14" class="goldPanel"/>
+      <text class="gold" x="275" y="406" text-anchor="middle" font-size="14" font-weight="900">林立欣</text>
+      <g transform="translate(66 430)">
+        <rect x="0" y="0" width="126" height="42" rx="12" class="goldPanel"/><text class="gold" x="63" y="27" text-anchor="middle" font-weight="900">安打 1B</text>
+        <rect x="142" y="0" width="126" height="42" rx="12" class="miniPanel"/><text class="ghostText" x="205" y="27" text-anchor="middle">二垒打</text>
+        <rect x="0" y="52" width="126" height="42" rx="12" class="miniPanel"/><text class="ghostText" x="63" y="79" text-anchor="middle">打点 RBI</text>
+        <rect x="142" y="52" width="126" height="42" rx="12" class="miniPanel"/><text class="ghostText" x="205" y="79" text-anchor="middle">得分 R</text>
+        <rect x="0" y="104" width="126" height="42" rx="12" class="miniPanel"/><text class="ghostText" x="63" y="131" text-anchor="middle">出局</text>
+        <rect x="142" y="104" width="126" height="42" rx="12" class="miniPanel"/><text class="ghostText" x="205" y="131" text-anchor="middle">三振 SO</text>
+      </g>
+
+      <rect x="42" y="614" width="308" height="126" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="648">投手记录</text>
+      <text class="body" x="66" y="678">林立欣 · IP 4.2 · H 3 · R 2 · ER 1</text>
+      <g transform="translate(66 694)">
+        <rect x="0" y="0" width="78" height="32" rx="10" class="miniPanel"/><text class="ghostText" x="39" y="22" text-anchor="middle">出局</text>
+        <rect x="92" y="0" width="78" height="32" rx="10" class="miniPanel"/><text class="ghostText" x="131" y="22" text-anchor="middle">保送</text>
+        <rect x="184" y="0" width="78" height="32" rx="10" class="goldPanel"/><text class="gold" x="223" y="22" text-anchor="middle" font-weight="900">三振</text>
+      </g>
+
+      <rect x="42" y="766" width="308" height="106" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="800">对手统计</text>
+      <text class="body" x="66" y="832">AB 23 · R 3 · H 6 · BB 2 · SO 4</text>
+      <text class="small" x="66" y="858">对手得分按钮同步写入逐局比分</text>
+    </g>
+    <text class="subhead" x="196" y="970" text-anchor="middle">03 · 中文现场记录</text>
+  </g>
+
+  <g transform="translate(1428 172)">
+    <rect x="0" y="0" width="392" height="912" rx="42" class="phone"/>
+    <clipPath id="clip4"><rect x="18" y="18" width="356" height="876" rx="30"/></clipPath>
+    <g clip-path="url(#clip4)">
+      <rect x="18" y="18" width="356" height="876" class="screen"/>
+      <circle cx="62" cy="64" r="22" fill="#07111f" stroke="#e4c77a" stroke-width="2"/>
+      <text class="eyebrow" x="98" y="58">POST GAME</text>
+      <text class="screenTitle" x="98" y="92">赛后确认</text>
+
+      <rect x="42" y="126" width="308" height="168" rx="20" class="panel"/>
+      <text class="small" x="66" y="160">朝阳 Sluggers vs 猎户座</text>
+      <text x="196" y="226" text-anchor="middle" fill="#e4c77a" font-family="-apple-system, BlinkMacSystemFont, PingFang SC, sans-serif" font-size="56" font-weight="900">3 : 5</text>
+      <text class="body" x="66" y="270">R/H/E · 猎户 5/9/1 · 对手 3/6/2</text>
+
+      <rect x="42" y="322" width="308" height="142" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="356">本场 MVP</text>
+      <rect x="66" y="376" width="260" height="44" rx="14" class="goldPanel"/>
+      <text class="gold" x="84" y="404" font-size="18" font-weight="900">林立欣</text>
+      <text class="small" x="66" y="446">关键二垒打 + 4.2 局 6K</text>
+
+      <rect x="42" y="492" width="308" height="180" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="526">数据确认</text>
+      <text class="mono" x="66" y="560">球员      AB H R RBI BB SO</text>
+      <text class="body" x="66" y="592">林立欣     4 2 1  2  0  0</text>
+      <text class="body" x="66" y="624">大川       3 1 1  1  1  0</text>
+      <text class="body" x="66" y="656">小江       4 2 2  0  0  1</text>
+
+      <rect x="42" y="700" width="308" height="86" rx="18" class="panel"/>
+      <text class="bodyStrong" x="66" y="734">比赛备注</text>
+      <text class="small" x="66" y="762">第 5 局临时换人；对手最后一局追分。</text>
+
+      <rect x="42" y="820" width="308" height="52" rx="16" fill="url(#goldBlue)"/>
+      <text class="btnText" x="196" y="853" text-anchor="middle">保存到比赛库</text>
+    </g>
+    <text class="subhead" x="196" y="970" text-anchor="middle">04 · 保存与回看</text>
+  </g>
+
+  <g transform="translate(106 1170)">
+    <rect x="0" y="0" width="1708" height="58" rx="18" fill="rgba(255,255,255,.055)" stroke="rgba(255,255,255,.12)"/>
+    <text class="bodyStrong" x="28" y="37">交互原则：</text>
+    <text class="body" x="128" y="37">中文按钮优先 · 现场误点可撤销 · 球员数据直接链接注册球员库 · 保存后进入同一套 Web / Admin / 小程序比赛库和积分系统</text>
+  </g>
+</svg>

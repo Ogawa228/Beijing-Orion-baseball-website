@@ -1,0 +1,126 @@
+<view class="page">
+  <view wx:if="{{event}}" class="card panel hero">
+    <image wx:if="{{event.heroCover}}" class="event-cover-hero" mode="aspectFill" src="{{event.heroCover}}" />
+    <view class="pill">{{event.tagLabel || '📅 活动'}}</view>
+    <view class="title">{{event.title}}</view>
+    <view class="subtle">{{event.date}} · {{event.location}}</view>
+    <view class="divider"></view>
+    <view class="body-text">{{event.body}}</view>
+    <view wx:if="{{event.images.length}}" class="event-gallery">
+      <image wx:for="{{event.images}}" wx:key="*this" class="event-gallery-image" mode="aspectFill" lazy-load="{{true}}" src="{{item}}" bindtap="previewEventImage" data-index="{{index}}" />
+    </view>
+    <button wx:if="{{event.sourceLink && event.sourceLink !== 'orion-miniprogram'}}" class="btn btn-ghost source-link-btn" bindtap="copySourceLink">复制原帖链接</button>
+  </view>
+
+  <view wx:if="{{event}}" class="section card panel stack">
+    <view class="row between">
+      <view>
+        <view class="eyebrow">📌 接龙</view>
+        <view class="card-title">报名接龙</view>
+      </view>
+      <view class="count">{{activeSignups.length}} 人</view>
+    </view>
+
+    <textarea class="textarea" placeholder="备注：例如晚到、带新人、需要装备" value="{{note}}" bindinput="onNoteInput" />
+    <view class="signup-actions">
+      <button class="btn btn-primary" loading="{{saving}}" bindtap="signup">我要报名</button>
+      <button class="btn btn-ghost" loading="{{saving}}" bindtap="tentative">先待定</button>
+      <button class="btn btn-danger" loading="{{saving}}" bindtap="cancelMine">取消报名</button>
+      <button class="btn btn-ghost" open-type="share">转发到群</button>
+    </view>
+  </view>
+
+  <view wx:if="{{event}}" class="section card panel">
+    <view class="row between">
+      <view class="card-title">名单</view>
+      <button class="link" bindtap="goCheckin">接龙签到</button>
+    </view>
+    <view wx:for="{{activeSignups}}" wx:key="id" class="signup-row">
+      <view class="signup-main">
+        <view class="signup-name">{{item.playerName || item.manualName || item.userDisplayName}}</view>
+        <view class="subtle">{{item.note || '已报名'}}</view>
+      </view>
+      <view class="signup-side">
+        <view class="pill">{{item.statusLabel}}</view>
+        <view wx:if="{{canManageSignups}}" class="signup-admin-actions">
+          <button class="link tiny-link" loading="{{saving}}" bindtap="updateSignupStatus" data-id="{{item.id}}" data-status="going">报名</button>
+          <button class="link tiny-link" loading="{{saving}}" bindtap="updateSignupStatus" data-id="{{item.id}}" data-status="tentative">待定</button>
+          <button class="link tiny-link danger-link" loading="{{saving}}" bindtap="updateSignupStatus" data-id="{{item.id}}" data-status="cancelled">移出</button>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{!activeSignups.length}}" class="empty">暂无报名</view>
+  </view>
+
+  <view wx:if="{{event}}" class="section card panel stack">
+    <view class="row between">
+      <view>
+        <view class="eyebrow">⚾ 比赛</view>
+        <view class="card-title">关联比赛</view>
+      </view>
+      <button wx:if="{{canStartGame}}" class="link" bindtap="startScoreFromEvent">从接龙记分</button>
+    </view>
+    <view wx:if="{{linkedGames.length}}" class="linked-game-list">
+      <view wx:for="{{linkedGames}}" wx:key="id" class="linked-game-row" bindtap="openGame" data-id="{{item.id}}">
+        <view class="linked-game-main">
+          <view class="linked-game-title">{{item.title}}</view>
+          <view class="subtle">{{item.meta || '比赛记录'}}</view>
+        </view>
+        <view class="linked-game-score">{{item.scoreText}}</view>
+      </view>
+    </view>
+    <view wx:elif="{{!linkedGamesHasMore}}" class="empty compact-empty">还没有关联比赛记录</view>
+    <button wx:if="{{linkedGamesHasMore}}" class="btn btn-ghost linked-game-more" loading="{{loadingMoreLinkedGames}}" bindtap="loadMoreLinkedGames">加载更多关联比赛</button>
+    <view class="subtle">从这条接龙发起的记分会自动写入同一个接龙 ID，赛后比分、打线、MVP 和事件日志可从这里回看。</view>
+  </view>
+
+  <view wx:if="{{canManageSignups}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">✍️ 名单修正</view>
+      <view class="card-title">管理员手动增补</view>
+    </view>
+    <view class="manual-player-search">
+      <input class="input manual-player-search-input" placeholder="搜索姓名 / 背号后选择球员" value="{{manualPlayerQuery}}" bindinput="onManualPlayerQueryInput" confirm-type="search" bindconfirm="searchManualPlayers" />
+      <button class="btn btn-ghost manual-player-search-btn" loading="{{loadingManualPlayers}}" bindtap="searchManualPlayers">搜索</button>
+      <button class="btn btn-ghost manual-player-clear-btn" loading="{{loadingManualPlayers}}" bindtap="clearManualPlayerQuery">重置</button>
+    </view>
+    <picker mode="selector" range="{{manualPlayerOptions}}" range-key="label" value="{{manualPlayerIndex}}" bindchange="onManualPlayerChange">
+      <view class="picker-like">{{manualPlayerLabel}}</view>
+    </picker>
+    <button wx:if="{{manualPlayersHasMore}}" class="btn btn-ghost manual-player-more" loading="{{loadingMoreManualPlayers}}" bindtap="loadMoreManualPlayers">加载更多球员</button>
+    <input class="input" placeholder="手动姓名，未选择球员时必填" value="{{manualName}}" bindinput="onManualNameInput" />
+    <picker mode="selector" range="{{manualStatusOptions}}" range-key="label" value="{{manualStatusIndex}}" bindchange="onManualStatusChange">
+      <view class="picker-like compact-picker">{{manualStatusLabel}}</view>
+    </picker>
+    <textarea class="textarea compact" placeholder="备注，例如晚到、带新人、管理员补录" value="{{manualNote}}" bindinput="onManualNoteInput" />
+    <button class="btn btn-primary" loading="{{saving}}" bindtap="adminUpsertSignup">加入/更新名单</button>
+    <view class="subtle">已建档球员会关联球员 ID；未建档成员只作为手动姓名，不会进入比赛统计。</view>
+  </view>
+
+  <view wx:if="{{canEditEvent}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">🛠 管理</view>
+      <view class="card-title">管理接龙</view>
+      <view class="subtle">编辑会保留同一条接龙 ID；删除后接龙名单会随接龙移除，已产生的签到/积分流水不会被批量改写。</view>
+    </view>
+    <button class="btn btn-ghost" bindtap="editEvent">编辑接龙</button>
+    <view class="danger-zone">
+      <input class="input" placeholder="输入“删除接龙”确认" value="{{deleteConfirmText}}" bindinput="onDeleteConfirmInput" />
+      <button class="btn btn-danger" loading="{{deleting}}" bindtap="deleteEvent">删除接龙</button>
+    </view>
+  </view>
+
+  <view wx:if="{{canImportSignups}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">📋 群接龙导入</view>
+      <view class="card-title">管理员粘贴识别</view>
+    </view>
+    <textarea class="textarea relay-import" placeholder="粘贴微信群接龙，例如：&#10;1. 张三&#10;2. 李四 待定 晚到&#10;3. 王五 请假" value="{{importText}}" bindinput="onImportInput" />
+    <view class="relay-import-actions">
+      <button class="btn btn-primary" loading="{{importing}}" bindtap="pasteAndImportRelay">粘贴并识别</button>
+      <button class="btn btn-ghost" loading="{{importing}}" bindtap="importRelayPaste">识别输入框</button>
+    </view>
+    <view class="subtle">从微信群复制接龙后点“粘贴并识别”。能匹配到正式球员档案的会自动关联，未匹配的先保留为手动姓名。</view>
+    <view wx:if="{{importSummary}}" class="import-summary">{{importSummary}}</view>
+  </view>
+</view>

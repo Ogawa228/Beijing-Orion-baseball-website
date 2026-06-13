@@ -25,6 +25,8 @@ const router = express.Router();
 
 const BUCKET = process.env.COS_BUCKET || '7072-prod-d5gtkxdyu7263e95b-1429688831';
 const REGION = process.env.COS_REGION || 'ap-shanghai';
+const IMAGE_EXT_RE = /^\.(jpg|jpeg|png|gif|webp|svg)$/i;
+const IMAGE_MIME_RE = /^image\/(?:jpeg|png|gif|webp|svg\+xml)$/i;
 
 // 单文件 ≤ 20 MB
 const upload = multer({
@@ -133,26 +135,39 @@ function canUpload() {
   return false;
 }
 
-// ---------- 路由 ----------
-router.post('/', requireAuth, rateLimit, upload.single('file'), wrap(async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'no_file', message: '没收到文件' });
-  if (!canUpload()) {
-    return res.status(503).json({
-      error: 'cos_not_configured',
-      message: '本地开发环境未配置对象存储凭证 — 头像 / 封面 / 高亮等上传功能仅云托管部署后可用',
-    });
-  }
+function sanitizeKind(kind) {
+  return (kind || 'misc').replace(/[^a-z]/gi, '').slice(0, 20) || 'misc';
+}
 
-  const kind = (req.body.kind || 'misc').replace(/[^a-z]/gi, '').slice(0, 20) || 'misc';
-  const ext  = path.extname(req.file.originalname || '').toLowerCase().slice(0, 10) || '.jpg';
-  const safeExt = /^\.(jpg|jpeg|png|gif|webp|svg)$/i.test(ext) ? ext : '.bin';
-  // 拒绝非图片 (除非是 highlight 类，但目前 highlight 走外链所以也不需要上传)
-  if (safeExt === '.bin') {
-    return res.status(400).json({ error: 'bad_filetype', message: '只支持 JPG / PNG / GIF / WEBP / SVG 图片格式' });
+function safeImageExt(fileName, contentType) {
+  const rawExt = path.extname(fileName || '').toLowerCase().slice(0, 10);
+  if (IMAGE_EXT_RE.test(rawExt)) return rawExt;
+  const type = String(contentType || '').toLowerCase();
+  if (type === 'image/jpeg') return '.jpg';
+  if (type === 'image/png') return '.png';
+  if (type === 'image/gif') return '.gif';
+  if (type === 'image/webp') return '.webp';
+  if (type === 'image/svg+xml') return '.svg';
+  return '.bin';
+}
+
+async function uploadImageBuffer({ buffer, fileName, contentType, kind }) {
+  if (!canUpload()) {
+    const err = new Error('本地开发环境未配置对象存储凭证 — 头像 / 封面 / 高亮等上传功能仅云托管部署后可用');
+    err.statusCode = 503;
+    err.code = 'cos_not_configured';
+    throw err;
   }
-  const ym   = new Date().toISOString().slice(0, 7);  // 2026-05
+  const safeExt = safeImageExt(fileName, contentType);
+  if (safeExt === '.bin' || (contentType && !IMAGE_MIME_RE.test(String(contentType)))) {
+    const err = new Error('只支持 JPG / PNG / GIF / WEBP / SVG 图片格式');
+    err.statusCode = 400;
+    err.code = 'bad_filetype';
+    throw err;
+  }
+  const ym = new Date().toISOString().slice(0, 7);
   const rand = crypto.randomBytes(8).toString('hex');
-  const key  = `orion/${kind}/${ym}/${rand}${safeExt}`;
+  const key = `orion/${sanitizeKind(kind)}/${ym}/${rand}${safeExt}`;
 
   const cos = getCos();
   try {
@@ -161,25 +176,64 @@ router.post('/', requireAuth, rateLimit, upload.single('file'), wrap(async (req,
         Bucket: BUCKET,
         Region: REGION,
         Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype || 'application/octet-stream',
+        Body: buffer,
+        ContentType: contentType || 'application/octet-stream',
       }, (err, data) => err ? reject(err) : resolve(data));
     });
   } catch (e) {
     console.error('[upload] putObject failed', e.message || e);
-    return res.status(500).json({ error: 'upload_failed', message: e.message || String(e) });
+    const err = new Error(e.message || String(e));
+    err.statusCode = 500;
+    err.code = 'upload_failed';
+    throw err;
   }
 
-  // 用云托管的安全域名 URL（走 wx 云托管权限网关，校验来源域是否在"安全域名"列表里）
-  // 而不是 COS 原生 `<bucket>.cos.<region>.myqcloud.com`（那个走 COS 私有读默认 403）
-  // 用户需要在云托管 → 存储 → 存储配置 → 安全域名 加上你的网站域名（localhost:3000 + tcb.qcloud.la）
-  const url = `https://${BUCKET}.tcb.qcloud.la/${key}`;
-  res.json({
-    url,
+  return {
+    url: `https://${BUCKET}.tcb.qcloud.la/${key}`,
     cloudPath: key,
-    size: req.file.size,
-    contentType: req.file.mimetype,
-  });
+    size: buffer.length,
+    contentType,
+  };
+}
+
+// ---------- 路由 ----------
+router.post('/', requireAuth, rateLimit, upload.single('file'), wrap(async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'no_file', message: '没收到文件' });
+  try {
+    const uploaded = await uploadImageBuffer({
+      buffer: req.file.buffer,
+      fileName: req.file.originalname,
+      contentType: req.file.mimetype,
+      kind: req.body.kind,
+    });
+    res.json(uploaded);
+  } catch (e) {
+    res.status(e.statusCode || 500).json({ error: e.code || 'upload_failed', message: e.message || String(e) });
+  }
+}));
+
+router.post('/base64', requireAuth, rateLimit, wrap(async (req, res) => {
+  const body = req.body || {};
+  const fileName = String(body.fileName || '').trim();
+  const contentType = String(body.contentType || '').trim();
+  const data = String(body.fileBase64 || '').replace(/^data:image\/[a-z0-9+.-]+;base64,/i, '').replace(/\s+/g, '');
+  if (!fileName || !data) return res.status(400).json({ error: 'bad_request', message: 'fileName / fileBase64 必填' });
+  const buffer = Buffer.from(data, 'base64');
+  if (!buffer.length) return res.status(400).json({ error: 'empty_file', message: '图片文件为空' });
+  if (buffer.length > 12 * 1024 * 1024) {
+    return res.status(413).json({ error: 'file_too_large', message: '图片不能超过 12MB' });
+  }
+  try {
+    const uploaded = await uploadImageBuffer({
+      buffer,
+      fileName,
+      contentType,
+      kind: body.kind,
+    });
+    res.json(uploaded);
+  } catch (e) {
+    res.status(e.statusCode || 500).json({ error: e.code || 'upload_failed', message: e.message || String(e) });
+  }
 }));
 
 module.exports = router;

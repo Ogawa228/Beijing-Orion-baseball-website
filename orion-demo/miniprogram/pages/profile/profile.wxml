@@ -1,0 +1,100 @@
+<view class="page">
+  <view class="profile card panel">
+    <image class="avatar-lg" src="{{avatarSrc}}" mode="aspectFill" />
+    <view wx:if="{{user}}">
+      <view class="eyebrow">My Orion</view>
+      <view class="title">{{user.displayName}}</view>
+      <view class="subtle">{{identityLabel}}</view>
+    </view>
+    <view wx:else>
+      <view class="title">未登录</view>
+      <view class="subtle">登录后查看报名、签到、积分和绑定状态。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{showBindCta}}" class="section bind-cta card panel">
+    <view>
+      <view class="eyebrow">Player Profile</view>
+      <view class="bind-cta-title">{{bindCtaTitle}}</view>
+      <view class="subtle">{{bindCtaText}}</view>
+    </view>
+    <button class="btn btn-primary bind-cta-btn" bindtap="go" data-url="/pages/bind/bind">去申请绑定</button>
+  </view>
+
+  <view class="quick">
+    <button class="quick-card card panel" bindtap="go" data-url="/pages/points/points">我的积分</button>
+    <button class="quick-card card panel" bindtap="go" data-url="/pages/highlights/highlights">精彩时刻</button>
+    <button class="quick-card card panel" bindtap="go" data-url="/pages/notifications/notifications">站内通知</button>
+    <button class="quick-card card panel" bindtap="go" data-url="/pages/contact/contact">联系我们</button>
+    <button wx:if="{{canAdmin}}" class="quick-card card panel" bindtap="go" data-url="/pages/admin/admin">管理后台</button>
+  </view>
+
+  <view wx:if="{{user}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">👤 账号</view>
+      <view class="card-title">账号资料</view>
+    </view>
+    <input class="input" placeholder="小程序昵称" value="{{accountNameInput}}" bindinput="onAccountNameInput" />
+    <input class="input" placeholder="头像图片地址，可选" value="{{accountAvatarInput}}" bindinput="onAccountAvatarInput" />
+    <view class="avatar-action-row">
+      <button class="btn btn-ghost small-action" loading="{{uploadingAccountAvatar}}" bindtap="chooseAccountAvatar">选择账号头像</button>
+      <button class="btn btn-ghost small-action" disabled="{{uploadingAccountAvatar}}" bindtap="clearAccountAvatar">清空头像</button>
+    </view>
+    <view wx:if="{{accountAvatarUploadText}}" class="subtle">{{accountAvatarUploadText}}</view>
+    <button class="btn btn-primary" loading="{{profileSaving}}" bindtap="saveAccountProfile">保存账号资料</button>
+  </view>
+
+  <view wx:if="{{player}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">✨ 展示</view>
+      <view class="card-title">球员页公开展示</view>
+    </view>
+    <view class="public-preview">
+      <image class="preview-avatar" src="{{publicPreviewAvatar}}" mode="aspectFill" />
+      <view>
+        <view class="item-title">{{publicPreviewName}}</view>
+        <view class="subtle">{{canEditPublicProfile ? '用于球员墙、积分榜和名人堂' : '试训队员公开展示跟随账号资料'}}</view>
+      </view>
+    </view>
+    <block wx:if="{{canEditPublicProfile}}">
+      <input class="input" placeholder="公开展示名称，可留空使用档案姓名" value="{{publicNameInput}}" bindinput="onPublicNameInput" />
+      <input class="input" placeholder="公开头像图片地址，可选" value="{{publicAvatarInput}}" bindinput="onPublicAvatarInput" />
+      <view class="avatar-action-row">
+        <button class="btn btn-ghost small-action" loading="{{uploadingPublicAvatar}}" bindtap="choosePublicAvatar">选择公开头像</button>
+        <button class="btn btn-ghost small-action" disabled="{{uploadingPublicAvatar}}" bindtap="clearPublicAvatar">清空公开头像</button>
+      </view>
+      <view wx:if="{{publicAvatarUploadText}}" class="subtle">{{publicAvatarUploadText}}</view>
+      <button class="btn btn-ghost" loading="{{profileSaving}}" bindtap="savePublicProfile">保存公开展示</button>
+    </block>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view class="card-title">绑定申请</view>
+      <button class="link" bindtap="go" data-url="/pages/bind/bind">去申请</button>
+    </view>
+    <view wx:for="{{bindRequests}}" wx:key="id" class="row-item">
+      <view>
+        <view class="item-title">{{item.title}}</view>
+        <view class="subtle">{{item.meta || '等待管理员处理'}}</view>
+      </view>
+      <view class="status-pill {{item.statusClass}}">{{item.statusLabel}}</view>
+    </view>
+    <view wx:if="{{!bindRequests.length && !loading}}" class="empty">暂无绑定申请</view>
+  </view>
+
+  <view class="section card panel">
+    <view class="card-title">近期报名</view>
+    <view wx:for="{{signups}}" wx:key="id" class="row-item">
+      <view>
+        <view class="item-title">{{item.title}}</view>
+        <view class="subtle">{{item.meta || '时间地点待定'}}</view>
+        <view wx:if="{{item.note}}" class="signup-note">{{item.note}}</view>
+      </view>
+      <view class="status-pill {{item.statusClass}}">{{item.statusLabel}}</view>
+    </view>
+    <view wx:if="{{!signups.length && !loading}}" class="empty">暂无报名记录</view>
+  </view>
+
+  <button wx:if="{{!user}}" class="btn btn-primary login" bindtap="go" data-url="/pages/login/login">登录</button>
+</view>

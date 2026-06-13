@@ -1,0 +1,75 @@
+<view class="page highlights-page">
+  <view class="section-head">
+    <view>
+      <view class="eyebrow">📸 时刻</view>
+      <view class="title">精彩时刻</view>
+    </view>
+    <button class="link" bindtap="load">刷新</button>
+  </view>
+
+  <view class="section card panel stack">
+    <view>
+      <view class="eyebrow">✨ 投稿</view>
+      <view class="card-title">提交精彩时刻</view>
+      <view class="subtle">小程序以图片为主；B站链接可选，提交后只作为链接保存，不在小程序内播放。</view>
+    </view>
+    <input class="input" placeholder="标题，例如：第 4 局关键安打" value="{{titleInput}}" bindinput="onTitleInput" />
+    <view class="upload-box">
+      <button class="btn btn-ghost" loading="{{uploading}}" bindtap="chooseAndUploadImage">选择图片并上传 COS</button>
+      <view wx:if="{{uploadFileName || uploadStatusText}}" class="subtle">{{uploadFileName}} {{uploadStatusText}}</view>
+      <image wx:if="{{imageInput}}" class="upload-preview" src="{{imageInput}}" mode="aspectFill" bindtap="previewImage" data-image="{{imageInput}}" />
+    </view>
+    <input class="input" placeholder="图片地址，可粘贴已上传 COS 图片地址" value="{{imageInput}}" bindinput="onImageInput" />
+    <input class="input" placeholder="B站链接，可选" value="{{bilibiliInput}}" bindinput="onBilibiliInput" />
+    <picker mode="selector" range="{{playerOptions}}" range-key="label" value="{{playerIndex}}" bindchange="onPlayerChange">
+      <view class="picker-like">{{playerLabel}}</view>
+    </picker>
+    <button wx:if="{{playerOptionHasMore}}" class="link load-inline" loading="{{loadingMorePlayers}}" bindtap="loadMorePlayerOptions">加载更多球员候选</button>
+    <picker mode="selector" range="{{gameOptions}}" range-key="label" value="{{gameIndex}}" bindchange="onGameChange">
+      <view class="picker-like">{{gameLabel}}</view>
+    </picker>
+    <button wx:if="{{gameOptionHasMore}}" class="link load-inline" loading="{{loadingMoreGames}}" bindtap="loadMoreGameOptions">加载更多比赛候选</button>
+    <button class="btn btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="submitHighlight">提交图片</button>
+    <view wx:if="{{!user}}" class="subtle">未登录时可以浏览已发布图片，投稿前需要先登录。</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view>
+        <view class="eyebrow">🖼 照片墙</view>
+        <view class="title">{{isReviewer ? '全部精彩时刻' : '已发布精彩时刻'}}</view>
+      </view>
+    </view>
+    <scroll-view wx:if="{{highlights.length}}" scroll-x enhanced show-scrollbar="{{false}}" class="moments-scroll">
+      <view class="moments-track">
+        <view wx:for="{{highlights}}" wx:key="id" class="moment-card card">
+          <image wx:if="{{item.image}}" class="moment-image" src="{{item.image}}" mode="aspectFill" lazy-load="{{true}}" bindtap="previewImage" data-image="{{item.image}}" />
+          <view wx:else class="image-missing">暂无图片</view>
+          <view class="moment-body">
+            <view class="row between">
+              <view class="pill {{item.statusClass}}">{{item.statusLabel}}</view>
+              <button wx:if="{{item.bilibiliUrl}}" class="copy-link" bindtap="copyBilibili" data-url="{{item.bilibiliUrl}}">复制B站链接</button>
+            </view>
+            <view class="moment-title">{{item.title}}</view>
+            <view wx:if="{{item.meta}}" class="subtle {{item.metaClass}}">{{item.meta}}</view>
+            <view wx:if="{{item.playerId || item.gameId}}" class="moment-links">
+              <button wx:if="{{item.playerId}}" class="mini-link" catchtap="openPlayer" data-id="{{item.playerId}}">看球员</button>
+              <button wx:if="{{item.gameId}}" class="mini-link" catchtap="openGame" data-id="{{item.gameId}}">看比赛</button>
+            </view>
+            <view wx:if="{{isReviewer}}" class="review-actions">
+              <button class="btn btn-primary small-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="publishHighlight" data-id="{{item.id}}">发布图片</button>
+              <button wx:if="{{item.isPending}}" class="btn btn-danger small-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="rejectHighlight" data-id="{{item.id}}">退回</button>
+              <button wx:if="{{item.isPublic}}" class="btn btn-ghost small-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="unpublishHighlight" data-id="{{item.id}}">下架</button>
+              <button wx:if="{{item.isRejected}}" class="btn btn-ghost small-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="restoreHighlight" data-id="{{item.id}}">重新发布</button>
+              <button class="btn btn-danger small-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="deleteHighlight" data-id="{{item.id}}">删除记录</button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{highlightHasMore}}" class="load-more" bindtap="loadMoreHighlights">
+      <text>{{loadingMoreHighlights ? '加载中...' : '加载更多精彩时刻'}}</text>
+    </view>
+    <view wx:if="{{!highlights.length && !loading}}" class="card empty">暂无精彩时刻</view>
+  </view>
+</view>

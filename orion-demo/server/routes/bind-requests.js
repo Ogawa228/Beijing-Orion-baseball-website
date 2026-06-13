@@ -27,6 +27,10 @@ function requestSelect(whereSql = '', limit = 80) {
       br.*,
       u.display_name AS user_display_name,
       ui.value AS user_email,
+      EXISTS (
+        SELECT 1 FROM user_identities wx
+        WHERE wx.user_id = u.id AND wx.type IN ('wx_openid', 'wx_unionid')
+      ) AS has_wx_identity,
       u.bound_player_id AS current_player_id,
       cp.name AS current_player_name,
       p.name AS requested_player_name,

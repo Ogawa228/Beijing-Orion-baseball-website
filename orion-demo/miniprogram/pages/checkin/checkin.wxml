@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="card panel stack">
+    <view class="eyebrow">✅ 接龙签到</view>
+    <view class="title">一键签到</view>
+    <view class="subtle">先选择本次训练、比赛或活动接龙，使用微信定位确认到场签到。</view>
+
+    <view>
+      <view class="label">签到接龙</view>
+      <picker mode="selector" range="{{relays}}" range-key="title" value="{{relayIndex}}" bindchange="onRelayChange">
+        <view class="picker-like relay-picker">
+          <view>
+            <view>{{relayLabel}}</view>
+            <view wx:if="{{relayMeta}}" class="subtle relay-meta">{{relayMeta}}</view>
+          </view>
+          <view class="relay-type">{{relayTypeLabel}}</view>
+        </view>
+      </picker>
+      <button wx:if="{{relaysHasMore}}" class="btn btn-ghost relay-more" loading="{{loadingMoreRelays}}" disabled="{{loadingMoreRelays}}" bindtap="loadMoreRelays">加载更多接龙</button>
+      <button wx:if="{{relaysLoadFailed}}" class="btn btn-ghost relay-more" bindtap="retryLoadRelays">重新加载接龙</button>
+    </view>
+
+    <view>
+      <view class="label">备注</view>
+      <input class="input" placeholder="可选，例如晚到、带新人" value="{{note}}" bindinput="onNoteInput" />
+    </view>
+
+    <button class="btn btn-primary" loading="{{loading}}" disabled="{{loading}}" bindtap="checkin">定位并签到</button>
+    <view class="subtle">位置：{{locationText}}</view>
+  </view>
+
+  <view wx:if="{{result}}" class="section card panel">
+    <view class="pill">{{resultKindLabel}}</view>
+    <view class="result-title">{{resultTitle}}</view>
+    <view class="subtle">{{result.attendance.date}} · {{result.attendance.note || '北京猎户座'}}</view>
+    <view class="point-line">{{pointDeltaText}}</view>
+    <view wx:if="{{totalPointsText}}" class="subtle">{{totalPointsText}}</view>
+    <view wx:if="{{upgradeText}}" class="upgrade-line">{{upgradeText}}</view>
+    <view wx:if="{{trialProgressText}}" class="subtle trial-progress">{{trialProgressText}}</view>
+    <button class="btn btn-ghost points-link" bindtap="goPoints">查看我的积分</button>
+  </view>
+</view>

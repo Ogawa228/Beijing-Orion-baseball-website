@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>微信定位接口申请总览</title>
+  <style>
+    :root {
+      --bg: #f6f5f1;
+      --panel: #ffffff;
+      --ink: #202124;
+      --muted: #6a6f78;
+      --line: #ded9ce;
+      --gold: #b4862b;
+      --green: #1f7a4d;
+      --red: #b34237;
+      --blue: #285a8e;
+      --shadow: 0 18px 50px rgba(46, 39, 28, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 30px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--gold);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      margin: 16px 0 0;
+      max-width: 760px;
+      color: #42464d;
+      font-size: 17px;
+    }
+
+    .status-box {
+      border-left: 4px solid var(--gold);
+      background: #fff8e5;
+      padding: 16px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #594314;
+    }
+
+    .status-box strong {
+      display: block;
+      color: #39290b;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: #c4aa72;
+      background: #fff9e9;
+    }
+
+    .btn.primary {
+      border-color: #9a6a18;
+      background: #9a6a18;
+      color: #fff;
+    }
+
+    .btn.green {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 22px;
+      align-items: start;
+      margin-top: 24px;
+    }
+
+    .nav {
+      position: sticky;
+      top: 16px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: 0 12px 32px rgba(46, 39, 28, 0.08);
+    }
+
+    .nav-title {
+      margin: 0 0 10px;
+      font-weight: 800;
+      color: #423018;
+    }
+
+    .nav a {
+      display: block;
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: #34373c;
+      font-size: 14px;
+    }
+
+    .nav a:hover {
+      background: #f5efe1;
+      text-decoration: none;
+    }
+
+    .content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(46, 39, 28, 0.08);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 10px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fffdf8;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .field {
+      border-top: 1px solid #ece7dd;
+      padding: 16px 0 0;
+      margin-top: 16px;
+    }
+
+    .field:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .field-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .label {
+      font-weight: 800;
+      color: #2c2f35;
+    }
+
+    textarea,
+    .copy-block {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #d8d2c7;
+      border-radius: 6px;
+      background: #fffaf0;
+      color: #2b2b2b;
+      font: 15px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      padding: 12px;
+      resize: vertical;
+    }
+
+    textarea.reason {
+      min-height: 160px;
+    }
+
+    textarea.privacy {
+      min-height: 84px;
+    }
+
+    .copy-block {
+      white-space: pre-wrap;
+      user-select: text;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .shot {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .shot img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 876 / 1163;
+      object-fit: cover;
+      background: #eee;
+    }
+
+    .shot figcaption {
+      margin: 0;
+      padding: 10px;
+      font-size: 13px;
+      color: #4e535a;
+      border-top: 1px solid var(--line);
+    }
+
+    .checklist {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .checklist li {
+      margin: 8px 0;
+    }
+
+    .warn {
+      border-left: 4px solid var(--red);
+      background: #fff1ee;
+      color: #63302b;
+      padding: 14px 16px;
+      border-radius: 6px;
+      margin-top: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      background: #1f7a4d;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      font-weight: 700;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        position: static;
+      }
+
+      .steps,
+      .image-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100vw - 20px, 1180px);
+        padding-top: 10px;
+      }
+
+      .hero,
+      .panel {
+        padding: 18px;
+      }
+
+      .panel-header,
+      .field-head {
+        display: block;
+      }
+
+      .field-head .btn,
+      .panel-header .btn {
+        margin-top: 8px;
+        width: 100%;
+      }
+
+      .steps,
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">北京猎户座小程序 · 微信后台速填页</p>
+        <h1>微信定位接口申请总览</h1>
+        <p class="hero-copy">打开微信公众平台后台申请接口时，按本页从上到下复制字段内容，并上传对应截图即可。每个字段右侧都有复制按钮，下面也放了完整截图预览。</p>
+        <div class="top-actions">
+          <a class="btn primary" href="#get-location">填写 wx.getLocation</a>
+          <a class="btn green" href="#choose-location">填写 wx.chooseLocation</a>
+          <a class="btn" href="#screenshots">查看上传截图</a>
+        </div>
+      </div>
+      <aside class="status-box">
+        <strong>申请口径</strong>
+        本页用于申请权限。当前小程序代码仍按已知上传规则使用 `chooseLocation` + `getFuzzyLocation`；如果 `wx.getLocation` 申请通过，上线前需要再把代码切换为 `chooseLocation` + `getLocation`，不要同时声明 `getLocation` 和 `getFuzzyLocation`。
+      </aside>
+    </header>
+
+    <main class="grid">
+      <nav class="nav" aria-label="页面导航">
+        <p class="nav-title">快速跳转</p>
+        <a href="#flow">申请顺序</a>
+        <a href="#get-location">wx.getLocation</a>
+        <a href="#choose-location">wx.chooseLocation</a>
+        <a href="#privacy">隐私授权说明</a>
+        <a href="#screenshots">辅助图片</a>
+        <a href="#notes">注意事项</a>
+      </nav>
+
+      <div class="content">
+        <section class="panel" id="flow">
+          <div class="panel-header">
+            <div>
+              <h2>申请顺序</h2>
+              <p class="sub">按这个顺序操作，避免在后台来回找材料。</p>
+            </div>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <strong>1. 申请 wx.getLocation</strong>
+              <span>队员主动点击“定位并签到”时使用，上传前两张截图。</span>
+            </div>
+            <div class="step">
+              <strong>2. 申请 wx.chooseLocation</strong>
+              <span>管理员发起接龙选择打卡点时使用，上传后两张截图。</span>
+            </div>
+            <div class="step">
+              <strong>3. 申请通过后再改代码</strong>
+              <span>通过后再切换 `requiredPrivateInfos` 和签到定位接口。</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="get-location">
+          <div class="panel-header">
+            <div>
+              <h2>wx.getLocation</h2>
+              <p class="sub">用于队员到场签到定位校验。</p>
+            </div>
+            <button class="btn primary" data-copy-target="get-all">复制本接口全部内容</button>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">接口名称</span>
+              <button class="btn" data-copy-target="get-name">复制</button>
+            </div>
+            <textarea id="get-name" readonly>wx.getLocation</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">使用场景</span>
+              <button class="btn" data-copy-target="get-scene">复制</button>
+            </div>
+            <textarea id="get-scene" readonly>队员在训练、比赛或活动接龙中进行到场签到。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">申请原因</span>
+              <button class="btn" data-copy-target="get-reason">复制</button>
+            </div>
+            <textarea class="reason" id="get-reason" readonly>因当前业务涉及球队训练、比赛和活动接龙签到，队员到达接龙指定场地后，需要获取用户当前地理位置，与管理员预先设置的打卡点进行距离校验，用于确认队员实际到场、避免异地代签到或误签到，并据此生成出勤记录和积分流水，完成“接龙报名 - 到场签到 - 积分统计”的业务闭环。故申请 wx.getLocation 接口，用于队员主动点击“定位并签到”时获取当前位置并完成到场签到校验。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">页面路径</span>
+              <button class="btn" data-copy-target="get-path">复制</button>
+            </div>
+            <textarea id="get-path" readonly>pages/checkin/checkin</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">用户触发方式</span>
+              <button class="btn" data-copy-target="get-trigger">复制</button>
+            </div>
+            <textarea id="get-trigger" readonly>用户主动点击“定位并签到”按钮后触发。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">是否后台持续定位</span>
+              <button class="btn" data-copy-target="get-background">复制</button>
+            </div>
+            <textarea id="get-background" readonly>否。仅在用户主动点击签到按钮时获取一次当前位置，不后台持续定位，不记录运动轨迹。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">上传辅助图片</span>
+              <button class="btn" data-copy-target="get-images">复制</button>
+            </div>
+            <textarea id="get-images" readonly>辅助图片/01_首页签到入口.png
+辅助图片/02_签到页定位按钮.png</textarea>
+          </div>
+
+          <div class="copy-block" id="get-all">接口名称：wx.getLocation
+
+使用场景：队员在训练、比赛或活动接龙中进行到场签到。
+
+申请原因：因当前业务涉及球队训练、比赛和活动接龙签到，队员到达接龙指定场地后，需要获取用户当前地理位置，与管理员预先设置的打卡点进行距离校验，用于确认队员实际到场、避免异地代签到或误签到，并据此生成出勤记录和积分流水，完成“接龙报名 - 到场签到 - 积分统计”的业务闭环。故申请 wx.getLocation 接口，用于队员主动点击“定位并签到”时获取当前位置并完成到场签到校验。
+
+页面路径：pages/checkin/checkin
+
+用户触发方式：用户主动点击“定位并签到”按钮后触发。
+
+是否后台持续定位：否。仅在用户主动点击签到按钮时获取一次当前位置，不后台持续定位，不记录运动轨迹。
+
+辅助图片：
+辅助图片/01_首页签到入口.png
+辅助图片/02_签到页定位按钮.png</div>
+        </section>
+
+        <section class="panel" id="choose-location">
+          <div class="panel-header">
+            <div>
+              <h2>wx.chooseLocation</h2>
+              <p class="sub">用于管理员发起或编辑接龙时选择打卡点。</p>
+            </div>
+            <button class="btn green" data-copy-target="choose-all">复制本接口全部内容</button>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">接口名称</span>
+              <button class="btn" data-copy-target="choose-name">复制</button>
+            </div>
+            <textarea id="choose-name" readonly>wx.chooseLocation</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">使用场景</span>
+              <button class="btn" data-copy-target="choose-scene">复制</button>
+            </div>
+            <textarea id="choose-scene" readonly>管理员发起或编辑训练、比赛、活动接龙时，在地图中选择本次接龙的打卡点。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">申请原因</span>
+              <button class="btn" data-copy-target="choose-reason">复制</button>
+            </div>
+            <textarea class="reason" id="choose-reason" readonly>因当前业务涉及球队训练、比赛和活动接龙管理，管理员发起或编辑接龙时，需要在地图中选择本次活动的打卡点，并保存地点名称、地址和经纬度，作为队员后续签到时的目标位置。该地点用于完成“管理员设置打卡点 - 队员到场签到 - 出勤和积分统计”的业务闭环。故申请 wx.chooseLocation 接口，用于管理员发起或编辑活动接龙时选择打卡点。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">页面路径</span>
+              <button class="btn" data-copy-target="choose-path">复制</button>
+            </div>
+            <textarea id="choose-path" readonly>pages/events/event-create/event-create</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">用户触发方式</span>
+              <button class="btn" data-copy-target="choose-trigger">复制</button>
+            </div>
+            <textarea id="choose-trigger" readonly>管理员主动点击“地图选择”按钮后触发。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">是否获取普通用户当前位置</span>
+              <button class="btn" data-copy-target="choose-normal-user">复制</button>
+            </div>
+            <textarea id="choose-normal-user" readonly>否。该接口用于管理员选择活动打卡点，不用于获取普通用户当前位置。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">上传辅助图片</span>
+              <button class="btn" data-copy-target="choose-images">复制</button>
+            </div>
+            <textarea id="choose-images" readonly>辅助图片/03_发起接龙页面.png
+辅助图片/04_地图选择按钮.png</textarea>
+          </div>
+
+          <div class="copy-block" id="choose-all">接口名称：wx.chooseLocation
+
+使用场景：管理员发起或编辑训练、比赛、活动接龙时，在地图中选择本次接龙的打卡点。
+
+申请原因：因当前业务涉及球队训练、比赛和活动接龙管理，管理员发起或编辑接龙时，需要在地图中选择本次活动的打卡点，并保存地点名称、地址和经纬度，作为队员后续签到时的目标位置。该地点用于完成“管理员设置打卡点 - 队员到场签到 - 出勤和积分统计”的业务闭环。故申请 wx.chooseLocation 接口，用于管理员发起或编辑活动接龙时选择打卡点。
+
+页面路径：pages/events/event-create/event-create
+
+用户触发方式：管理员主动点击“地图选择”按钮后触发。
+
+是否获取普通用户当前位置：否。该接口用于管理员选择活动打卡点，不用于获取普通用户当前位置。
+
+辅助图片：
+辅助图片/03_发起接龙页面.png
+辅助图片/04_地图选择按钮.png</div>
+        </section>
+
+        <section class="panel" id="privacy">
+          <div class="panel-header">
+            <div>
+              <h2>隐私授权说明</h2>
+              <p class="sub">如果后台或隐私协议要求补充用途说明，可直接复制。</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">wx.getLocation</span>
+              <button class="btn" data-copy-target="privacy-get">复制</button>
+            </div>
+            <textarea class="privacy" id="privacy-get" readonly>用于训练、比赛和活动签到时确认是否到达管理员设置的打卡点。</textarea>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <span class="label">wx.chooseLocation</span>
+              <button class="btn" data-copy-target="privacy-choose">复制</button>
+            </div>
+            <textarea class="privacy" id="privacy-choose" readonly>用于管理员发起或编辑训练、比赛、活动接龙时选择打卡点。</textarea>
+          </div>
+        </section>
+
+        <section class="panel" id="screenshots">
+          <div class="panel-header">
+            <div>
+              <h2>辅助图片</h2>
+              <p class="sub">微信后台上传时按接口选择对应两张图。图片都在本 HTML 同级目录的 `辅助图片/` 文件夹内。</p>
+            </div>
+          </div>
+          <div class="image-grid">
+            <figure class="shot">
+              <a href="辅助图片/01_首页签到入口.png" target="_blank" rel="noreferrer">
+                <img src="辅助图片/01_首页签到入口.png" alt="首页签到入口截图">
+              </a>
+              <figcaption>01_首页签到入口.png<br>wx.getLocation 第 1 张</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="辅助图片/02_签到页定位按钮.png" target="_blank" rel="noreferrer">
+                <img src="辅助图片/02_签到页定位按钮.png" alt="签到页定位按钮截图">
+              </a>
+              <figcaption>02_签到页定位按钮.png<br>wx.getLocation 第 2 张</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="辅助图片/03_发起接龙页面.png" target="_blank" rel="noreferrer">
+                <img src="辅助图片/03_发起接龙页面.png" alt="发起接龙页面截图">
+              </a>
+              <figcaption>03_发起接龙页面.png<br>wx.chooseLocation 第 1 张</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="辅助图片/04_地图选择按钮.png" target="_blank" rel="noreferrer">
+                <img src="辅助图片/04_地图选择按钮.png" alt="地图选择按钮截图">
+              </a>
+              <figcaption>04_地图选择按钮.png<br>wx.chooseLocation 第 2 张</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="panel" id="notes">
+          <div class="panel-header">
+            <div>
+              <h2>注意事项</h2>
+              <p class="sub">申请时容易踩的点。</p>
+            </div>
+          </div>
+          <ul class="checklist">
+            <li>不要上传开发者工具全窗口原图 `_window_*.png`，本申请文件夹没有放这些原图。</li>
+            <li>`wx.getLocation` 的申请理由要强调“用户主动点击签到按钮后获取一次当前位置”，不要写后台持续定位。</li>
+            <li>`wx.chooseLocation` 的申请理由要强调“管理员主动点击地图选择按钮设置打卡点”，不要写普通用户被动定位。</li>
+            <li>如果后台要求补充更完整链路，再补截原生地图选择页、选点回填页或签到成功页。</li>
+          </ul>
+          <div class="warn">
+            申请通过前不要直接把小程序代码切到 `wx.getLocation` 上传。微信编译曾确认 `getLocation` 与 `getFuzzyLocation` 互斥，上线前需要按通过后的接口重新调整 `requiredPrivateInfos`。
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">已复制</div>
+
+  <script>
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+
+    function getCopyText(target) {
+      if (!target) return '';
+      if ('value' in target) return target.value;
+      return target.innerText || target.textContent || '';
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+    }
+
+    async function copyText(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (error) {
+        // Fall through to the legacy selection method.
+      }
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      temp.setAttribute('readonly', '');
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      document.body.appendChild(temp);
+      temp.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (error) {
+        ok = false;
+      }
+      document.body.removeChild(temp);
+      return ok;
+    }
+
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        const ok = await copyText(getCopyText(target));
+        showToast(ok ? '已复制' : '复制失败，请手动选中文本');
+      });
+    });
+  </script>
+</body>
+</html>

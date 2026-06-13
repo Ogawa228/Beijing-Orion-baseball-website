@@ -1,0 +1,57 @@
+<view class="page players-page">
+  <view class="section-head">
+    <view>
+      <view class="eyebrow">👥 阵容</view>
+      <view class="title">球员阵容</view>
+    </view>
+    <button class="btn btn-ghost small" bindtap="load">刷新</button>
+  </view>
+
+  <view class="roster-metrics">
+    <view class="metric card">
+      <text class="metric-value">{{playerCount}}</text>
+      <text class="subtle">正式球员</text>
+    </view>
+    <view class="metric card">
+      <text class="metric-value">{{positionCount}}</text>
+      <text class="subtle">守位覆盖</text>
+    </view>
+    <view class="metric card">
+      <text class="metric-value">{{topPlayer ? topPlayer.displayName : '-'}}</text>
+      <text class="subtle">当前积分榜首</text>
+    </view>
+  </view>
+
+  <view class="search-row">
+    <input class="input search-input" placeholder="搜索姓名、背号、守位" value="{{keyword}}" bindinput="onSearch" />
+    <button wx:if="{{keyword}}" class="btn btn-ghost clear-btn" bindtap="clearSearch">清空</button>
+  </view>
+
+  <view class="player-list">
+    <view wx:for="{{visiblePlayers}}" wx:key="id" class="player-card card panel" bindtap="openDetail" data-id="{{item.id}}">
+      <image class="avatar player-avatar {{item.avatarClass}}" src="{{item.avatar}}" mode="aspectFill" lazy-load="{{true}}" />
+      <view class="player-main">
+        <view class="player-head">
+          <view class="player-name {{item.nameClass}}">{{item.displayName}}</view>
+          <view class="player-number">{{item.numberText}}</view>
+        </view>
+        <view class="player-meta">
+          <text>{{item.positionText}}</text>
+          <text wx:if="{{item.joinText}}"> · {{item.joinText}}</text>
+        </view>
+        <view wx:if="{{item.slogan}}" class="subtle slogan">{{item.slogan}}</view>
+        <view wx:if="{{item.titles.length}}" class="title-row">
+          <text wx:for="{{item.titles}}" wx:key="*this" class="pill title-pill">{{item}}</text>
+        </view>
+      </view>
+      <view class="points-box">
+        <text class="points">{{item.total}}</text>
+        <text class="subtle">分</text>
+        <text wx:if="{{item.rank}}" class="rank">#{{item.rank}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!visiblePlayers.length && !loading}}" class="card empty">暂无球员</view>
+  <button wx:if="{{hasMore}}" class="btn btn-ghost load-more" loading="{{loadingMore}}" bindtap="loadMore">加载更多球员</button>
+</view>

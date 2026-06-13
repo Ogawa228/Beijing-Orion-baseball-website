@@ -1,0 +1,61 @@
+<view class="page contact-page">
+  <view class="contact-hero card panel">
+    <image class="hero-logo" src="/assets/logo.jpg" mode="aspectFill" />
+    <view>
+      <view class="eyebrow">📮 联系我们</view>
+      <view class="title">想加入我们？</view>
+      <view class="subtle">老手、零基础、慢垒或棒球兴趣者都可以先从试训接龙开始。</view>
+    </view>
+  </view>
+
+  <view class="section card panel stack">
+    <view>
+      <view class="eyebrow">ℹ️ 球队信息</view>
+      <view class="card-title">训练与联系</view>
+    </view>
+    <view class="info-list">
+      <view wx:for="{{teamInfo}}" wx:key="label" class="info-row" bindtap="copyInfo" data-value="{{item.copyValue}}" data-label="{{item.label}}">
+        <view class="info-icon">{{item.icon}}</view>
+        <view class="info-main">
+          <view class="info-label">{{item.label}}</view>
+          <view class="info-value">{{item.value}}</view>
+        </view>
+        <view class="copy-hint">复制</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel stack">
+    <view>
+      <view class="eyebrow">👥 负责人</view>
+      <view class="card-title">联系联络人</view>
+    </view>
+    <view wx:for="{{contacts}}" wx:key="name" class="contact-row">
+      <image wx:if="{{item.avatar}}" class="contact-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load="{{true}}" />
+      <view wx:else class="contact-avatar fallback">{{item.initial}}</view>
+      <view class="contact-main">
+        <view class="contact-name">{{item.name}} · {{item.role}}</view>
+        <view class="subtle">{{item.meta}}</view>
+        <view class="handle-row">
+          <button wx:for="{{item.handles}}" wx:for-item="handle" wx:key="value" class="handle-chip" catchtap="copyHandle" data-value="{{handle.value}}" data-label="{{item.name}}{{handle.label}}">{{handle.label}} {{handle.value}}</button>
+        </view>
+      </view>
+    </view>
+    <view class="contact-tip">📩 复制联系方式后说明“猎户座试训”。</view>
+  </view>
+
+  <view class="section card panel stack">
+    <view>
+      <view class="eyebrow">🧢 试训</view>
+      <view class="card-title">快速生成咨询内容</view>
+    </view>
+    <input class="input" placeholder="你的称呼，可选" value="{{joinName}}" bindinput="onNameInput" />
+    <input class="input" placeholder="联系方式，可选" value="{{joinContact}}" bindinput="onContactInput" />
+    <textarea class="textarea" placeholder="想补充的经验、位置或可参加时间，可选" value="{{joinMessage}}" bindinput="onMessageInput" />
+    <view class="action-row">
+      <button class="btn btn-primary action-btn" bindtap="copyJoinMessage">复制咨询内容</button>
+      <button class="btn btn-ghost action-btn" bindtap="goEvents">查看接龙</button>
+    </view>
+    <button class="link legal-link" bindtap="goLegal">查看用户协议、隐私政策和个人信息处理规则</button>
+  </view>
+</view>

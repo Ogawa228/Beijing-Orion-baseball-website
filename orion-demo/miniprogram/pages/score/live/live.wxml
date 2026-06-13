@@ -1,0 +1,250 @@
+<view class="page">
+  <view wx:if="{{draft}}" class="card panel scoreboard">
+    <view class="row between">
+      <view class="subtle">{{draft.date}} · {{sportLabel}}</view>
+      <button class="undo-btn" bindtap="undoLast" disabled="{{!history.length}}">撤销上一步</button>
+    </view>
+    <view class="matchup">{{awayName}} vs {{homeName}}</view>
+    <view class="big-score">{{awayScore}} : {{homeScore}}</view>
+    <view class="score-meta">
+      <view>
+        <view class="meta-label">当前局</view>
+        <view class="meta-value">第 {{inning + 1}} 局{{halfLabel}}</view>
+      </view>
+      <view>
+        <view class="meta-label">当前进攻</view>
+        <view class="meta-value">{{offenseName || '-'}}</view>
+      </view>
+      <view>
+        <view class="meta-label">出局 / 垒位</view>
+        <view class="meta-value">{{outs}} 出 · {{baseSummary}}</view>
+      </view>
+      <view>
+        <view class="meta-label">事件日志</view>
+        <view class="meta-value">{{playLog.length}} 条</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view>
+        <view class="card-title no-gap">比赛局面</view>
+        <view class="subtle">{{offenseName || '-'}} 进攻 · {{outs}} 出 · {{baseSummary}}</view>
+      </view>
+      <picker mode="selector" range="{{halfOptions}}" value="{{halfIndex}}" bindchange="onHalfChange">
+        <view class="pill">{{halfLabel}}</view>
+      </picker>
+    </view>
+    <view class="situation-grid">
+      <view class="outs-panel">
+        <view class="label compact">出局数</view>
+        <view class="out-dots">
+          <view wx:for="{{outDots}}" wx:key="id" class="out-dot {{item.activeClass}}"></view>
+        </view>
+        <view class="action-stack compact-actions">
+          <button class="btn btn-ghost" bindtap="addOut">出局 +1</button>
+          <button class="btn btn-ghost" bindtap="clearOuts">清零</button>
+        </view>
+      </view>
+      <view class="bases-panel">
+        <view class="label compact">垒上跑者</view>
+        <view class="base-board">
+          <button class="base-btn base-second {{baseSecondClass}}" data-base="second" bindtap="toggleBase">二垒</button>
+          <button class="base-btn base-third {{baseThirdClass}}" data-base="third" bindtap="toggleBase">三垒</button>
+          <button class="base-btn base-first {{baseFirstClass}}" data-base="first" bindtap="toggleBase">一垒</button>
+          <view class="home-plate">本垒</view>
+        </view>
+        <button class="btn btn-ghost clear-bases" bindtap="clearBases">清空垒位</button>
+      </view>
+    </view>
+    <button class="btn btn-primary next-half" bindtap="nextHalf">换半局 / 下一局</button>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view class="card-title">逐局记分</view>
+      <view class="pill">第 {{inning + 1}} 局</view>
+    </view>
+    <view class="score-actions action-stack">
+      <button class="btn btn-ghost" data-team="away" bindtap="addRun">{{awayName}} 得分 +1</button>
+      <button class="btn btn-ghost" data-team="home" bindtap="addRun">{{homeName}} 得分 +1</button>
+    </view>
+    <scroll-view scroll-x class="wide-scroll">
+      <view class="line-table">
+        <view class="line-row header">
+          <text class="team">队伍</text>
+          <text wx:for="{{lineAway}}" wx:key="*this" class="cell">{{index + 1}}</text>
+          <text class="cell total">R</text>
+        </view>
+        <view class="line-row">
+          <text class="team">{{awayName}}</text>
+          <text wx:for="{{lineAway}}" wx:key="*this" class="cell">{{item}}</text>
+          <text class="cell total">{{awayScore}}</text>
+        </view>
+        <view class="line-row">
+          <text class="team">{{homeName}}</text>
+          <text wx:for="{{lineHome}}" wx:key="*this" class="cell">{{item}}</text>
+          <text class="cell total">{{homeScore}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="action-stack inning-nav">
+      <button class="btn btn-ghost" bindtap="prevInning">上一局</button>
+      <button class="btn btn-primary" bindtap="nextInning">下一局</button>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view>
+        <view class="card-title no-gap">猎户打线</view>
+        <view class="subtle">第 {{currentBatter.order || '-'}} 棒 · {{currentBatter.pos || '未设守位'}}</view>
+      </view>
+      <view class="pill">{{currentBatter.name || '未选球员'}}</view>
+    </view>
+    <view class="batter-nav action-stack">
+      <button class="btn btn-ghost" bindtap="prevBatter">上一名球员</button>
+      <button class="btn btn-primary" bindtap="nextBatter">下一名球员</button>
+    </view>
+    <picker mode="selector" range="{{batting}}" range-key="name" value="{{currentIndex}}" bindchange="onBatterChange">
+      <view class="picker-like batter-picker">直接选择当前打者：{{currentBatter.name || '未选球员'}}</view>
+    </picker>
+    <view class="stat-actions">
+      <button class="stat-btn" data-key="_1B" bindtap="incStat">安打 1B</button>
+      <button class="stat-btn" data-key="_2B" bindtap="incStat">二垒打</button>
+      <button class="stat-btn" data-key="_3B" bindtap="incStat">三垒打</button>
+      <button class="stat-btn gold" data-key="HR" bindtap="incStat">本垒打 HR</button>
+      <button class="stat-btn" data-key="RBI" bindtap="incStat">手动打点 RBI</button>
+      <button class="stat-btn" data-key="R" bindtap="incStat">得分 R</button>
+      <button class="stat-btn" data-key="BB" bindtap="incStat">四坏 BB</button>
+      <button class="stat-btn danger" data-key="SO" bindtap="incStat">三振 SO</button>
+      <button class="stat-btn" data-key="OUT" bindtap="incStat">出局</button>
+      <button class="stat-btn danger" data-key="E" bindtap="incStat">守备失误 E</button>
+    </view>
+  </view>
+
+  <view class="section card panel stack">
+    <view class="row between">
+      <view>
+        <view class="card-title no-gap">阵容调整</view>
+        <view class="subtle">换守位、换人、代打代跑都记入事件日志。</view>
+      </view>
+      <view class="pill">{{adjustmentPositionLabel}}</view>
+    </view>
+    <view class="form-grid adjustment-form">
+      <view>
+        <view class="label">球员</view>
+        <picker mode="selector" range="{{batting}}" range-key="name" value="{{adjustmentPlayerIndex}}" bindchange="onAdjustmentPlayerChange">
+          <view class="picker-like">{{batting[adjustmentPlayerIndex].name || '选择球员'}}</view>
+        </picker>
+      </view>
+      <view>
+        <view class="label">新守位</view>
+        <picker mode="selector" range="{{positions}}" value="{{adjustmentPositionIndex}}" bindchange="onAdjustmentPositionChange">
+          <view class="picker-like">{{adjustmentPositionLabel}}</view>
+        </picker>
+      </view>
+    </view>
+    <textarea class="textarea" placeholder="例如：第 4 局换到 3B，代跑，伤退" value="{{adjustmentNote}}" bindinput="onAdjustmentNoteInput" />
+    <button class="btn btn-ghost" bindtap="applyLineupAdjustment">记录阵容调整</button>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view class="card-title">投手记录</view>
+      <picker mode="selector" range="{{pitcherOptions}}" range-key="name" value="{{pitcherIndex}}" bindchange="onPitcherChange">
+        <view class="pill">选择投手</view>
+      </picker>
+    </view>
+    <button class="btn btn-ghost add-pitcher" bindtap="addPitcher">加入投手记录</button>
+    <view wx:for="{{pitchers}}" wx:key="playerId" class="pitcher-card">
+      <view class="row between">
+        <view>
+          <view class="pitch-name">{{item.name}}</view>
+          <view class="subtle">IP {{item.IP}} · H {{item.H}} · R {{item.R}} · ER {{item.ER}} · BB {{item.BB}} · SO {{item.SO}}</view>
+        </view>
+        <picker mode="selector" range="{{pitchDecisions}}" range-key="label" value="{{item.decisionIndex}}" data-index="{{index}}" bindchange="onDecisionChange">
+          <view class="pill">{{item.decision || '胜败'}}</view>
+        </picker>
+      </view>
+      <view class="stat-actions pitcher-actions">
+        <button class="stat-btn" data-index="{{index}}" data-key="OUT" bindtap="incPitchStat">出局 +1</button>
+        <button class="stat-btn" data-index="{{index}}" data-key="H" bindtap="incPitchStat">被安打 H</button>
+        <button class="stat-btn" data-index="{{index}}" data-key="R" bindtap="incPitchStat">失分 R</button>
+        <button class="stat-btn" data-index="{{index}}" data-key="ER" bindtap="incPitchStat">责失 ER</button>
+        <button class="stat-btn" data-index="{{index}}" data-key="BB" bindtap="incPitchStat">保送 BB</button>
+        <button class="stat-btn gold" data-index="{{index}}" data-key="SO" bindtap="incPitchStat">三振 SO</button>
+        <button class="stat-btn danger" data-index="{{index}}" data-key="HR" bindtap="incPitchStat">被本垒 HR</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="card-title">对手统计</view>
+    <view class="opponent-line">AB {{opponentBatting.AB}} · R {{opponentBatting.R}} · H {{opponentBatting.H}} · BB {{opponentBatting.BB}} · SO {{opponentBatting.SO}} · E {{opponentBatting.E}}</view>
+    <view class="stat-actions">
+      <button class="stat-btn" data-key="_1B" bindtap="incOpponentStat">安打 1B</button>
+      <button class="stat-btn" data-key="_2B" bindtap="incOpponentStat">二垒打</button>
+      <button class="stat-btn" data-key="_3B" bindtap="incOpponentStat">三垒打</button>
+      <button class="stat-btn gold" data-key="HR" bindtap="incOpponentStat">本垒打 HR</button>
+      <button class="stat-btn" data-key="RBI" bindtap="incOpponentStat">手动打点 RBI</button>
+      <button class="stat-btn" data-key="R" bindtap="incOpponentStat">得分 R</button>
+      <button class="stat-btn" data-key="BB" bindtap="incOpponentStat">四坏 BB</button>
+      <button class="stat-btn danger" data-key="SO" bindtap="incOpponentStat">三振 SO</button>
+      <button class="stat-btn" data-key="OUT" bindtap="incOpponentStat">出局</button>
+      <button class="stat-btn danger" data-key="E" bindtap="incOpponentStat">失误 E</button>
+    </view>
+  </view>
+
+  <view class="section card panel">
+    <view class="card-title">本队数据确认</view>
+    <scroll-view scroll-x class="wide-scroll">
+      <view class="bat-table">
+        <view class="bat-row header">
+          <text class="bat-name">球员</text>
+          <text>AB</text><text>H</text><text>R</text><text>RBI</text><text>BB</text><text>SO</text><text>E</text>
+        </view>
+        <view wx:for="{{batting}}" wx:key="playerId" class="bat-row {{currentIndex == index ? 'active' : ''}}" bindtap="selectBatterRow" data-index="{{index}}">
+          <text class="bat-name">{{item.order}}. {{item.name}}</text>
+          <text>{{item.AB}}</text><text>{{item.H}}</text><text>{{item.R}}</text><text>{{item.RBI}}</text><text>{{item.BB}}</text><text>{{item.SO}}</text><text>{{item.E || 0}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="section card panel">
+    <view class="row between">
+      <view class="card-title">事件日志</view>
+      <view class="pill">{{playLog.length}} 条</view>
+    </view>
+    <view wx:for="{{playLog}}" wx:key="id" class="log-row">
+      <view class="log-main">
+        <view class="log-title">{{item.label}}</view>
+        <view class="subtle">{{item.inningLabel}} · {{item.offenseName}} · {{item.outs}} 出 · {{item.bases}}</view>
+      </view>
+      <view class="log-score">{{item.score}}</view>
+    </view>
+    <view wx:if="{{!playLog.length}}" class="empty">暂无事件，记录得分、打席或对手统计后会自动生成。</view>
+  </view>
+
+  <view class="section card panel stack">
+    <view class="card-title">赛后确认</view>
+    <view>
+      <view class="label">本场 MVP</view>
+      <picker mode="selector" range="{{mvpOptions}}" range-key="name" value="{{mvpIndex}}" bindchange="onMvpChange">
+        <view class="picker-like">{{mvpOptions[mvpIndex].name}}</view>
+      </picker>
+    </view>
+    <view>
+      <view class="label">MVP 理由</view>
+      <textarea class="textarea" placeholder="例如：关键安打、完投、守备亮点" value="{{mvpNote}}" bindinput="onMvpNoteInput" />
+    </view>
+    <view>
+      <view class="label">比赛备注</view>
+      <textarea class="textarea" placeholder="记录伤退、换人、特殊规则、赛后补充" value="{{gameNote}}" bindinput="onGameNoteInput" />
+    </view>
+  </view>
+
+  <button class="btn btn-primary save" loading="{{saving}}" disabled="{{saving}}" bindtap="saveGame">保存到比赛库</button>
+</view>

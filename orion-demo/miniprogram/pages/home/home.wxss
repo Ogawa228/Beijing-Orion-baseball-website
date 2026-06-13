@@ -1,0 +1,174 @@
+.home-page {
+  padding-top: 20rpx;
+}
+
+.hero {
+  position: relative;
+  height: 280rpx;
+  overflow: hidden;
+}
+
+.hero-bg,
+.hero-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-shade {
+  background: linear-gradient(180deg, rgba(5, 11, 24, .12), rgba(5, 11, 24, .86));
+}
+
+.hero-content {
+  position: absolute;
+  left: 26rpx;
+  right: 26rpx;
+  bottom: 26rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.logo {
+  width: 92rpx;
+  height: 92rpx;
+  border: 2rpx solid rgba(228, 199, 122, .65);
+  border-radius: 50%;
+}
+
+.hero-title {
+  margin: 6rpx 0 0;
+  color: #f6f8ff;
+  font-size: 44rpx;
+  font-weight: 800;
+}
+
+.hero-chip {
+  flex: 0 0 auto;
+  max-width: 200rpx;
+  min-height: 60rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 22rpx;
+  border: 1rpx solid rgba(255, 255, 255, .22);
+  border-radius: 999rpx;
+  color: #e8eefa;
+  background: rgba(10, 22, 40, .66);
+  font-size: 24rpx;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-chip-login {
+  border-color: rgba(228, 199, 122, .6);
+  color: #081120;
+  background: #e4c77a;
+}
+
+.home-page .section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 20rpx;
+  width: 100%;
+}
+
+.section-title-block {
+  min-width: 0;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  width: auto;
+  min-width: 72rpx;
+  min-height: 52rpx;
+  padding: 0 4rpx;
+  color: #8fb0ff;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.link-hover {
+  color: #e4c77a;
+}
+
+.card-title {
+  display: block;
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.event-card {
+  min-height: 150rpx;
+}
+
+.leader-row,
+.game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 84rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, .08);
+}
+
+.touch-row-hover {
+  background: rgba(143, 176, 255, .08);
+}
+
+.leader-row:last-child,
+.game-row:last-child {
+  border-bottom: 0;
+}
+
+.leader-rank {
+  width: 56rpx;
+  color: #c9a961;
+  font-weight: 800;
+}
+
+.leader-name {
+  flex: 1;
+  color: #e8eefa;
+  font-size: 28rpx;
+}
+
+.leader-score,
+.score {
+  color: #e4c77a;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+/* 页脚低频入口:球员阵容 / 名人堂 / 精彩时刻 */
+.quick-links {
+  display: flex;
+  justify-content: space-around;
+  gap: 8rpx;
+}
+
+.quick-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 14rpx;
+  color: #9bbcff;
+  font-size: 26rpx;
+  font-weight: 700;
+}

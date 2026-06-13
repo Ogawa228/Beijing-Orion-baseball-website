@@ -1,0 +1,377 @@
+.scoreboard {
+  text-align: center;
+}
+
+.game-cover-hero {
+  width: 100%;
+  height: 260rpx;
+  margin-bottom: 18rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .06);
+}
+
+.matchup {
+  margin-top: 12rpx;
+  color: #f6f8ff;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.big-score {
+  margin: 18rpx 0;
+  color: #e4c77a;
+  font-size: 72rpx;
+  font-weight: 900;
+}
+
+.mvp-line {
+  margin-top: 18rpx;
+  color: #f6f8ff;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.mvp-line.linked-row,
+.review-line.linked-row {
+  color: #e4c77a;
+}
+
+.score-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.detail-action-btn {
+  width: auto;
+  min-width: 230rpx;
+  min-height: 66rpx;
+  margin: 0;
+  font-size: 24rpx;
+}
+
+.origin-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10rpx 16rpx;
+  margin-top: 18rpx;
+  padding: 16rpx 18rpx;
+  border: 1rpx solid rgba(228, 199, 122, .26);
+  border-radius: 8rpx;
+  background: rgba(228, 199, 122, .08);
+  color: #f6f8ff;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.origin-meta {
+  color: #9fb0cf;
+  font-weight: 700;
+}
+
+.origin-arrow {
+  color: #9bbcff;
+}
+
+.card-title {
+  margin-bottom: 18rpx;
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 760;
+}
+
+.line-scroll {
+  width: 100%;
+}
+
+.line-row,
+.box-row {
+  display: grid;
+  align-items: center;
+  min-height: 66rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, .08);
+  color: #dbe5f8;
+  font-size: 24rpx;
+}
+
+.line-row {
+  display: flex;
+  width: max-content;
+}
+
+.line-row.header,
+.box-row.header {
+  color: #9aa9c4;
+}
+
+.cell {
+  width: 64rpx;
+  text-align: center;
+}
+
+.cell.team {
+  /* 与打击/投手表 190rpx 首列对齐,三张上下排布的 sticky 首列保持同宽 */
+  width: 190rpx;
+  text-align: left;
+}
+
+/* 横向滚动时锁定首列,数字列滑出视口后仍能看清行归属 */
+.cell.team,
+.name-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #0a1527;
+  box-shadow: 8rpx 0 12rpx rgba(5, 11, 24, .35);
+}
+
+.cell.total {
+  color: #e4c77a;
+  font-weight: 800;
+}
+
+.box-table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.box-row {
+  text-align: center;
+}
+
+.box-row.header {
+  font-weight: 800;
+}
+
+.batting-table .box-row {
+  grid-template-columns: 190rpx 72rpx repeat(13, 68rpx);
+}
+
+.pitching-table .box-row {
+  grid-template-columns: 190rpx repeat(10, 74rpx);
+}
+
+.name-cell {
+  color: #f6f8ff;
+  text-align: left;
+  font-weight: 700;
+  padding-right: 12rpx;
+}
+
+.load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.retry-btn {
+  min-width: 220rpx;
+  margin-bottom: 20rpx;
+}
+
+.linked-row .name-cell {
+  color: #e4c77a;
+}
+
+.pitch-name {
+  color: #f6f8ff;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.sort-tools {
+  margin-bottom: 18rpx;
+  padding: 16rpx;
+  border: 1rpx solid rgba(155, 188, 255, .16);
+  border-radius: 8rpx;
+  background: rgba(155, 188, 255, .05);
+}
+
+.sort-hint {
+  color: #9fb0cf;
+  font-size: 22rpx;
+  font-weight: 760;
+}
+
+.sort-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.sort-chip {
+  flex: 0 0 auto;
+  min-width: 104rpx;
+  min-height: 54rpx;
+  margin: 0;
+  padding: 0 18rpx;
+  border: 1rpx solid rgba(255, 255, 255, .14);
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, .05);
+  color: #dbe5f8;
+  font-size: 22rpx;
+  font-weight: 850;
+  line-height: 54rpx;
+}
+
+.sort-chip.active {
+  border-color: rgba(228, 199, 122, .62);
+  background: rgba(228, 199, 122, .16);
+  color: #e4c77a;
+}
+
+.metric-bars {
+  display: grid;
+  gap: 10rpx;
+  margin-top: 16rpx;
+}
+
+.metric-bar-row {
+  display: grid;
+  grid-template-columns: 130rpx minmax(140rpx, 1fr) 72rpx;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 36rpx;
+}
+
+.metric-name,
+.metric-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dbe5f8;
+  font-size: 22rpx;
+  font-weight: 760;
+}
+
+.metric-value {
+  color: #e4c77a;
+  text-align: right;
+}
+
+.metric-track {
+  height: 16rpx;
+  overflow: hidden;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, .08);
+}
+
+.metric-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e4c77a 0%, #9bbcff 100%);
+}
+
+.opponent-bars .metric-fill {
+  background: linear-gradient(90deg, rgba(155, 188, 255, .72) 0%, rgba(246, 248, 255, .9) 100%);
+}
+
+.game-log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 82rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, .08);
+}
+
+.linked-log .log-title {
+  color: #e4c77a;
+}
+
+.log-title {
+  color: #f6f8ff;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.log-link {
+  margin-top: 6rpx;
+  color: #9bbcff;
+  font-size: 22rpx;
+  font-weight: 760;
+}
+
+.log-runners {
+  margin-top: 6rpx;
+  color: #d9bd70;
+  font-size: 22rpx;
+  font-weight: 760;
+}
+
+.runner-link {
+  color: #9bbcff;
+}
+
+.log-score {
+  flex: 0 0 auto;
+  color: #e4c77a;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.review-line {
+  color: #f6f8ff;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.review-note {
+  margin-top: 12rpx;
+  color: #dbe5f8;
+  font-size: 26rpx;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.highlight-card {
+  min-width: 0;
+}
+
+.highlight-image {
+  width: 100%;
+  height: 188rpx;
+  border: 1rpx solid rgba(228, 199, 122, .2);
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .06);
+}
+
+.highlight-title {
+  margin-top: 10rpx;
+  color: #f6f8ff;
+  font-size: 25rpx;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-link {
+  width: 100%;
+  min-height: 54rpx;
+  margin-top: 10rpx;
+  padding: 0;
+  border: 1rpx solid rgba(155, 188, 255, .25);
+  border-radius: 999rpx;
+  color: #9bbcff;
+  font-size: 22rpx;
+  font-weight: 850;
+  background: rgba(155, 188, 255, .08);
+}
+
+.highlight-more {
+  margin-top: 18rpx;
+}

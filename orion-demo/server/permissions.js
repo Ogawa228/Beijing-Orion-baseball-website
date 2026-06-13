@@ -11,6 +11,7 @@ const OPS_PERMISSIONS = [
   'highlights:write',
   'players:display_write',
   'uploads:content',
+  'notifications:write',
 ];
 
 const DATA_PERMISSIONS = [

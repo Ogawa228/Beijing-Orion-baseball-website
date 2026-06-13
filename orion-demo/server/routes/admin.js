@@ -30,6 +30,19 @@ const {
 } = require('../people-helpers');
 
 const router = express.Router();
+const MAX_ADMIN_USER_LIMIT = 100;
+
+function parseAdminUserLimit(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), MAX_ADMIN_USER_LIMIT);
+}
+
+function parseAdminUserOffset(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), 10000);
+}
 
 function rowToUser(u) {
   const userLike = {
@@ -59,10 +72,14 @@ function rowToUser(u) {
   };
 }
 
-// 列出所有用户（带绑定 player 信息）
-router.get('/users', requirePermission('users:read'), wrap(async (_req, res) => {
+// 列出用户（带绑定 player 信息）；不传 limit 时保持旧版全量返回兼容
+router.get('/users', requirePermission('users:read'), wrap(async (req, res) => {
   await ensurePermissionsSchema();
   await ensurePeopleTables();
+  const limit = parseAdminUserLimit(req.query.limit);
+  const offset = parseAdminUserOffset(req.query.offset);
+  const pageSql = limit ? ' LIMIT ? OFFSET ?' : '';
+  const pageParams = limit ? [limit + 1, offset] : [];
   const users = await db.q(`
     SELECT
       u.id, u.display_name, u.role, u.admin_level, u.admin_granted_by, u.admin_granted_at,
@@ -76,8 +93,78 @@ router.get('/users', requirePermission('users:read'), wrap(async (_req, res) => 
     LEFT JOIN players p ON p.id = u.bound_player_id
     LEFT JOIN users grantor ON grantor.id = u.admin_granted_by
     ORDER BY u.created_at DESC
-  `);
-  res.json({ users: users.map(rowToUser) });
+    ${pageSql}
+  `, pageParams);
+  const pageUsers = limit ? users.slice(0, limit) : users;
+  res.json({
+    users: pageUsers.map(rowToUser),
+    hasMore: limit ? users.length > limit : false,
+    nextOffset: limit ? offset + pageUsers.length : users.length,
+  });
+}));
+
+// 支持 limit/offset/keyword 分页用户候选;includePlayers=false 时跳过球员候选(小程序用已分页球员池)。
+// 不传 limit 时保持旧版行为(用户上限 200 + 全量正式球员)。
+router.get('/bind-invitation-options', requirePermission('bind_codes:manage'), wrap(async (req, res) => {
+  await ensurePeopleTables();
+  const limit = parseAdminUserLimit(req.query.limit);
+  const offset = parseAdminUserOffset(req.query.offset);
+  const keyword = String(req.query.keyword || req.query.q || '').trim();
+  const includePlayers = !(req.query.includePlayers === 'false' || req.query.includePlayers === '0');
+  const userFilters = [], userParams = [];
+  if (keyword) {
+    const like = `%${keyword}%`;
+    userFilters.push('(u.display_name LIKE ? OR ui.value LIKE ? OR p.name LIKE ?)');
+    userParams.push(like, like, like);
+  }
+  const userWhere = userFilters.length ? `WHERE ${userFilters.join(' AND ')}` : '';
+  const userQueryLimit = limit ? limit + 1 : 200;
+  const users = await db.q(`
+    SELECT
+      u.id, u.display_name, u.bound_player_id, u.created_at,
+      ui.value AS email,
+      p.name AS player_name, p.number AS player_number, p.position AS player_position
+    FROM users u
+    LEFT JOIN user_identities ui ON ui.user_id = u.id AND ui.type = 'email'
+    LEFT JOIN players p ON p.id = u.bound_player_id
+    ${userWhere}
+    ORDER BY u.created_at DESC
+    LIMIT ? OFFSET ?
+  `, userParams.concat([userQueryLimit, limit ? offset : 0]));
+  const pageUsers = limit ? users.slice(0, limit) : users;
+  const players = includePlayers
+    ? await db.q(`
+        SELECT id, name, number, position
+        FROM players
+        WHERE level = 'verified'
+        ORDER BY created_at ASC
+        ${limit ? 'LIMIT 200' : ''}
+      `)
+    : [];
+  const payload = {
+    users: pageUsers.map(u => ({
+      id: u.id,
+      displayName: u.display_name || u.email || u.id,
+      email: u.email || '',
+      boundPlayerId: u.bound_player_id || '',
+      boundPlayerName: u.player_name || '',
+      boundPlayerNumber: u.player_number || '',
+      boundPlayerPosition: u.player_position || '',
+      createdAt: u.created_at,
+    })),
+    players: players.map(p => ({
+      id: p.id,
+      name: p.name,
+      number: p.number,
+      position: p.position,
+      level: 'verified',
+    })),
+  };
+  if (limit) {
+    payload.usersHasMore = users.length > limit;
+    payload.usersNextOffset = offset + pageUsers.length;
+  }
+  res.json(payload);
 }));
 
 router.patch('/users/:id/admin-level', requirePermission('users:grant_admin'), wrap(async (req, res) => {
@@ -367,16 +454,42 @@ router.get('/audit-logs', wrap(async (req, res, next) => {
 }), wrap(async (req, res) => {
   await ensurePeopleTables();
   const limit = Math.min(Math.max(Number(req.query.limit || 80), 1), 200);
+  const offset = Math.min(Math.max(Number(req.query.offset || 0), 0), 5000);
   const gameOnly = !hasPermission(req.user, 'audit:read') && hasPermission(req.user, 'audit:game_read');
+  const filters = [];
+  const params = [];
+  if (gameOnly) {
+    filters.push("l.target_type = 'game'");
+  } else if (req.query.targetType) {
+    filters.push('l.target_type = ?');
+    params.push(String(req.query.targetType).slice(0, 40));
+  }
+  if (req.query.action) {
+    filters.push('l.action = ?');
+    params.push(String(req.query.action).slice(0, 60));
+  }
+  if (req.query.q) {
+    const keyword = `%${String(req.query.q).trim().slice(0, 80)}%`;
+    filters.push('(l.summary LIKE ? OR l.action LIKE ? OR l.target_id LIKE ? OR u.display_name LIKE ?)');
+    params.push(keyword, keyword, keyword, keyword);
+  }
+  const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
   const rows = await db.q(`
     SELECT l.*, u.display_name AS actor_name
     FROM admin_audit_logs l
     LEFT JOIN users u ON u.id = l.actor_user_id
-    ${gameOnly ? "WHERE l.target_type = 'game'" : ''}
+    ${where}
     ORDER BY l.created_at DESC
-    LIMIT ${limit}
-  `);
-  res.json({ logs: rows.map(rowToAuditLog) });
+    LIMIT ${limit + 1}
+    OFFSET ${offset}
+  `, params);
+  const hasMore = rows.length > limit;
+  res.json({
+    logs: rows.slice(0, limit).map(rowToAuditLog),
+    hasMore,
+    nextOffset: offset + Math.min(rows.length, limit),
+    scope: gameOnly ? 'game' : 'all',
+  });
 }));
 
 // 重置某用户密码 — admin 设置新密码，回头通过 IM/邮箱 告诉用户

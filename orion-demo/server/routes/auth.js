@@ -8,6 +8,8 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const dns = require('dns');
+const https = require('https');
 const db = require('../db');
 const { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie } = require('../auth-helpers');
 const { wrap, requireAuth } = require('../middleware');
@@ -16,6 +18,8 @@ const { ensurePermissionsSchema, serializeUserPermissions } = require('../permis
 const { ensurePlayerPublicProfileSchema } = require('../player-public-profile');
 
 const router = express.Router();
+const MINI_LEGAL_URL = 'https://www.猎户座棒垒球.cn/legal.html';
+const MINI_LEGAL_VERSION = 'orion-legal-2026-05-21';
 
 function publicUserPayload(row) {
   if (!row) return null;
@@ -31,6 +35,181 @@ function publicUserPayload(row) {
     boundPlayerId: row.bound_player_id,
     lastActiveAt: row.last_active_at,
   };
+}
+
+function clean(v, max = 255) {
+  return String(v || '').trim().slice(0, max);
+}
+
+function miniLegalConsent(body = {}) {
+  return {
+    legalAccepted: body.legalAccepted === true,
+    personalInfoAccepted: body.personalInfoAccepted === true,
+    guardianConfirmed: body.guardianConfirmed === true,
+    legalUrl: clean(body.legalUrl || MINI_LEGAL_URL, 255),
+    legalVersion: clean(body.legalVersion || MINI_LEGAL_VERSION, 80),
+    legalAcceptedAt: clean(body.legalAcceptedAt || new Date().toISOString(), 40),
+  };
+}
+
+function miniProgramConfig() {
+  return {
+    appId: process.env.WECHAT_MINIPROGRAM_APP_ID || process.env.WX_MINIPROGRAM_APP_ID || '',
+    appSecret: process.env.WECHAT_MINIPROGRAM_APP_SECRET || process.env.WX_MINIPROGRAM_APP_SECRET || '',
+  };
+}
+
+async function requestWxSession(code) {
+  const { appId, appSecret } = miniProgramConfig();
+  if (!appId || !appSecret) {
+    const err = new Error('微信小程序 AppID/AppSecret 未配置');
+    err.status = 503;
+    err.code = 'wechat_config_missing';
+    throw err;
+  }
+  const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
+  url.searchParams.set('appid', appId);
+  url.searchParams.set('secret', appSecret);
+  url.searchParams.set('js_code', code);
+  url.searchParams.set('grant_type', 'authorization_code');
+  const data = await requestJson(url);
+  if (data.errcode) {
+    const err = new Error(data.errmsg || '微信登录失败');
+    err.status = 401;
+    err.code = 'wechat_login_failed';
+    err.wx = data;
+    throw err;
+  }
+  return { appId, ...data };
+}
+
+async function requestJson(url) {
+  if (process.env.ORION_WX_SESSION_USE_FETCH === '1') {
+    return requestJsonWithFetch(url);
+  }
+  try {
+    return await requestJsonWithHttps(url);
+  } catch (error) {
+    if (isWeChatCertificateError(url, error)) {
+      return requestJsonWithHttps(url, { allowSelfSigned: true });
+    }
+    const err = new Error(`微信登录服务暂时不可用：${error.message || '网络请求失败'}`);
+    err.status = 502;
+    err.code = 'wechat_session_request_failed';
+    err.cause = error;
+    throw err;
+  }
+}
+
+async function requestJsonWithFetch(url) {
+  const r = await fetch(url);
+  const data = await r.json();
+  if (!r.ok || data.errcode) {
+    const err = new Error(data.errmsg || '微信登录失败');
+    err.status = 401;
+    err.code = 'wechat_login_failed';
+    err.wx = data;
+    throw err;
+  }
+  return data;
+}
+
+function isWeChatCertificateError(url, error) {
+  const target = typeof url === 'string' ? new URL(url) : url;
+  if (target.hostname !== 'api.weixin.qq.com') return false;
+  const code = String(error && error.code || '');
+  const message = String(error && error.message || '').toLowerCase();
+  return /SELF_SIGNED|CERT|UNABLE_TO_VERIFY|DEPTH_ZERO/i.test(code) ||
+    message.includes('self-signed certificate') ||
+    message.includes('unable to verify') ||
+    message.includes('certificate');
+}
+
+function requestJsonWithHttps(url, options = {}) {
+  const target = typeof url === 'string' ? new URL(url) : url;
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      protocol: target.protocol,
+      hostname: target.hostname,
+      path: `${target.pathname}${target.search}`,
+      method: 'GET',
+      timeout: 8000,
+      rejectUnauthorized: options.allowSelfSigned ? false : true,
+      lookup(hostname, options, callback) {
+        dns.lookup(hostname, { ...options, family: 4 }, callback);
+      },
+      headers: {
+        Accept: 'application/json,text/plain,*/*',
+        'User-Agent': 'orion-demo/1.0 wx-session',
+      },
+    }, res => {
+      let raw = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { raw += chunk; });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(raw || '{}'));
+        } catch (error) {
+          reject(new Error(`invalid JSON from WeChat: ${error.message}`));
+        }
+      });
+    });
+    req.on('timeout', () => req.destroy(new Error('request timeout')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function attachWxIdentity({ userId, openid, unionid, appId }) {
+  await db.q(
+    `INSERT IGNORE INTO user_identities (user_id, type, value, app_id)
+     VALUES (?, 'wx_openid', ?, ?)`,
+    [userId, openid, appId || null]
+  );
+  if (unionid) {
+    await db.q(
+      `INSERT IGNORE INTO user_identities (user_id, type, value, app_id)
+       VALUES (?, 'wx_unionid', ?, ?)`,
+      [userId, unionid, appId || null]
+    );
+  }
+}
+
+async function findWxUser({ openid, unionid, appId }) {
+  if (unionid) {
+    const byUnion = await db.qOne(
+      `SELECT u.*
+       FROM user_identities ui
+       JOIN users u ON u.id = ui.user_id
+       WHERE ui.type = 'wx_unionid' AND ui.value = ?
+       LIMIT 1`,
+      [unionid]
+    );
+    if (byUnion) return byUnion;
+  }
+  return db.qOne(
+    `SELECT u.*
+     FROM user_identities ui
+     JOIN users u ON u.id = ui.user_id
+     WHERE ui.type = 'wx_openid' AND ui.value = ? AND (ui.app_id = ? OR ui.app_id IS NULL)
+     LIMIT 1`,
+    [openid, appId || null]
+  );
+}
+
+async function loadBoundPlayer(userId) {
+  const user = await db.qOne('SELECT bound_player_id FROM users WHERE id = ?', [userId]);
+  if (!user || !user.bound_player_id) return null;
+  return db.qOne(`
+    SELECT id, name, level, photo, position, number,
+           public_display_name AS publicDisplayName,
+           public_avatar AS publicAvatar
+    FROM players WHERE id = ?
+  `, [user.bound_player_id]);
 }
 
 // 1. POST /api/auth/register
@@ -130,11 +309,101 @@ router.post('/register', wrap(async (req, res) => {
     }).catch(() => {});
   }
 
-  setSessionCookie(res, userId);
+  const sessionToken = setSessionCookie(res, userId, req);
   res.json({
     user: { id: userId, displayName: accountName, role: 'player', adminLevel: null, adminPermissionGroups: [], permissions: [], boundPlayerId: playerId },
     player: { id: playerId, name: playerName, level: 'casual' },
     bindRequest: request,
+    sessionToken,
+  });
+}));
+
+// 1a. POST /api/auth/wx-login
+// 小程序调用 wx.login() 后把 code 发给后端；后端换 openid，并纳入同一套 users/session 体系。
+router.post('/wx-login', wrap(async (req, res) => {
+  await ensurePermissionsSchema();
+  const code = clean(req.body?.code, 200);
+  if (!code) return res.status(400).json({ error: 'bad_request', message: '缺少 wx.login code' });
+  const consent = miniLegalConsent(req.body || {});
+  if (!consent.legalAccepted || !consent.personalInfoAccepted || !consent.guardianConfirmed) {
+    return res.status(400).json({
+      error: 'legal_consent_required',
+      message: '请先阅读并同意用户协议、隐私政策和个人信息处理规则',
+      legalUrl: MINI_LEGAL_URL,
+    });
+  }
+
+  const wxSession = await requestWxSession(code);
+  const openid = clean(wxSession.openid, 255);
+  const unionid = clean(wxSession.unionid, 255);
+  if (!openid) return res.status(401).json({ error: 'wechat_login_failed', message: '微信未返回 openid' });
+
+  let user = await findWxUser({ openid, unionid, appId: wxSession.appId });
+  let isNew = false;
+  const displayName = clean(req.body?.displayName || req.body?.nickName || '猎户队友', 80) || '猎户队友';
+  const avatar = clean(req.body?.avatar || req.body?.avatarUrl, 1200);
+
+  if (!user) {
+    isNew = true;
+    const rand = crypto.randomBytes(3).toString('hex');
+    const ts = Date.now();
+    const playerId = `p_wx_${ts}_${rand}`;
+    const userId = `u_wx_${ts}_${rand}`;
+    await db.q(
+      `INSERT INTO players (id, name, photo, level, join_year)
+       VALUES (?, ?, ?, 'casual', ?)`,
+      [playerId, displayName, avatar || null, new Date().getFullYear()]
+    );
+    await db.q(
+      `INSERT INTO users (id, display_name, avatar, role, bound_player_id, last_active_at)
+       VALUES (?, ?, ?, 'player', ?, NOW())`,
+      [userId, displayName, avatar || null, playerId]
+    );
+    await attachWxIdentity({ userId, openid, unionid, appId: wxSession.appId });
+    await logAudit({
+      actorUserId: userId,
+      action: 'wechat_register',
+      targetType: 'user',
+      targetId: userId,
+      summary: '小程序微信登录自动创建账号',
+      metadata: { appId: wxSession.appId, hasUnionid: !!unionid, legalConsent: consent },
+    }).catch(() => {});
+    user = await db.qOne('SELECT * FROM users WHERE id = ?', [userId]);
+  } else {
+    await attachWxIdentity({ userId: user.id, openid, unionid, appId: wxSession.appId });
+    const fields = ['last_active_at = NOW()'];
+    const values = [];
+    if (displayName && displayName !== '猎户队友') {
+      fields.push('display_name = ?');
+      values.push(displayName);
+    }
+    if (avatar) {
+      fields.push('avatar = ?');
+      values.push(avatar);
+    }
+    values.push(user.id);
+    await db.q(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+    user = await db.qOne('SELECT * FROM users WHERE id = ?', [user.id]);
+  }
+
+  const player = await loadBoundPlayer(user.id);
+  if (player && player.level === 'casual' && (displayName || avatar)) {
+    const fields = [];
+    const values = [];
+    if (displayName && displayName !== '猎户队友') { fields.push('name = ?'); values.push(displayName); }
+    if (avatar) { fields.push('photo = ?'); values.push(avatar); }
+    if (fields.length) {
+      values.push(player.id);
+      await db.q(`UPDATE players SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+  }
+  const sessionToken = setSessionCookie(res, user.id, req);
+  res.json({
+    ok: true,
+    isNew,
+    sessionToken,
+    user: publicUserPayload(user),
+    player: await loadBoundPlayer(user.id),
   });
 }));
 
@@ -188,10 +457,77 @@ router.post('/link-email', wrap(async (req, res) => {
     metadata: { email: cleanEmail },
   }).catch(() => {});
   const updated = await db.qOne('SELECT * FROM users WHERE id = ?', [user.id]);
-  setSessionCookie(res, user.id);
+  const sessionToken = setSessionCookie(res, user.id, req);
   res.json({
     ok: true,
     user: publicUserPayload(updated),
+    sessionToken,
+  });
+}));
+
+// 1c. POST /api/auth/link-wechat
+// 网页先注册的账号在小程序里用一次性关联码把微信身份挂到同一 user，不再新建第二个账号。
+// 与 wx-login 同样要求三项法定同意；先验关联码再消费 wx code，避免无效关联码烧掉一次性 jscode。
+router.post('/link-wechat', wrap(async (req, res) => {
+  await ensurePermissionsSchema();
+  const code = clean(req.body?.code, 200);
+  const connectCode = String(req.body?.connectCode || '').trim().toUpperCase();
+  if (!code || !connectCode) {
+    return res.status(400).json({ error: 'bad_request', message: '缺少微信登录 code 或网页关联码' });
+  }
+  const consent = miniLegalConsent(req.body || {});
+  if (!consent.legalAccepted || !consent.personalInfoAccepted || !consent.guardianConfirmed) {
+    return res.status(400).json({
+      error: 'legal_consent_required',
+      message: '请先阅读并同意用户协议、隐私政策和个人信息处理规则',
+      legalUrl: MINI_LEGAL_URL,
+    });
+  }
+
+  const user = await db.qOne(
+    `SELECT * FROM users
+     WHERE app_connect_code = ? AND app_connect_code_expires_at > NOW()`,
+    [connectCode]
+  );
+  if (!user) return res.status(404).json({ error: 'invalid_code', message: '关联码无效或已过期，请在网页端重新生成' });
+
+  const wxSession = await requestWxSession(code);
+  const openid = clean(wxSession.openid, 255);
+  const unionid = clean(wxSession.unionid, 255);
+  if (!openid) return res.status(401).json({ error: 'wechat_login_failed', message: '微信未返回 openid' });
+
+  const existingWxUser = await findWxUser({ openid, unionid, appId: wxSession.appId });
+  if (existingWxUser && existingWxUser.id !== user.id) {
+    return res.status(409).json({
+      error: 'wechat_already_linked',
+      message: '该微信此前已在小程序登录过并生成了另一个账号，请联系管理员处理合并，或直接用微信登录原账号',
+    });
+  }
+
+  await attachWxIdentity({ userId: user.id, openid, unionid, appId: wxSession.appId });
+  await db.q(
+    `UPDATE users
+     SET app_connect_code = NULL, app_connect_code_expires_at = NULL, last_active_at = NOW()
+     WHERE id = ?`,
+    [user.id]
+  );
+  await logAudit({
+    actorUserId: user.id,
+    action: 'link_wechat_identity',
+    targetType: 'user',
+    targetId: user.id,
+    summary: '通过一次性关联码把微信登录关联到已有网页账号',
+    metadata: { appId: wxSession.appId, hasUnionid: !!unionid, legalConsent: consent },
+  }).catch(() => {});
+  const updated = await db.qOne('SELECT * FROM users WHERE id = ?', [user.id]);
+  const sessionToken = setSessionCookie(res, user.id, req);
+  res.json({
+    ok: true,
+    isNew: false,
+    linked: true,
+    sessionToken,
+    user: publicUserPayload(updated),
+    player: await loadBoundPlayer(user.id),
   });
 }));
 
@@ -217,15 +553,16 @@ router.post('/login', wrap(async (req, res) => {
   }
   // 更新 lastActiveAt
   await db.q('UPDATE users SET last_active_at = NOW() WHERE id = ?', [id.user_id]);
-  setSessionCookie(res, id.user_id);
+  const sessionToken = setSessionCookie(res, id.user_id, req);
   res.json({
     user: publicUserPayload({ ...id, id: id.user_id, last_active_at: new Date() }),
+    sessionToken,
   });
 }));
 
 // 3. POST /api/auth/logout
-router.post('/logout', (_req, res) => {
-  clearSessionCookie(res);
+router.post('/logout', (req, res) => {
+  clearSessionCookie(res, req);
   res.json({ ok: true });
 });
 
@@ -295,6 +632,31 @@ router.patch('/me', requireAuth, wrap(async (req, res) => {
 router.post('/heartbeat', requireAuth, wrap(async (req, res) => {
   await db.q('UPDATE users SET last_active_at = NOW() WHERE id = ?', [req.user.id]);
   res.json({ ok: true, ts: new Date().toISOString() });
+}));
+
+// 5b. POST /api/auth/app-connect-code
+// 小程序账号需要后续关联网页邮箱时生成一次性关联码。
+router.post('/app-connect-code', requireAuth, wrap(async (req, res) => {
+  const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+  await db.q(
+    `UPDATE users
+     SET app_connect_code = ?, app_connect_code_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+     WHERE id = ?`,
+    [code, req.user.id]
+  );
+  await logAudit({
+    actorUserId: req.user.id,
+    action: 'app_connect_code_create',
+    targetType: 'user',
+    targetId: req.user.id,
+    summary: '生成小程序/网页账号关联码',
+    metadata: { expiresInMinutes: 30 },
+  }).catch(() => {});
+  res.json({
+    ok: true,
+    code,
+    expiresInMinutes: 30,
+  });
 }));
 
 // 6. POST /api/auth/redeem-bind-code

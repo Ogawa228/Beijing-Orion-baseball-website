@@ -1,0 +1,61 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/login/login",
+    "pages/legal/legal",
+    "pages/contact/contact",
+    "pages/events/event-list/event-list",
+    "pages/events/event-detail/event-detail",
+    "pages/events/event-create/event-create",
+    "pages/checkin/checkin",
+    "pages/players/player-list/player-list",
+    "pages/players/player-detail/player-detail",
+    "pages/hall-of-fame/hall-of-fame",
+    "pages/highlights/highlights",
+    "pages/games/game-list/game-list",
+    "pages/tournaments/tournament-detail/tournament-detail",
+    "pages/games/game-detail/game-detail",
+    "pages/games/game-edit/game-edit",
+    "pages/games/game-import/game-import",
+    "pages/score/create/create",
+    "pages/score/live/live",
+    "pages/profile/profile",
+    "pages/bind/bind",
+    "pages/points/points",
+    "pages/notifications/notifications",
+    "pages/admin/admin",
+    "pages/admin/audit/audit"
+  ],
+  "window": {
+    "navigationBarTitleText": "北京猎户座",
+    "navigationBarBackgroundColor": "#050B18",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#050B18",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9aa9c4",
+    "selectedColor": "#e4c77a",
+    "backgroundColor": "#0a1527",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/events/event-list/event-list", "text": "活动中心" },
+      { "pagePath": "pages/home/home", "text": "数据中心" },
+      { "pagePath": "pages/checkin/checkin", "text": "签到" },
+      { "pagePath": "pages/points/points", "text": "积分榜" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "requiredPrivateInfos": [
+    "chooseLocation",
+    "getLocation"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于到场签到和接龙地点选择"
+    }
+  }
+}

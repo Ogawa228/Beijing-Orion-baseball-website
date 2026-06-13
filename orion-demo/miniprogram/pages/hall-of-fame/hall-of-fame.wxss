@@ -1,0 +1,77 @@
+.hero {
+  min-height: 176rpx;
+  background:
+    linear-gradient(135deg, rgba(201, 169, 97, .18), rgba(46, 107, 255, .1)),
+    rgba(10, 22, 40, .82);
+}
+
+.hof-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 184rpx;
+  margin-bottom: 18rpx;
+  overflow: hidden;
+}
+
+.rank-mark {
+  position: absolute;
+  right: 22rpx;
+  bottom: 8rpx;
+  color: rgba(228, 199, 122, .12);
+  font-size: 96rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hof-avatar {
+  flex: 0 0 auto;
+  width: 112rpx;
+  height: 112rpx;
+  border: 2rpx solid rgba(228, 199, 122, .55);
+  border-radius: 50%;
+  background: #0f1e38;
+}
+
+.hof-main {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  flex: 1;
+}
+
+.hof-name {
+  color: #f6f8ff;
+  font-size: 32rpx;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.year-pill {
+  flex: 0 0 auto;
+  min-width: 78rpx;
+  min-height: 42rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  color: #081120;
+  background: #e4c77a;
+  font-size: 22rpx;
+  font-weight: 900;
+  text-align: center;
+}
+
+.reason {
+  margin-top: 12rpx;
+  color: #dbe5f8;
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
+.load-more {
+  min-height: 72rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+}

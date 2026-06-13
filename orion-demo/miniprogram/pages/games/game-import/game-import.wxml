@@ -1,0 +1,96 @@
+<view class="page import-page">
+  <view class="card panel stack">
+    <view>
+      <view class="eyebrow">📄 数据导入</view>
+      <view class="title">比赛数据入库</view>
+      <view class="subtle">选择赛事，再从微信聊天文件里选择 GameChanger PDF 或结构化 Excel。解析后先预览比分和球员统计，确认后写入比赛记录。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!canImport && !loading}}" class="section card panel stack">
+    <view class="card-title">暂无导入权限</view>
+    <view class="subtle">需要数据组的比赛草稿和比赛入库权限。</view>
+  </view>
+
+  <view wx:if="{{canImport}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">🏆 第一步</view>
+      <view class="card-title">关联赛事</view>
+    </view>
+    <picker mode="selector" range="{{tournamentOptions}}" range-key="label" value="{{tournamentIndex}}" bindchange="onTournamentChange">
+      <view class="picker-like">{{tournamentLabel}}</view>
+    </picker>
+    <button wx:if="{{tournamentHasMore}}" class="btn btn-ghost tournament-more" loading="{{loadingMoreTournaments}}" bindtap="loadMoreTournaments">加载更多赛事候选</button>
+  </view>
+
+  <view wx:if="{{canImport}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">📎 第二步</view>
+      <view class="card-title">选择 PDF / Excel</view>
+      <view class="subtle">可一次选择多份聊天 PDF 或 Excel，逐份解析入库。PDF 文件名需要是“客队_vs_主队_Mon_DD_YYYY.pdf”，Excel 支持结构化核验表和单表汇总。</view>
+    </view>
+    <button class="btn btn-ghost" bindtap="chooseGameFiles">选择聊天文件</button>
+    <view wx:if="{{fileQueueText}}" class="subtle">{{fileQueueText}}</view>
+    <view wx:if="{{files.length > 1}}" class="queue-list">
+      <view wx:for="{{files}}" wx:key="id" class="queue-row {{selectedFileId == item.id ? 'active' : ''}} {{item.statusClass}}" bindtap="selectFile" data-id="{{item.id}}">
+        <view class="queue-main">
+          <view class="queue-name">{{index + 1}}. {{item.name}}</view>
+          <view class="subtle">{{item.sizeText || '文件大小未知'}}</view>
+        </view>
+        <view class="queue-status">{{item.statusText}}</view>
+      </view>
+    </view>
+    <view wx:if="{{fileName}}" class="file-box">
+      <view class="file-name">{{fileName}}</view>
+      <view class="subtle">{{fileSizeText}}</view>
+    </view>
+    <view wx:if="{{fileName}}" class="cover-box">
+      <image wx:if="{{coverUrl}}" class="cover-preview" mode="aspectFill" src="{{coverUrl}}" />
+      <view class="cover-info">
+        <view class="cover-title">比赛封面图</view>
+        <view class="subtle">{{coverFileName || '可选，上传后会作为比赛详情封面'}}</view>
+        <view wx:if="{{coverUploadText}}" class="cover-status">{{coverUploadText}}</view>
+      </view>
+      <button class="btn btn-ghost cover-btn" loading="{{uploadingCover}}" bindtap="chooseCoverImage">{{coverUrl ? '更换封面' : '上传封面'}}</button>
+    </view>
+    <button class="btn btn-primary" loading="{{parsing}}" bindtap="parseSelectedFile">解析文件</button>
+  </view>
+
+  <view wx:if="{{draft}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">✅ 第三步</view>
+      <view class="card-title">解析预览</view>
+    </view>
+    <view class="score-line">
+      <text>{{draft.away}}</text>
+      <text class="score">{{draft.awayScore}} : {{draft.homeScore}}</text>
+      <text>{{draft.home}}</text>
+    </view>
+    <view class="summary-grid">
+      <view wx:for="{{summaryRows}}" wx:key="label" class="summary-cell">
+        <view class="subtle">{{item.label}}</view>
+        <view class="summary-value">{{item.value}}</view>
+      </view>
+    </view>
+    <view wx:if="{{warnings.length}}" class="warning-box">
+      <view class="warning-title">需要复核</view>
+      <view wx:for="{{warnings}}" wx:key="*this" class="warning-item">{{item}}</view>
+    </view>
+    <view class="preview-block">
+      <view class="preview-title">本队打击</view>
+      <view wx:for="{{battingPreview}}" wx:key="name" class="preview-row">
+        <text>{{item.name}}</text>
+        <text>{{item.line}}</text>
+      </view>
+    </view>
+    <view class="preview-block">
+      <view class="preview-title">投手数据</view>
+      <view wx:for="{{pitchingPreview}}" wx:key="name" class="preview-row">
+        <text>{{item.name}}</text>
+        <text>{{item.line}}</text>
+      </view>
+      <view wx:if="{{!pitchingPreview.length}}" class="subtle">暂无投手数据</view>
+    </view>
+    <button class="btn btn-primary" loading="{{saving}}" bindtap="confirmImport">确认入库</button>
+  </view>
+</view>

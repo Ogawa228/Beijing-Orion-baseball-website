@@ -23,18 +23,19 @@ const RULES = {
   hallOfFame:         200,
 };
 
-// 一次性把数据库的 players + games + tournaments + attendances + adjustments + hof 全拉出来
+// 一次性把数据库的 players + games + tournaments + events + attendances + adjustments + hof 全拉出来
 // 数据量小（53 球员 / 10 场以内），全表扫不慢
 async function loadAll() {
-  const [players, games, tournaments, attendances, adjustments, hof] = await Promise.all([
+  const [players, games, tournaments, events, attendances, adjustments, hof] = await Promise.all([
     db.q('SELECT * FROM players'),
     db.q('SELECT * FROM games'),
     db.q('SELECT * FROM tournaments'),
+    db.q('SELECT id, title FROM events'),
     db.q('SELECT * FROM attendances'),
     db.q('SELECT * FROM points_adjustments'),
     db.q('SELECT * FROM hall_of_fame'),
   ]);
-  return { players, games, tournaments, attendances, adjustments, hof };
+  return { players, games, tournaments, events, attendances, adjustments, hof };
 }
 
 function getEventTitle(events, refId) {
@@ -42,13 +43,68 @@ function getEventTitle(events, refId) {
   return e?.title || '';
 }
 
+function rowMatchesPlayer(row, player, nameKeys) {
+  if (!row) return false;
+  if (row.playerId && row.playerId === player.id) return true;
+  if (row.player_id && row.player_id === player.id) return true;
+  return nameKeys.has(canonicalNameKey(row.name || row.playerName));
+}
+
+function normalizeSeasonFilter(options) {
+  if (!options) return '';
+  if (typeof options === 'string') return options.trim();
+  return String(options.season || '').trim();
+}
+
+function itemMatchesSeason(item, season) {
+  if (!season) return true;
+  const date = String(item.date || '');
+  const detailSeason = String(item.detail?.season || '');
+  return date.startsWith(season) || detailSeason === season;
+}
+
+function rebuildBreakdownFromTimeline(timeline) {
+  return (timeline || []).reduce((acc, item) => {
+    const delta = Number(item.delta || 0);
+    const detail = item.detail || {};
+    if (item.source === 'game') {
+      const appearance = Number(detail.appearance || 0);
+      const performance = Number(
+        detail.performance !== undefined ? detail.performance : delta - appearance
+      );
+      acc.base += appearance;
+      acc.performance += performance;
+    } else if (item.source === 'training' || item.source === 'event') {
+      acc.base += delta;
+    } else if (item.source === 'award' || item.source === 'hof') {
+      acc.awards += delta;
+    } else if (item.source === 'manual') {
+      acc.manual += delta;
+    }
+    return acc;
+  }, { base: 0, performance: 0, awards: 0, manual: 0 });
+}
+
+function applySeasonFilter(result, season) {
+  if (!season) return result;
+  const timeline = (result.timeline || []).filter(item => itemMatchesSeason(item, season));
+  const breakdown = rebuildBreakdownFromTimeline(timeline);
+  return {
+    total: breakdown.base + breakdown.performance + breakdown.awards + breakdown.manual,
+    breakdown,
+    timeline,
+  };
+}
+
 // 计算单球员积分：返回 { total, breakdown, timeline }
-function computePlayerPoints(playerId, all) {
+function computePlayerPoints(playerId, all, options = {}) {
+  const season = normalizeSeasonFilter(options);
   const player = all.players.find(p => p.id === playerId);
   if (!player) return { total: 0, breakdown:{base:0,performance:0,awards:0,manual:0}, timeline: [] };
   const R = RULES;
   const nameKeys = playerNameKeys(player);
   const tournamentMap = new Map((all.tournaments || []).map(t => [t.id, t]));
+  const eventMap = new Map((all.events || []).map(e => [e.id, e]));
   const timeline = [];
   let base = 0, performance = 0, awards = 0, manual = 0;
 
@@ -59,8 +115,8 @@ function computePlayerPoints(playerId, all) {
     const isLeagueOrCup = (tType === 'league' || tType === 'cup');
     const battingArr  = g.batting  || [];
     const pitchingArr = g.pitching || [];
-    const battingLine  = battingArr.find (b => nameKeys.has(canonicalNameKey(b.name)));
-    const pitchingLine = pitchingArr.find(p => nameKeys.has(canonicalNameKey(p.name)));
+    const battingLine  = battingArr.find(b => rowMatchesPlayer(b, player, nameKeys));
+    const pitchingLine = pitchingArr.find(p => rowMatchesPlayer(p, player, nameKeys));
     if (!battingLine && !pitchingLine) continue;
 
     const apperancePts = isLeagueOrCup ? R.leagueOrCup : R.friendlyOrTraining;
@@ -69,7 +125,10 @@ function computePlayerPoints(playerId, all) {
     const perfPieces = [];
 
     let mvpBonus = 0;
-    if (g.mvp_player_name && nameKeys.has(canonicalNameKey(g.mvp_player_name))) {
+    if (
+      (g.mvp_player_id && g.mvp_player_id === player.id) ||
+      (!g.mvp_player_id && g.mvp_player_name && nameKeys.has(canonicalNameKey(g.mvp_player_name)))
+    ) {
       mvpBonus = R.mvp; perfPieces.push(`MVP +${R.mvp}`);
     }
 
@@ -107,12 +166,21 @@ function computePlayerPoints(playerId, all) {
     performance += perfTotal;
     const gameDelta = apperancePts + perfTotal;
     const t = tournamentMap.get(g.tournament_id);
+    const gameDate = g.date ? new Date(g.date).toISOString().slice(0,10) : null;
     timeline.push({
-      date: g.date ? new Date(g.date).toISOString().slice(0,10) : null,
+      date: gameDate,
       source: 'game', refId: g.id,
       label: `${isLeagueOrCup ? '🏆' : '⚾'} vs ${oppName||'对手'} · ${isLeagueOrCup ? '联赛·杯赛' : '友谊·训练赛'}`,
       delta: gameDelta,
-      detail: { appearance: apperancePts, performance: perfTotal, pieces: perfPieces, tournamentName: t?.short_name || t?.name || '' }
+      detail: {
+        appearance: apperancePts,
+        performance: perfTotal,
+        pieces: perfPieces,
+        tournamentName: t?.short_name || t?.name || '',
+        tournamentId: t?.id || g.tournament_id || null,
+        gameId: g.id,
+        season: t?.season || (gameDate ? gameDate.slice(0,4) : ''),
+      }
     });
   }
 
@@ -121,11 +189,15 @@ function computePlayerPoints(playerId, all) {
     if (a.player_id !== playerId) continue;
     const delta = (a.kind === 'training') ? R.training : R.event;
     base += delta;
+    const event = a.ref_id ? eventMap.get(a.ref_id) : null;
+    const eventTitle = event?.title || getEventTitle(all.events, a.ref_id);
     let label = a.kind === 'training' ? '🏋 训练签到' : `🎉 活动出席`;
+    if (eventTitle) label += ` · ${eventTitle}`;
+    const attendDate = a.date ? new Date(a.date).toISOString().slice(0,10) : null;
     timeline.push({
-      date: a.date ? new Date(a.date).toISOString().slice(0,10) : null,
+      date: attendDate,
       source: a.kind, refId: a.ref_id, label, delta,
-      detail: { note: a.note || '' }
+      detail: { note: a.note || '', eventId: event?.id || a.ref_id || null, eventTitle, season: attendDate ? attendDate.slice(0,4) : '' }
     });
   }
 
@@ -152,7 +224,7 @@ function computePlayerPoints(playerId, all) {
     timeline.push({
       date: hofEntry.inducted_year ? `${hofEntry.inducted_year}-01-01` : '',
       source: 'hof', refId: null, label: `🌟 入选名人堂`, delta: R.hallOfFame,
-      detail: { reason: hofEntry.reason || '', year: hofEntry.inducted_year }
+      detail: { reason: hofEntry.reason || '', year: hofEntry.inducted_year, season: hofEntry.inducted_year ? String(hofEntry.inducted_year) : '' }
     });
   }
 
@@ -165,26 +237,28 @@ function computePlayerPoints(playerId, all) {
       source: 'manual', refId: a.id,
       label: `⚙ 管理员调整${a.reason ? ' · ' + a.reason : ''}`,
       delta: a.delta,
-      detail: { reason: a.reason || '', createdAt: a.created_at }
+      detail: { reason: a.reason || '', createdAt: a.created_at, gameId: a.game_id || null, season: a.created_at ? new Date(a.created_at).toISOString().slice(0,4) : '' }
     });
   }
 
   timeline.sort((a,b) => (b.date||'').localeCompare(a.date||''));
-  return {
+  const result = {
     total: base + performance + awards + manual,
     breakdown: { base, performance, awards, manual },
     timeline,
   };
+  return applySeasonFilter(result, season);
 }
 
 // 排行榜
-async function leaderboard() {
+async function leaderboard(options = {}) {
+  const season = normalizeSeasonFilter(options);
   const all = await loadAll();
   return all.players.map(p => {
-    const pts = computePlayerPoints(p.id, all);
+    const pts = computePlayerPoints(p.id, all, { season });
     const gamesCount = pts.timeline.filter(t => t.source === 'game').length;
     return {
-      player: { id: p.id, name: p.name, number: p.number, position: p.position, photo: p.photo, level: p.level },
+      player: { id: p.id, name: p.name, number: p.number, position: p.position, photo: p.photo, publicDisplayName: p.public_display_name || p.publicDisplayName || '', publicAvatar: p.public_avatar || p.publicAvatar || '', level: p.level },
       total: pts.total,
       breakdown: pts.breakdown,
       gamesCount,
@@ -192,9 +266,9 @@ async function leaderboard() {
   }).filter(r => r.total !== 0 || r.gamesCount > 0).sort((a,b) => b.total - a.total);
 }
 
-async function getPlayerPoints(playerId) {
+async function getPlayerPoints(playerId, options = {}) {
   const all = await loadAll();
-  return computePlayerPoints(playerId, all);
+  return computePlayerPoints(playerId, all, options);
 }
 
 module.exports = { RULES, leaderboard, getPlayerPoints, loadAll, computePlayerPoints };

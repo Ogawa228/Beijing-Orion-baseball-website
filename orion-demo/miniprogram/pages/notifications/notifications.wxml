@@ -1,0 +1,50 @@
+<view class="page">
+  <view class="section-head">
+    <view>
+      <view class="eyebrow">🔔 通知</view>
+      <view class="title">站内通知</view>
+    </view>
+    <button class="link" bindtap="load">刷新</button>
+  </view>
+
+  <view wx:if="{{isSender}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">📣 管理</view>
+      <view class="card-title">发送站内通知</view>
+      <view class="subtle">写入同一套站内信，队员可在个人面板查看。</view>
+    </view>
+    <picker mode="selector" range="{{targetOptions}}" range-key="label" value="{{targetIndex}}" bindchange="onTargetChange">
+      <view class="picker-like">{{targetLabel}}</view>
+    </picker>
+    <picker wx:if="{{targetScope === 'player'}}" mode="selector" range="{{playerOptions}}" range-key="label" value="{{playerIndex}}" bindchange="onPlayerChange">
+      <view class="picker-like">{{playerLabel}}</view>
+    </picker>
+    <button wx:if="{{targetScope === 'player' && playerHasMore}}" class="btn btn-ghost load-more" loading="{{loadingMorePlayers}}" disabled="{{loadingMorePlayers}}" bindtap="loadMorePlayers">加载更多球员</button>
+    <input class="input" maxlength="80" placeholder="通知标题，例如 本周训练提醒" value="{{noticeTitle}}" bindinput="onNoticeTitleInput" />
+    <textarea class="textarea compact" maxlength="800" placeholder="通知内容" value="{{noticeBody}}" bindinput="onNoticeBodyInput" />
+    <button class="btn btn-primary" loading="{{saving}}" bindtap="submitNotice">发送通知</button>
+  </view>
+
+  <view class="notice-summary card panel">
+    <view class="summary-value">{{loading && !notifications.length ? '…' : unreadCount}}</view>
+    <view>
+      <view class="summary-title">未读通知</view>
+      <view class="subtle">点击通知可标记为已读。</view>
+    </view>
+  </view>
+
+  <view wx:for="{{notifications}}" wx:key="id" class="note card panel {{item.readClass}}" bindtap="markRead" data-id="{{item.id}}">
+    <view class="row between">
+      <view class="note-title">{{item.title}}</view>
+      <view class="pill">{{item.statusText}}</view>
+    </view>
+    <view class="subtle">{{item.body}}</view>
+    <view wx:if="{{item.timeText}}" class="note-time">{{item.timeText}}</view>
+  </view>
+  <view wx:if="{{loading && !notifications.length}}" class="card panel skeleton-group">
+    <view class="skeleton-line"></view>
+    <view class="skeleton-line short"></view>
+  </view>
+  <view wx:elif="{{!notifications.length}}" class="card empty">暂无通知</view>
+  <button wx:if="{{notificationsHasMore}}" class="btn btn-ghost" loading="{{loadingMoreNotifications}}" disabled="{{loadingMoreNotifications}}" bindtap="loadMoreNotifications">加载更多通知</button>
+</view>

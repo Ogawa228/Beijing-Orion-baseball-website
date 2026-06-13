@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
 CREATE TABLE IF NOT EXISTS games (
   id VARCHAR(64) PRIMARY KEY,
   tournament_id VARCHAR(64) DEFAULT NULL,
+  event_id VARCHAR(64) DEFAULT NULL,
   sport VARCHAR(20) DEFAULT '',
   season VARCHAR(20) DEFAULT '',
   season_name VARCHAR(80) DEFAULT '',
@@ -107,10 +108,14 @@ CREATE TABLE IF NOT EXISTS games (
   pitching JSON DEFAULT NULL,
   opp_pitching JSON DEFAULT NULL,
   mvp_player_name VARCHAR(80) DEFAULT '',
+  mvp_player_id VARCHAR(64) DEFAULT '',
   mvp_note VARCHAR(255) DEFAULT '',
+  game_log JSON DEFAULT NULL,
+  metadata JSON DEFAULT NULL,
   is_aggregate BOOLEAN DEFAULT FALSE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_tournament (tournament_id),
+  INDEX idx_game_event (event_id),
   INDEX idx_date (date),
   INDEX idx_aggregate (is_aggregate),
   CONSTRAINT fk_game_tournament FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL
@@ -126,9 +131,30 @@ CREATE TABLE IF NOT EXISTS events (
   location VARCHAR(120) DEFAULT '',
   body TEXT DEFAULT NULL,
   images JSON DEFAULT NULL,
+  metadata JSON DEFAULT NULL,
   source_link VARCHAR(255) DEFAULT '',
   created_at DATE DEFAULT NULL,
   INDEX idx_date (date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============== 5b. 活动接龙报名（event_signups）==============
+CREATE TABLE IF NOT EXISTS event_signups (
+  id VARCHAR(64) PRIMARY KEY,
+  event_id VARCHAR(64) NOT NULL,
+  user_id VARCHAR(64) DEFAULT NULL,
+  player_id VARCHAR(64) DEFAULT NULL,
+  manual_name VARCHAR(120) DEFAULT '',
+  status ENUM('going','tentative','cancelled') NOT NULL DEFAULT 'going',
+  note TEXT DEFAULT NULL,
+  source VARCHAR(40) DEFAULT 'mini',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_event_user (event_id, user_id),
+  INDEX idx_event_status (event_id, status),
+  INDEX idx_user_status (user_id, status),
+  CONSTRAINT fk_es_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_es_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_es_player FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============== 6. 名人堂（hall_of_fame）==============
@@ -182,6 +208,7 @@ CREATE TABLE IF NOT EXISTS attendances (
   ref_id VARCHAR(64) DEFAULT NULL,
   date DATE NOT NULL,
   note TEXT DEFAULT NULL,
+  metadata JSON DEFAULT NULL,
   created_by VARCHAR(64) DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_player_kind (player_id, kind),

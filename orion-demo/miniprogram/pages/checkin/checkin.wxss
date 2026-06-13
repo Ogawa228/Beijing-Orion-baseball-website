@@ -1,0 +1,64 @@
+.label {
+  margin-bottom: 10rpx;
+  color: #e8eefa;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.relay-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  height: auto;
+  min-height: 92rpx;
+  padding-top: 14rpx;
+  padding-bottom: 14rpx;
+}
+
+.relay-meta {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+}
+
+.relay-type {
+  flex: 0 0 auto;
+  color: #e4c77a;
+  font-size: 22rpx;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.relay-more {
+  margin-top: 12rpx;
+  min-height: 68rpx;
+}
+
+.result-title {
+  margin: 18rpx 0 8rpx;
+  color: #f6f8ff;
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.point-line {
+  margin-top: 18rpx;
+  color: #e4c77a;
+  font-size: 40rpx;
+  font-weight: 900;
+}
+
+.upgrade-line {
+  margin-top: 14rpx;
+  color: #9af1bd;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.trial-progress {
+  margin-top: 10rpx;
+}
+
+.points-link {
+  margin-top: 18rpx;
+}

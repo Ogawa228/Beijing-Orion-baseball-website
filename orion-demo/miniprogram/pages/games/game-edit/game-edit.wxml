@@ -1,0 +1,119 @@
+<view class="page game-edit-page">
+  <view class="card panel stack">
+    <view>
+      <view class="eyebrow">🛠 比赛</view>
+      <view class="title">比赛数据修订</view>
+      <view class="subtle">保存会写入后台审计；这里只修订已入库比赛，不做 PDF 解析。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!canEditGame && !loading}}" class="section card panel stack">
+    <view class="card-title">暂无修订权限</view>
+    <view class="subtle">只有管理员或数据组可以修订比赛数据。</view>
+  </view>
+
+  <view wx:if="{{canEditGame}}" class="section card panel stack">
+    <view class="card-title">场次信息</view>
+    <picker mode="selector" range="{{tournamentOptions}}" range-key="label" value="{{tournamentIndex}}" bindchange="onTournamentChange">
+      <view class="picker-like">{{tournamentLabel}}</view>
+    </picker>
+    <button wx:if="{{tournamentHasMore}}" class="btn btn-ghost tournament-more" loading="{{loadingMoreTournaments}}" bindtap="loadMoreTournaments">加载更多赛事候选</button>
+    <picker mode="date" value="{{date}}" bindchange="onDateChange">
+      <view class="picker-like">{{date || '选择日期'}}</view>
+    </picker>
+    <view class="cover-edit-box">
+      <image wx:if="{{cover}}" class="cover-edit-preview" mode="aspectFill" src="{{cover}}" />
+      <view class="cover-edit-main">
+        <view class="cover-edit-title">比赛封面图</view>
+        <input class="input cover-input" placeholder="COS 图片地址，可手动粘贴" value="{{cover}}" bindinput="onCoverInput" />
+        <view wx:if="{{coverUploadText}}" class="subtle">{{coverUploadText}}</view>
+      </view>
+      <button class="btn btn-ghost cover-upload-btn" loading="{{uploadingCover}}" bindtap="chooseCoverImage">{{cover ? '更换封面' : '上传封面'}}</button>
+    </view>
+    <input class="input" placeholder="场地 / 主客场，例如 Home / Away / 奥体" value="{{venue}}" bindinput="onVenueInput" />
+    <view class="two-col">
+      <input class="input" placeholder="客队" value="{{away}}" bindinput="onAwayInput" />
+      <input class="input" placeholder="主队" value="{{home}}" bindinput="onHomeInput" />
+    </view>
+    <view class="score-grid">
+      <input class="input" type="number" placeholder="客队得分" value="{{awayScore}}" bindinput="onAwayScoreInput" />
+      <input class="input" type="number" placeholder="主队得分" value="{{homeScore}}" bindinput="onHomeScoreInput" />
+      <input class="input" type="number" placeholder="客队 H" value="{{awayH}}" bindinput="onAwayHInput" />
+      <input class="input" type="number" placeholder="主队 H" value="{{homeH}}" bindinput="onHomeHInput" />
+      <input class="input" type="number" placeholder="客队 E" value="{{awayE}}" bindinput="onAwayEInput" />
+      <input class="input" type="number" placeholder="主队 E" value="{{homeE}}" bindinput="onHomeEInput" />
+    </view>
+  </view>
+
+  <view wx:if="{{canEditGame && currentBatting}}" class="section card panel stack">
+    <view>
+      <view class="card-title">本队打击修订</view>
+      <view class="subtle">选择一名球员，改完先暂存，再保存整场修订。</view>
+    </view>
+    <picker mode="selector" range="{{battingOptions}}" range-key="label" value="{{battingIndex}}" bindchange="onBattingChange">
+      <view class="picker-like">{{battingLabel}}</view>
+    </picker>
+    <view class="two-col">
+      <input class="input" placeholder="姓名" value="{{currentBatting.name}}" data-field="name" bindinput="onBattingFieldInput" />
+      <input class="input" placeholder="守位" value="{{currentBatting.pos}}" data-field="pos" bindinput="onBattingFieldInput" />
+    </view>
+    <view class="stat-grid">
+      <input class="input" type="number" placeholder="AB" value="{{currentBatting.AB}}" data-field="AB" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="R" value="{{currentBatting.R}}" data-field="R" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="H" value="{{currentBatting.H}}" data-field="H" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="1B" value="{{currentBatting._1B}}" data-field="_1B" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="2B" value="{{currentBatting._2B}}" data-field="_2B" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="3B" value="{{currentBatting._3B}}" data-field="_3B" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="HR" value="{{currentBatting.HR}}" data-field="HR" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="RBI" value="{{currentBatting.RBI}}" data-field="RBI" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="BB" value="{{currentBatting.BB}}" data-field="BB" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="SO" value="{{currentBatting.SO}}" data-field="SO" bindinput="onBattingFieldInput" />
+      <input class="input" type="number" placeholder="E" value="{{currentBatting.E}}" data-field="E" bindinput="onBattingFieldInput" />
+    </view>
+    <button class="btn btn-ghost" bindtap="saveCurrentBattingRow">暂存打击行</button>
+  </view>
+
+  <view wx:if="{{canEditGame && currentPitching}}" class="section card panel stack">
+    <view>
+      <view class="card-title">投手数据修订</view>
+      <view class="subtle">IP 保留 1.0 / 2.1 / 3.2 这类棒垒球记法。</view>
+    </view>
+    <picker mode="selector" range="{{pitchingOptions}}" range-key="label" value="{{pitchingIndex}}" bindchange="onPitchingChange">
+      <view class="picker-like">{{pitchingLabel}}</view>
+    </picker>
+    <view class="two-col">
+      <input class="input" placeholder="投手姓名" value="{{currentPitching.name}}" data-field="name" bindinput="onPitchingFieldInput" />
+      <input class="input" placeholder="决胜，例如 W/L/SV" value="{{currentPitching.decision}}" data-field="decision" bindinput="onPitchingFieldInput" />
+    </view>
+    <view class="stat-grid">
+      <input class="input" placeholder="IP" value="{{currentPitching.IP}}" data-field="IP" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="H" value="{{currentPitching.H}}" data-field="H" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="R" value="{{currentPitching.R}}" data-field="R" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="ER" value="{{currentPitching.ER}}" data-field="ER" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="BB" value="{{currentPitching.BB}}" data-field="BB" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="SO" value="{{currentPitching.SO}}" data-field="SO" bindinput="onPitchingFieldInput" />
+      <input class="input" type="number" placeholder="HR" value="{{currentPitching.HR}}" data-field="HR" bindinput="onPitchingFieldInput" />
+    </view>
+    <button class="btn btn-ghost" bindtap="saveCurrentPitchingRow">暂存投手行</button>
+  </view>
+
+  <view wx:if="{{canEditGame}}" class="section card panel stack">
+    <view class="card-title">赛后与审计</view>
+    <picker mode="selector" range="{{mvpOptions}}" range-key="label" value="{{mvpIndex}}" bindchange="onMvpChange">
+      <view class="picker-like">{{mvpLabel}}</view>
+    </picker>
+    <input class="input" placeholder="MVP 球员名，可手动修正" value="{{mvpPlayerName}}" bindinput="onMvpPlayerInput" />
+    <textarea class="textarea compact" placeholder="MVP 备注 / Game Log 修订说明" value="{{mvpNote}}" bindinput="onMvpNoteInput" />
+    <textarea class="textarea compact reason" placeholder="必填：修订原因，例如 GameChanger 姓名漏字、比分录入错误" value="{{revisionReason}}" bindinput="onRevisionReasonInput" />
+    <button class="btn btn-primary" loading="{{saving}}" bindtap="saveGame">保存修订</button>
+  </view>
+
+  <view wx:if="{{canEditGame && canDeleteGame}}" class="section card panel stack danger-zone">
+    <view>
+      <view class="card-title danger-title">危险操作</view>
+      <view class="subtle">删除后比赛列表、详情、球员相关比赛和统计来源都会少这一场；如只是比分或球员数据错误，优先使用上方修订。</view>
+    </view>
+    <input class="input" placeholder="输入“删除比赛”确认" value="{{deleteConfirmText}}" bindinput="onDeleteConfirmInput" />
+    <button class="btn btn-danger" loading="{{saving}}" bindtap="deleteGame">删除比赛</button>
+  </view>
+</view>

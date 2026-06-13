@@ -1,0 +1,247 @@
+.game-list-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18rpx;
+  width: 100%;
+  margin-bottom: 14rpx;
+}
+
+.create-btn {
+  flex: 0 0 auto;
+  width: 124rpx !important;
+  max-width: 124rpx;
+  min-width: 118rpx;
+  min-height: 54rpx;
+  margin-left: auto;
+  padding: 0;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+}
+
+.game-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.import-btn {
+  border-radius: 999rpx;
+  color: #e8eefa;
+}
+
+.game-sport-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 10rpx;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 24rpx;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.game-sport-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: none;
+  height: 48rpx;
+  padding: 0 !important;
+  border: 1rpx solid rgba(255, 255, 255, .12);
+  border-radius: 999rpx;
+  color: #9aa9c4;
+  font-size: 22rpx;
+  font-weight: 760;
+  background: rgba(255, 255, 255, .04);
+  line-height: 48rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.game-sport-all {
+  width: 92rpx !important;
+}
+
+.game-sport-named {
+  width: 126rpx !important;
+}
+
+.game-sport-chip.active {
+  color: #081120;
+  background: #c9a961;
+  font-weight: 800;
+}
+
+.game-sport-chip-hover {
+  background: rgba(143, 176, 255, .12);
+}
+
+.compact-section {
+  margin-top: 18rpx;
+}
+
+.compact-head {
+  margin-bottom: 12rpx;
+}
+
+.tournament-scroll {
+  width: 100%;
+  white-space: nowrap;
+  margin-bottom: 18rpx;
+}
+
+.tournament-track {
+  display: inline-flex;
+  gap: 14rpx;
+  min-width: 100%;
+}
+
+.tournament-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 280rpx;
+  min-height: 148rpx;
+  padding: 18rpx;
+  text-align: left;
+}
+
+.tournament-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  width: 100%;
+  margin-top: auto;
+}
+
+.tournament-card.active {
+  border-color: rgba(228, 199, 122, .72);
+  background: rgba(201, 169, 97, .16);
+}
+
+.tournament-name {
+  width: 100%;
+  color: #f6f8ff;
+  font-size: 27rpx;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournament-meta {
+  display: block;
+  width: 100%;
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournament-count {
+  color: #e4c77a;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.tournament-detail-link {
+  flex: 0 0 auto;
+  color: #9bbcff;
+  font-size: 23rpx;
+  font-weight: 850;
+}
+
+.tournament-load-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46rpx;
+  padding: 0 20rpx;
+  margin: 0 0 18rpx;
+  border: 1rpx solid rgba(155, 188, 255, .24);
+  border-radius: 999rpx;
+  color: #9bbcff;
+  font-size: 22rpx;
+  font-weight: 850;
+  background: rgba(91, 139, 255, .08);
+}
+
+.game-card {
+  margin-bottom: 18rpx;
+}
+
+.game-card-grid {
+  display: grid;
+  grid-template-columns: 148rpx minmax(0, 1fr);
+  align-items: center;
+  gap: 18rpx;
+}
+
+.game-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 148rpx;
+  height: 104rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(228, 199, 122, .18);
+  border-radius: 8rpx;
+  background: rgba(228, 199, 122, .08);
+}
+
+.game-cover.no-cover {
+  background: linear-gradient(135deg, rgba(15, 39, 78, .88), rgba(4, 13, 27, .95));
+}
+
+.game-cover-img {
+  width: 100%;
+  height: 100%;
+}
+
+.game-cover-fallback {
+  color: #e4c77a;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.game-card-main {
+  min-width: 0;
+}
+
+.teams {
+  margin: 16rpx 0 8rpx;
+  color: #f6f8ff;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.score {
+  color: #e4c77a;
+  font-size: 36rpx;
+  font-weight: 900;
+}
+
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72rpx;
+  margin: 8rpx 0 20rpx;
+  border: 1rpx solid rgba(155, 188, 255, .28);
+  border-radius: 999rpx;
+  color: #9bbcff;
+  font-size: 24rpx;
+  font-weight: 850;
+  background: rgba(143, 176, 255, .08);
+}

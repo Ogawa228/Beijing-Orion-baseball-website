@@ -114,6 +114,7 @@ function rowToBindRequest(r) {
     userId: r.user_id,
     userDisplayName: r.user_display_name || '',
     userEmail: r.user_email || '',
+    hasWxIdentity: !!r.has_wx_identity,
     currentPlayerId: r.current_player_id || '',
     currentPlayerName: r.current_player_name || '',
     requestedPlayerId: r.requested_player_id,

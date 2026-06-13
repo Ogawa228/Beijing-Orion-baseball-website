@@ -1,0 +1,41 @@
+.note {
+  margin-bottom: 18rpx;
+}
+
+.notice-summary {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 18rpx;
+}
+
+.summary-value {
+  flex: 0 0 auto;
+  min-width: 86rpx;
+  color: #e4c77a;
+  font-size: 54rpx;
+  font-weight: 900;
+  text-align: center;
+}
+
+.summary-title {
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.note-title {
+  color: #f6f8ff;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.note.read {
+  opacity: .72;
+}
+
+.note-time {
+  margin-top: 12rpx;
+  color: #7f8fa9;
+  font-size: 22rpx;
+}

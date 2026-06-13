@@ -1,0 +1,208 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="card panel skeleton-group">
+    <view class="skeleton-line tall"></view>
+    <view class="skeleton-line"></view>
+    <view class="skeleton-line short"></view>
+  </view>
+  <view wx:elif="{{loadError}}" class="card panel load-error">
+    <view class="empty">比赛详情加载失败，请检查网络后重试</view>
+    <button class="btn btn-primary retry-btn" bindtap="retryLoad">重新加载</button>
+  </view>
+  <view wx:if="{{game}}" class="scoreboard card panel">
+    <image wx:if="{{game.cover}}" class="game-cover-hero" mode="aspectFill" src="{{game.cover}}" />
+    <view class="subtle">{{game.date}} · {{game.seasonName || game.season}}</view>
+    <view class="matchup">{{game.away}} vs {{game.home}}</view>
+    <view class="big-score">{{game.awayScore}} : {{game.homeScore}}</view>
+    <view class="pill">{{game.sportLabel || '⚾🥎 综合'}}</view>
+    <view class="score-actions">
+      <button class="btn btn-primary detail-action-btn" loading="{{exportingPdf}}" disabled="{{exportingPdf}}" bindtap="exportGamePdf">📄 导出 PDF</button>
+      <button wx:if="{{canEditGame}}" class="btn btn-ghost detail-action-btn" bindtap="editGame">修订比赛数据</button>
+    </view>
+    <view wx:if="{{mvp}}" class="mvp-line {{mvp.linked ? 'linked-row' : ''}}" bindtap="openPlayer" data-player-id="{{mvp.playerId}}">MVP · <text class="{{mvp.nameClass}}">{{mvp.displayName}}</text></view>
+    <view wx:if="{{origin}}" class="origin-strip" bindtap="openEvent" data-id="{{origin.eventId}}">
+      <text>来自接龙：{{origin.title}}</text>
+      <text wx:if="{{origin.countText}}" class="origin-meta">{{origin.countText}}</text>
+      <text class="origin-arrow">{{origin.eventId ? '查看' : ''}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{lineHome.length}}" class="section card panel">
+    <view class="card-title">逐局</view>
+    <scroll-view scroll-x class="line-scroll">
+      <view class="line-row header">
+        <text class="cell team">队伍</text>
+        <text wx:for="{{lineHome}}" wx:key="*this" class="cell">{{index + 1}}</text>
+        <text class="cell total">R</text>
+        <text class="cell total">H</text>
+        <text class="cell total">E</text>
+      </view>
+      <view class="line-row">
+        <text class="cell team">{{game.away}}</text>
+        <text wx:for="{{lineAway}}" wx:key="*this" class="cell">{{item}}</text>
+        <text class="cell total">{{game.awayScore}}</text>
+        <text class="cell total">{{awayTotals.H || 0}}</text>
+        <text class="cell total">{{awayTotals.E || 0}}</text>
+      </view>
+      <view class="line-row">
+        <text class="cell team">{{game.home}}</text>
+        <text wx:for="{{lineHome}}" wx:key="*this" class="cell">{{item}}</text>
+        <text class="cell total">{{game.homeScore}}</text>
+        <text class="cell total">{{homeTotals.H || 0}}</text>
+        <text class="cell total">{{homeTotals.E || 0}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view wx:if="{{!loading && !loadError}}" class="section card panel">
+    <view class="card-title">猎户进攻</view>
+    <view wx:if="{{batting.length}}" class="sort-tools">
+      <view class="sort-hint">按 {{battingSortLabel}}{{battingSortArrow}} 排序 · 指标条同步</view>
+      <view class="sort-chip-row">
+        <button wx:for="{{battingSortOptions}}" wx:key="key" class="sort-chip {{item.key === battingSortKey ? 'active' : ''}}" bindtap="sortBatting" data-key="{{item.key}}">{{item.label}}</button>
+      </view>
+      <view class="metric-bars">
+        <view wx:for="{{battingChart}}" wx:key="id" class="metric-bar-row">
+          <text class="metric-name {{item.nameClass}}">{{item.name}}</text>
+          <view class="metric-track"><view class="metric-fill" style="{{item.barStyle}}"></view></view>
+          <text class="metric-value">{{item.valueText}}</text>
+        </view>
+      </view>
+    </view>
+    <scroll-view scroll-x class="line-scroll">
+      <view class="box-table batting-table">
+        <view class="box-row header">
+          <text class="name-cell">球员</text><text>守位</text><text>AB</text><text>R</text><text>H</text><text>1B</text><text>2B</text><text>3B</text><text>HR</text><text>RBI</text><text>BB</text><text>SO</text><text>E</text><text>AVG</text><text>OPS</text>
+        </view>
+        <view wx:for="{{batting}}" wx:key="name" class="box-row {{item.linked ? 'linked-row' : ''}}" bindtap="openPlayer" data-player-id="{{item.playerId}}">
+          <text class="name-cell {{item.nameClass}}">{{item.displayName || item.name}}</text><text>{{item.pos || '-'}}</text><text>{{item.AB || 0}}</text><text>{{item.R || 0}}</text><text>{{item.H || 0}}</text><text>{{item._1B || 0}}</text><text>{{item._2B || 0}}</text><text>{{item._3B || 0}}</text><text>{{item.HR || 0}}</text><text>{{item.RBI || 0}}</text><text>{{item.BB || 0}}</text><text>{{item.SO || 0}}</text><text>{{item.E || 0}}</text><text>{{item.avgText}}</text><text>{{item.opsText}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{!batting.length}}" class="empty">暂无打击数据</view>
+  </view>
+
+  <view wx:if="{{!loading && !loadError}}" class="section card panel">
+    <view class="card-title">投手记录</view>
+    <view wx:if="{{pitching.length}}" class="sort-tools">
+      <view class="sort-hint">按 {{pitchingSortLabel}}{{pitchingSortArrow}} 排序 · 指标条同步</view>
+      <view class="sort-chip-row">
+        <button wx:for="{{pitchingSortOptions}}" wx:key="key" class="sort-chip {{item.key === pitchingSortKey ? 'active' : ''}}" bindtap="sortPitching" data-key="{{item.key}}">{{item.label}}</button>
+      </view>
+      <view class="metric-bars">
+        <view wx:for="{{pitchingChart}}" wx:key="id" class="metric-bar-row">
+          <text class="metric-name {{item.nameClass}}">{{item.name}}</text>
+          <view class="metric-track"><view class="metric-fill" style="{{item.barStyle}}"></view></view>
+          <text class="metric-value">{{item.valueText}}</text>
+        </view>
+      </view>
+    </view>
+    <scroll-view scroll-x class="line-scroll">
+      <view class="box-table pitching-table">
+        <view class="box-row header">
+          <text class="name-cell">投手</text><text>IP</text><text>H</text><text>R</text><text>ER</text><text>BB</text><text>SO</text><text>HR</text><text>决胜</text><text>ERA</text><text>WHIP</text>
+        </view>
+        <view wx:for="{{pitching}}" wx:key="name" class="box-row {{item.linked ? 'linked-row' : ''}}" bindtap="openPlayer" data-player-id="{{item.playerId}}">
+          <text class="name-cell {{item.nameClass}}">{{item.displayName || item.name}}</text><text>{{item.IP || '0.0'}}</text><text>{{item.H || 0}}</text><text>{{item.R || 0}}</text><text>{{item.ER || 0}}</text><text>{{item.BB || 0}}</text><text>{{item.SO || 0}}</text><text>{{item.HR || 0}}</text><text>{{item.decision || '-'}}</text><text>{{item.eraText}}</text><text>{{item.whipText}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{!pitching.length}}" class="empty">暂无投手数据</view>
+  </view>
+
+  <view wx:if="{{!loading && !loadError}}" class="section card panel">
+    <view class="card-title">对手进攻</view>
+    <view wx:if="{{oppBatting.length}}" class="sort-tools">
+      <view class="sort-hint">按 {{oppBattingSortLabel}}{{oppBattingSortArrow}} 排序 · 指标条同步</view>
+      <view class="sort-chip-row">
+        <button wx:for="{{oppBattingSortOptions}}" wx:key="key" class="sort-chip {{item.key === oppBattingSortKey ? 'active' : ''}}" bindtap="sortOppBatting" data-key="{{item.key}}">{{item.label}}</button>
+      </view>
+      <view class="metric-bars opponent-bars">
+        <view wx:for="{{oppBattingChart}}" wx:key="id" class="metric-bar-row">
+          <text class="metric-name">{{item.name}}</text>
+          <view class="metric-track"><view class="metric-fill" style="{{item.barStyle}}"></view></view>
+          <text class="metric-value">{{item.valueText}}</text>
+        </view>
+      </view>
+    </view>
+    <scroll-view scroll-x class="line-scroll">
+      <view class="box-table batting-table">
+        <view class="box-row header">
+          <text class="name-cell">球员/队伍</text><text>守位</text><text>AB</text><text>R</text><text>H</text><text>1B</text><text>2B</text><text>3B</text><text>HR</text><text>RBI</text><text>BB</text><text>SO</text><text>E</text><text>AVG</text><text>OPS</text>
+        </view>
+        <view wx:for="{{oppBatting}}" wx:key="name" class="box-row">
+          <text class="name-cell">{{item.displayName || item.name}}</text><text>{{item.pos || '-'}}</text><text>{{item.AB || 0}}</text><text>{{item.R || 0}}</text><text>{{item.H || 0}}</text><text>{{item._1B || 0}}</text><text>{{item._2B || 0}}</text><text>{{item._3B || 0}}</text><text>{{item.HR || 0}}</text><text>{{item.RBI || 0}}</text><text>{{item.BB || 0}}</text><text>{{item.SO || 0}}</text><text>{{item.E || 0}}</text><text>{{item.avgText}}</text><text>{{item.opsText}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{!oppBatting.length}}" class="empty">暂无对手进攻数据</view>
+  </view>
+
+  <view wx:if="{{!loading && !loadError}}" class="section card panel">
+    <view class="card-title">对手投手</view>
+    <view wx:if="{{oppPitching.length}}" class="sort-tools">
+      <view class="sort-hint">按 {{oppPitchingSortLabel}}{{oppPitchingSortArrow}} 排序 · 指标条同步</view>
+      <view class="sort-chip-row">
+        <button wx:for="{{oppPitchingSortOptions}}" wx:key="key" class="sort-chip {{item.key === oppPitchingSortKey ? 'active' : ''}}" bindtap="sortOppPitching" data-key="{{item.key}}">{{item.label}}</button>
+      </view>
+      <view class="metric-bars opponent-bars">
+        <view wx:for="{{oppPitchingChart}}" wx:key="id" class="metric-bar-row">
+          <text class="metric-name">{{item.name}}</text>
+          <view class="metric-track"><view class="metric-fill" style="{{item.barStyle}}"></view></view>
+          <text class="metric-value">{{item.valueText}}</text>
+        </view>
+      </view>
+    </view>
+    <scroll-view scroll-x class="line-scroll">
+      <view class="box-table pitching-table">
+        <view class="box-row header">
+          <text class="name-cell">投手</text><text>IP</text><text>H</text><text>R</text><text>ER</text><text>BB</text><text>SO</text><text>HR</text><text>决胜</text><text>ERA</text><text>WHIP</text>
+        </view>
+        <view wx:for="{{oppPitching}}" wx:key="name" class="box-row">
+          <text class="name-cell">{{item.displayName || item.name}}</text><text>{{item.IP || '0.0'}}</text><text>{{item.H || 0}}</text><text>{{item.R || 0}}</text><text>{{item.ER || 0}}</text><text>{{item.BB || 0}}</text><text>{{item.SO || 0}}</text><text>{{item.HR || 0}}</text><text>{{item.decision || '-'}}</text><text>{{item.eraText}}</text><text>{{item.whipText}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{!oppPitching.length}}" class="empty">暂无对手投手数据</view>
+  </view>
+
+  <view wx:if="{{gameLog.length}}" class="section card panel">
+    <view class="row between">
+      <view class="card-title">事件日志</view>
+      <view class="pill">{{gameLog.length}} 条</view>
+    </view>
+    <view wx:for="{{gameLog}}" wx:key="id" class="game-log-row {{item.playerId ? 'linked-log' : ''}}" bindtap="openPlayer" data-player-id="{{item.playerId}}">
+      <view>
+          <view class="log-title {{item.nameClass}}">{{item.label}}</view>
+        <view class="subtle">{{item.inningLabel}} · {{item.offenseName}} · {{item.outs}} 出 · {{item.bases}}</view>
+        <view wx:if="{{item.scoredRunners.length}}" class="log-runners">
+          <text>得分：</text>
+          <text wx:for="{{item.scoredRunners}}" wx:for-item="runner" wx:for-index="runnerIndex" wx:key="displayName" class="{{runner.linked ? 'runner-link' : ''}} {{runner.nameClass}}" catchtap="openPlayer" data-player-id="{{runner.playerId}}">{{runner.displayName}}{{runnerIndex < item.scoredRunners.length - 1 ? '、' : ''}}</text>
+        </view>
+        <view wx:if="{{item.playerId}}" class="log-link {{item.nameClass}}">查看 {{item.playerName || '球员'}} 档案</view>
+      </view>
+      <view class="log-score">{{item.score}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{mvp || game.mvpNote}}" class="section card panel">
+    <view class="card-title">赛后记录</view>
+    <view wx:if="{{mvp}}" class="review-line {{mvp.linked ? 'linked-row' : ''}}" bindtap="openPlayer" data-player-id="{{mvp.playerId}}">MVP：<text class="{{mvp.nameClass}}">{{mvp.displayName}}</text></view>
+    <view wx:if="{{game.mvpNote}}" class="review-note">{{game.mvpNote}}</view>
+  </view>
+
+  <view wx:if="{{highlights.length || highlightsHasMore}}" class="section card panel">
+    <view class="row between">
+      <view class="card-title">精彩时刻</view>
+      <view class="pill">{{highlightCountText}}</view>
+    </view>
+    <view wx:if="{{highlights.length}}" class="highlight-grid">
+      <view wx:for="{{highlights}}" wx:key="id" class="highlight-card">
+        <image class="highlight-image" src="{{item.image}}" mode="aspectFill" lazy-load="{{true}}" bindtap="previewHighlight" data-image="{{item.image}}" />
+        <view class="highlight-title">{{item.title}}</view>
+        <view wx:if="{{item.meta}}" class="subtle {{item.metaClass}}">{{item.meta}}</view>
+        <button wx:if="{{item.bilibiliUrl}}" class="copy-link" bindtap="copyHighlightLink" data-url="{{item.bilibiliUrl}}">复制B站链接</button>
+      </view>
+    </view>
+    <button wx:if="{{highlightsHasMore}}" class="btn btn-ghost highlight-more" loading="{{loadingMoreHighlights}}" bindtap="loadMoreGameHighlights">加载更多精彩时刻</button>
+  </view>
+</view>

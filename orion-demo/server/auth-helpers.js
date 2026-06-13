@@ -3,11 +3,13 @@
 // 后续接 wx.login 时同样体系，wx 那边追加 wx_openid 进 user_identities
 
 const crypto = require('crypto');
+const { domainToASCII } = require('url');
 
 // SESSION_SECRET 从环境变量读，没设就用一个默认（生产部署务必设）
 const SECRET = process.env.SESSION_SECRET || 'orion-default-secret-change-me';
 const COOKIE_NAME = 'orion_session';
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;   // 30 天
+const CUSTOM_COOKIE_DOMAIN = 'xn--4gsr8nf4ck7ihxnemb.cn';
 
 // ============== 密码哈希（PBKDF2，纯标准库，无需 bcrypt）==============
 // 格式：scheme$iterations$salt_hex$hash_hex
@@ -55,34 +57,85 @@ function verifySession(token) {
 }
 
 // ============== Cookie 工具 ==============
-function setSessionCookie(res, userId) {
-  const token = signSession(userId);
-  // HttpOnly + SameSite=Lax + Secure 仅生产
+function normalizeRequestHost(req) {
+  const raw = String(req?.headers?.host || '').split(',')[0].trim().toLowerCase();
+  if (!raw) return '';
+  const withoutPort = raw.startsWith('[')
+    ? raw.slice(1, raw.indexOf(']') > 0 ? raw.indexOf(']') : undefined)
+    : raw.replace(/:\d+$/, '');
+  return domainToASCII(withoutPort) || withoutPort;
+}
+
+function cookieDomainForRequest(req) {
+  const host = normalizeRequestHost(req);
+  if (host === CUSTOM_COOKIE_DOMAIN || host === `www.${CUSTOM_COOKIE_DOMAIN}`) {
+    return CUSTOM_COOKIE_DOMAIN;
+  }
+  return '';
+}
+
+function sessionCookieString(value, req, { maxAgeSec, domain = '' } = {}) {
   const isProd = process.env.NODE_ENV === 'production';
-  const maxAgeSec = Math.floor(COOKIE_MAX_AGE_MS / 1000);
   const parts = [
-    `${COOKIE_NAME}=${token}`,
+    `${COOKIE_NAME}=${value}`,
     `Path=/`,
-    `Max-Age=${maxAgeSec}`,
     `HttpOnly`,
     `SameSite=Lax`,
   ];
+  if (Number.isFinite(maxAgeSec)) parts.splice(2, 0, `Max-Age=${maxAgeSec}`);
+  if (domain) parts.push(`Domain=${domain}`);
   if (isProd) parts.push('Secure');
-  res.setHeader('Set-Cookie', parts.join('; '));
+  return parts.join('; ');
+}
+
+function setSessionCookie(res, userId, req) {
+  const token = signSession(userId);
+  const maxAgeSec = Math.floor(COOKIE_MAX_AGE_MS / 1000);
+  const domain = cookieDomainForRequest(req);
+  const cookies = [
+    sessionCookieString(token, req, { maxAgeSec, domain }),
+  ];
+  if (domain) {
+    cookies.unshift(sessionCookieString('', req, { maxAgeSec: 0 }));
+  }
+  res.setHeader('Set-Cookie', cookies);
   return token;
 }
 
-function clearSessionCookie(res) {
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
+function sessionCookieDomainForRequest(req) {
+  return cookieDomainForRequest(req);
+}
+
+function clearSessionCookie(res, req) {
+  const domain = cookieDomainForRequest(req);
+  const cookies = [
+    sessionCookieString('', req, { maxAgeSec: 0 }),
+  ];
+  if (domain) {
+    cookies.push(sessionCookieString('', req, { maxAgeSec: 0, domain }));
+  }
+  res.setHeader('Set-Cookie', cookies);
 }
 
 function readSessionUserId(req) {
+  const auth = req.headers.authorization || req.headers.Authorization || '';
+  const bearer = String(auth || '').match(/^Bearer\s+(.+)$/i);
+  const headerToken = req.headers['x-orion-session'] || (bearer && bearer[1]);
+  if (headerToken) {
+    const fromHeader = verifySession(String(headerToken).trim());
+    if (fromHeader) return fromHeader;
+  }
   const raw = req.headers.cookie || '';
   const parts = raw.split(';').map(s => s.trim());
-  const target = parts.find(p => p.startsWith(COOKIE_NAME + '='));
-  if (!target) return null;
-  const token = target.slice(COOKIE_NAME.length + 1);
-  return verifySession(token);
+  const tokens = parts
+    .filter(p => p.startsWith(COOKIE_NAME + '='))
+    .map(p => p.slice(COOKIE_NAME.length + 1))
+    .filter(Boolean);
+  for (const token of tokens) {
+    const userId = verifySession(token);
+    if (userId) return userId;
+  }
+  return null;
 }
 
 module.exports = {
@@ -94,4 +147,5 @@ module.exports = {
   setSessionCookie,
   clearSessionCookie,
   readSessionUserId,
+  sessionCookieDomainForRequest,
 };

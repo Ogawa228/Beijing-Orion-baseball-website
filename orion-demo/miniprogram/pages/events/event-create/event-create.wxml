@@ -1,0 +1,96 @@
+<view class="page">
+  <view class="card panel stack">
+    <view class="eyebrow">📌 发起接龙</view>
+    <view class="title">{{pageTitle}}</view>
+    <view class="subtle">{{pageSubtle}}</view>
+  </view>
+
+  <view wx:if="{{permissionChecked && !canCreateEvent}}" class="section card panel stack">
+    <view class="label">需要运营组权限</view>
+    <view class="subtle">发起和编辑接龙只开放给运营组、B 级或 A 级管理员。</view>
+    <button class="btn btn-ghost" bindtap="backToEventList">返回接龙列表</button>
+  </view>
+
+  <view wx:if="{{canCreateEvent}}" class="section card panel stack">
+    <view class="xhs-import-box">
+      <view class="row between xhs-import-head">
+        <view>
+          <view class="label">📕 一键导入帖子内容</view>
+          <view class="subtle">从小红书或群公告复制标题和正文，识别后请再确认日期、地点和封面。</view>
+        </view>
+      </view>
+      <textarea class="textarea xhs-textarea" placeholder="把帖子标题 + 正文粘贴到这里，例如训练通知、杯赛招募、团建说明..." value="{{xhsRaw}}" bindinput="onXhsRawInput" />
+      <view class="xhs-actions">
+        <button class="btn btn-primary xhs-btn" bindtap="parseXhsPaste">识别并填充</button>
+        <button class="btn btn-ghost xhs-btn" bindtap="pasteAndParseXhs">粘贴识别</button>
+        <button class="btn btn-ghost xhs-btn" bindtap="clearXhsPaste">清空</button>
+      </view>
+      <view wx:if="{{xhsParseText}}" class="subtle">{{xhsParseText}}</view>
+    </view>
+
+    <view>
+      <view class="label">活动标题</view>
+      <input class="input" placeholder="例如 周末常规训练" value="{{title}}" bindinput="onTitleInput" />
+    </view>
+    <view>
+      <view class="label">分类标签</view>
+      <picker mode="selector" range="{{tagOptions}}" range-key="label" value="{{tagIndex}}" bindchange="onTagChange">
+        <view class="picker-like picker-row">
+          <text>{{tagOptions[tagIndex].label}}</text>
+          <text class="picker-arrow">选择</text>
+        </view>
+      </picker>
+    </view>
+    <view class="form-grid">
+      <view>
+        <view class="label">时间</view>
+        <input class="input" placeholder="2026-05-30 09:00" value="{{date}}" bindinput="onDateInput" />
+      </view>
+      <view>
+        <view class="location-edit-box">
+          <view class="location-edit-main">
+            <view class="label">地点</view>
+            <input class="input" placeholder="奥体中心棒垒球场" value="{{location}}" bindinput="onLocationInput" />
+            <view wx:if="{{locationMetaText}}" class="subtle">{{locationMetaText}}</view>
+          </view>
+          <button class="btn btn-ghost location-pick-btn" bindtap="chooseEventLocation">地图选择</button>
+        </view>
+      </view>
+    </view>
+    <view class="cover-edit-box">
+      <image wx:if="{{cover}}" class="cover-edit-preview" mode="aspectFill" src="{{cover}}" />
+      <view class="cover-edit-main">
+        <view class="label">接龙封面图</view>
+        <input class="input cover-input" placeholder="COS 图片地址，可手动粘贴" value="{{cover}}" bindinput="onCoverInput" />
+        <view wx:if="{{coverUploadText}}" class="subtle">{{coverUploadText}}</view>
+      </view>
+      <button class="btn btn-ghost cover-upload-btn" loading="{{uploadingCover}}" bindtap="chooseCoverImage">{{cover ? '更换封面' : '上传封面'}}</button>
+    </view>
+    <view>
+      <view class="label">原帖链接</view>
+      <input class="input" placeholder="小红书、B站或官网链接，可选" value="{{sourceLink}}" bindinput="onSourceLinkInput" />
+    </view>
+    <view class="gallery-edit-box">
+      <view class="row between gallery-head">
+        <view>
+          <view class="label">接龙配图</view>
+          <view class="subtle">最多 9 张，用于训练安排、路线、装备或精彩时刻照片。</view>
+        </view>
+        <button class="btn btn-ghost gallery-upload-btn" loading="{{uploadingGallery}}" bindtap="chooseGalleryImages">{{images.length ? '继续上传' : '上传配图'}}</button>
+      </view>
+      <view wx:if="{{images.length}}" class="gallery-grid">
+        <view wx:for="{{images}}" wx:key="*this" class="gallery-item">
+          <image class="gallery-image" mode="aspectFill" lazy-load="{{true}}" src="{{item}}" bindtap="previewGalleryImage" data-index="{{index}}" />
+          <button class="gallery-remove" bindtap="removeGalleryImage" data-index="{{index}}">移除</button>
+        </view>
+      </view>
+      <view wx:if="{{galleryUploadText}}" class="subtle">{{galleryUploadText}}</view>
+    </view>
+    <view>
+      <view class="label">活动说明</view>
+      <textarea class="textarea" placeholder="训练内容、装备要求、集合方式等" value="{{body}}" bindinput="onBodyInput" />
+    </view>
+    <button class="btn btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="submit">{{submitLabel}}</button>
+    <view class="subtle">发起和编辑接龙只开放给运营组、B 级或 A 级管理员。</view>
+  </view>
+</view>

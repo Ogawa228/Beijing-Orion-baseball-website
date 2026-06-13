@@ -30,7 +30,7 @@ const PLAYERS_STARFIELD_DEFAULTS = {
   randomSeed: 17,
 };
 
-const FORMATIONS = new Set(['scatter', 'orion', 'spiral', 'orbit', 'vline', 'year', 'random']);
+const FORMATIONS = new Set(['scatter', 'orion', 'spiral', 'orbit', 'diamond', 'vline', 'year', 'random']);
 const PATHS = new Set(['or', 'wave', 'orbit', 'spiral', 'random', 'none']);
 const PARTICLE_MODES = new Set(['auto', 'webgl', 'css', 'off']);
 

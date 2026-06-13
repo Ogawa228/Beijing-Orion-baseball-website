@@ -21,7 +21,7 @@
 <link rel="icon" href="assets/img/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=33">
-<script src="assets/js/db.js?v=24"></script>
+<script src="assets/js/db.js?v=27"></script>
 <script>
 (() => {
   try {
@@ -2638,7 +2638,7 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
             <input type="search" id="searchInput" placeholder="搜索姓名 / 球衣号 / 位置..." autocomplete="off">
             <div class="pos-chips" id="posChips"></div>
           </div>
-          <div class="arm-public-hint">成为正式球员后，可完整查看清晰头像与姓名</div>
+          <div class="arm-public-hint" data-auth="guest">成为正式球员后，可完整查看清晰头像与姓名</div>
         </div>
         <div class="arm-hud" aria-hidden="true">
           <div class="arm-hud-label">ORION FIELD</div>
@@ -2684,6 +2684,7 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
                   <option value="orion">OR 字阵</option>
                   <option value="spiral">螺旋升空</option>
                   <option value="orbit">环形巡航</option>
+                  <option value="diamond">棒球场钻石</option>
                   <option value="vline">斜翼队列</option>
                   <option value="year">年份字阵</option>
                   <option value="random">随机编队</option>
@@ -2795,7 +2796,7 @@ html.wallpaper-mode .orion-arm-stage[data-density="overflow"] .arm-node-name {
   <div class="footer-meta"><span>© 2026 Beijing Orion Baseball Club</span></div>
 </footer>
 
-<script src="assets/js/auth.js?v=20"></script>
+<script src="assets/js/auth.js?v=23"></script>
 <script>
 (async () => {
 await window.dbReady();
@@ -3176,6 +3177,7 @@ const ARM_FORMATION_LABELS = {
   orion: 'OR',
   spiral: '螺旋',
   orbit: '环形',
+  diamond: '钻石',
   vline: '斜翼',
   year: '年份',
   random: '随机',
@@ -3199,8 +3201,12 @@ const ARM_PRESETS = [
   { id: 'nebula', name: '星河散列', settings: { formation: 'scatter', path: 'wave', pathDuration: 16.2, breatheDuration: 12.6, sway: .7, spread: 1.08, randomSeed: 31 } },
   { id: 'spiral', name: '螺旋升空', settings: { formation: 'spiral', path: 'spiral', pathDuration: 9.4, breatheDuration: 8.6, sway: 1.35, spread: 1, randomSeed: 43 } },
   { id: 'orbit', name: '环形巡航', settings: { formation: 'orbit', path: 'orbit', pathDuration: 11.2, breatheDuration: 12, sway: .9, spread: .96, randomSeed: 59 } },
+  { id: 'baseball-diamond', name: '棒球场钻石', settings: { formation: 'diamond', path: 'wave', pathDuration: 10.6, breatheDuration: 10.4, sway: .86, spread: 1, randomSeed: 29 } },
   { id: 'wing', name: '斜翼队列', settings: { formation: 'vline', path: 'wave', pathDuration: 7.8, breatheDuration: 9.2, sway: 1.18, spread: 1.02, randomSeed: 71 } },
   { id: 'year-2026', name: '年份 2026', settings: { formation: 'year', year: '2026', yearLimit: 84, path: 'wave', pathDuration: 12.4, breatheDuration: 11.2, sway: .82, spread: .98, randomSeed: 86 } },
+];
+const ARM_LOCKED_PLAYER_PAIRS = [
+  { anchor: ['p_jinjs', '江山', '靳江山'], follow: ['p_yujing', '虞婧'] },
 ];
 let armAdminState = loadArmAdminSettings();
 let armCustomTemplateState = loadArmCustomTemplates();
@@ -3984,6 +3990,72 @@ function buildArmYearSegments(value) {
   };
 }
 
+function armPlayerMatchesTokens(player, tokens) {
+  if (!player || !tokens?.length) return false;
+  const rawValues = [player.id, player.name, ...(Array.isArray(player.aliases) ? player.aliases : [])]
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+  const rawSet = new Set(rawValues.map(value => value.toLowerCase()));
+  const keySet = new Set(rawValues.map(value => DB.canonicalNameKey(value)));
+  return tokens.some(token => {
+    const raw = String(token || '').trim();
+    if (!raw) return false;
+    return rawSet.has(raw.toLowerCase()) || keySet.has(DB.canonicalNameKey(raw));
+  });
+}
+
+function findArmLockedPlayerIndex(tokens) {
+  return armState.filtered.findIndex(player => armPlayerMatchesTokens(player, tokens));
+}
+
+function keepArmLockedPlayerPairsTogether(points, bounds, minDist) {
+  if (!points.length || !ARM_LOCKED_PLAYER_PAIRS.length) return;
+  const { mobile, sidePad, topPad, bottomPad, w, h, centerX, centerY } = bounds;
+  const radius = clamp(minDist * 1.08, mobile ? 58 : 82, mobile ? 82 : 112);
+  const maxX = Math.max(sidePad, w - sidePad);
+  const maxY = Math.max(topPad, h - bottomPad);
+
+  ARM_LOCKED_PLAYER_PAIRS.forEach(pair => {
+    const anchorIndex = findArmLockedPlayerIndex(pair.anchor);
+    const followIndex = findArmLockedPlayerIndex(pair.follow);
+    if (anchorIndex < 0 || followIndex < 0 || anchorIndex === followIndex) return;
+    const anchor = points[anchorIndex];
+    const follower = points[followIndex];
+    if (!anchor || !follower) return;
+
+    let best = null;
+    const baseAngle = Number.isFinite(anchor.theta) ? anchor.theta : -Math.PI / 4;
+    for (let step = 0; step < 18; step++) {
+      const theta = baseAngle + step * Math.PI * 2 / 18;
+      const x = clamp(anchor.x + Math.cos(theta) * radius, sidePad, maxX);
+      const y = clamp(anchor.y + Math.sin(theta) * radius, topPad, maxY);
+      const pairDistance = Math.hypot(x - anchor.x, y - anchor.y);
+      if (pairDistance < radius * .72) continue;
+      let nearest = Infinity;
+      for (let i = 0; i < points.length; i++) {
+        if (i === anchorIndex || i === followIndex || !points[i]) continue;
+        nearest = Math.min(nearest, Math.hypot(x - points[i].x, y - points[i].y));
+      }
+      const edgePenalty = Math.min(x - sidePad, maxX - x, y - topPad, maxY - y);
+      const score = nearest + edgePenalty * .18 + pairDistance * .28;
+      if (!best || score > best.score) best = { x, y, theta, score };
+    }
+    if (!best) {
+      const theta = Math.atan2(centerY - anchor.y, centerX - anchor.x);
+      best = {
+        x: clamp(anchor.x + Math.cos(theta) * radius, sidePad, maxX),
+        y: clamp(anchor.y + Math.sin(theta) * radius, topPad, maxY),
+        theta,
+      };
+    }
+    if (!best) return;
+    follower.x = best.x;
+    follower.y = best.y;
+    follower.theta = best.theta;
+    follower.ring = anchor.ring;
+  });
+}
+
 function buildArmLayout(count, rect) {
   const bounds = getArmStageBounds(rect);
   const { w, h, mobile, sidePad, topPad, bottomPad, areaW, areaH, centerX, centerY } = bounds;
@@ -4112,6 +4184,48 @@ function buildArmLayout(count, rect) {
         ring
       );
     }
+  } else if (mode === 'diamond') {
+    const home = { x: centerX, y: centerY + areaH * (mobile ? .30 : .31) };
+    const first = { x: centerX + areaW * (mobile ? .30 : .24), y: centerY + areaH * (mobile ? .05 : .03) };
+    const second = { x: centerX, y: centerY - areaH * (mobile ? .23 : .25) };
+    const third = { x: centerX - areaW * (mobile ? .30 : .24), y: centerY + areaH * (mobile ? .05 : .03) };
+    const segments = [
+      [home, first],
+      [first, second],
+      [second, third],
+      [third, home],
+    ];
+    const perimeterCount = Math.max(4, Math.ceil(count * .72));
+    for (let index = 0; index < count; index++) {
+      const seed = index + 1;
+      if (index < perimeterCount) {
+        const t = (index / perimeterCount) * segments.length;
+        const segIndex = Math.min(segments.length - 1, Math.floor(t));
+        const local = t - segIndex;
+        const [a, b] = segments[segIndex];
+        const x = a.x + (b.x - a.x) * local;
+        const y = a.y + (b.y - a.y) * local;
+        pushPoint(
+          index,
+          x + jitter(seed, 31, mobile ? 7 : 12),
+          y + jitter(seed, 47, mobile ? 7 : 12),
+          Math.atan2(b.y - a.y, b.x - a.x),
+          local
+        );
+      } else {
+        const order = index - perimeterCount;
+        const outfieldCount = Math.max(1, count - perimeterCount);
+        const p = (order + .5) / outfieldCount;
+        const theta = Math.PI * (1.10 + p * .80);
+        pushPoint(
+          index,
+          centerX + Math.cos(theta) * areaW * (mobile ? .42 : .44) * spread + jitter(seed, 31, mobile ? 8 : 14),
+          centerY + areaH * .04 + Math.sin(theta) * areaH * (mobile ? .34 : .39) * spread + jitter(seed, 47, mobile ? 8 : 13),
+          theta,
+          p
+        );
+      }
+    }
   } else if (mode === 'vline') {
     const rows = Math.ceil(count / 2);
     for (let index = 0; index < count; index++) {
@@ -4184,6 +4298,8 @@ function buildArmLayout(count, rect) {
       point.y = clamp(point.y, topPad, Math.max(topPad, h - bottomPad));
     }
   }
+
+  keepArmLockedPlayerPairsTogether(points, bounds, minDist);
 
   return points.map(point => {
     const norm = Math.hypot(

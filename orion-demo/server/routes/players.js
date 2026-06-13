@@ -48,6 +48,116 @@ function uniqueNamesByCanonical(items) {
   return out;
 }
 
+function splitList(value) {
+  if (Array.isArray(value)) return uniqueNamesByCanonical(value);
+  return uniqueNamesByCanonical(String(value || '').split(/[、,，;；|/]/));
+}
+
+function normalizePhotoUrl(value) {
+  const url = String(value || '').trim();
+  if (!url || url.length > 2048 || /^data:/i.test(url)) return '';
+  return url;
+}
+
+function buildPlayerPhotoMap(value) {
+  const entries = Array.isArray(value)
+    ? value.map(item => [item?.name || item?.playerName, item?.url || item?.photo])
+    : Object.entries(value || {});
+  const map = new Map();
+  for (const [name, rawUrl] of entries.slice(0, 200)) {
+    const key = canonicalNameKey(name);
+    const url = normalizePhotoUrl(rawUrl);
+    if (!key || !url || map.has(key)) continue;
+    map.set(key, url);
+  }
+  return map;
+}
+
+function splitImportLine(line) {
+  const cleaned = String(line || '')
+    .replace(/^\s*(?:\d+[\.\)、)]|[-*•])\s*/, '')
+    .trim();
+  if (!cleaned) return [];
+  if (/[,，\t]/.test(cleaned)) return cleaned.split(/[,，\t]/).map(s => s.trim());
+  const parts = cleaned.split(/\s+/).map(s => s.trim()).filter(Boolean);
+  if (parts.length <= 3) return parts;
+  return [parts[0], parts[1], parts.slice(2).join(' ')];
+}
+
+function parseListLimit(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), 200);
+}
+
+function parseListOffset(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(Math.floor(n), 10000);
+}
+
+function flag(value) {
+  return value === true || value === 'true' || value === '1' || value === 1;
+}
+
+function buildPlayerListWhere(query) {
+  const inc = String(query.include || '').toLowerCase();
+  const whereParts = [];
+  const params = [];
+  if (inc !== 'all' && inc !== 'casual') whereParts.push(`level = 'verified'`);
+  const keyword = String(query.keyword || query.q || '').trim().toLowerCase();
+  if (keyword) {
+    const like = `%${keyword}%`;
+    whereParts.push(`(
+      LOWER(name) LIKE ?
+      OR LOWER(COALESCE(number, '')) LIKE ?
+      OR LOWER(COALESCE(position, '')) LIKE ?
+      OR LOWER(COALESCE(public_display_name, '')) LIKE ?
+      OR CAST(join_year AS CHAR) LIKE ?
+      OR LOWER(COALESCE(CAST(aliases AS CHAR), '')) LIKE ?
+      OR LOWER(COALESCE(CAST(titles AS CHAR), '')) LIKE ?
+    )`);
+    params.push(like, like, like, like, like, like, like);
+  }
+  return {
+    where: whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '',
+    params,
+  };
+}
+
+function parsePlayerImportText(text) {
+  const rows = [];
+  const invalid = [];
+  String(text || '').split(/\r?\n/).forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line) return;
+    const parts = splitImportLine(line);
+    const name = String(parts[0] || '').trim();
+    if (!name || /^姓名$/i.test(name)) return;
+    if (name.length > 80) {
+      invalid.push({ line: index + 1, text: line, reason: '姓名过长' });
+      return;
+    }
+    const joinYearValue = String(parts[5] || '').trim();
+    const joinYear = joinYearValue ? Number(joinYearValue) : null;
+    if (joinYearValue && (!Number.isInteger(joinYear) || joinYear < 1900 || joinYear > 2100)) {
+      invalid.push({ line: index + 1, text: line, reason: '入队年份格式不正确' });
+      return;
+    }
+    rows.push({
+      line: index + 1,
+      name,
+      number: String(parts[1] || '').trim(),
+      position: String(parts[2] || '').trim(),
+      bats: String(parts[3] || '').trim(),
+      throws: String(parts[4] || '').trim(),
+      joinYear,
+      aliases: splitList(parts.slice(6).join('、')),
+    });
+  });
+  return { rows, invalid };
+}
+
 // 把 DB 行转换成前端友好的对象（snake_case → camelCase + 解 JSON）
 function rowToPlayer(r) {
   if (!r) return null;
@@ -74,12 +184,32 @@ function rowToPlayer(r) {
 // GET /api/players - 列表（默认只返 verified；?include=casual 返 casual）
 router.get('/', wrap(async (req, res) => {
   await ensurePlayerPublicProfileSchema();
-  const inc = (req.query.include || '').toLowerCase();
-  let where = '';
-  if (inc === 'all' || inc === 'casual') where = '';
-  else where = `WHERE level = 'verified'`;
-  const rows = await db.q(`SELECT * FROM players ${where} ORDER BY created_at ASC`);
-  res.json({ players: rows.map(rowToPlayer) });
+  const { where, params } = buildPlayerListWhere(req.query || {});
+  const limit = parseListLimit(req.query.limit);
+  const offset = parseListOffset(req.query.offset);
+  const pageParams = limit ? params.concat(limit + 1, offset) : params;
+  const rows = await db.q(
+    `SELECT * FROM players ${where} ORDER BY created_at ASC${limit ? ' LIMIT ? OFFSET ?' : ''}`,
+    pageParams
+  );
+  const pageRows = limit ? rows.slice(0, limit) : rows;
+  const body = {
+    players: pageRows.map(rowToPlayer),
+    hasMore: limit ? rows.length > limit : false,
+    nextOffset: limit ? offset + pageRows.length : rows.length,
+  };
+  if (flag(req.query.includeTotal)) {
+    const countRow = await db.qOne(`SELECT COUNT(*) AS total FROM players ${where}`, params);
+    body.total = Number(countRow?.total || 0);
+  }
+  if (flag(req.query.includePositionCount)) {
+    const countRow = await db.qOne(
+      `SELECT COUNT(DISTINCT CASE WHEN TRIM(COALESCE(position, '')) <> '' THEN TRIM(position) END) AS total FROM players ${where}`,
+      params
+    );
+    body.positionCount = Number(countRow?.total || 0);
+  }
+  res.json(body);
 }));
 
 // PATCH /api/players/:id/public-profile - 球员本人或管理员维护球员页公开展示资料
@@ -270,6 +400,110 @@ router.post('/merge', requirePermission('players:write'), wrap(async (req, res) 
   } finally {
     conn.release();
   }
+}));
+
+// POST /api/players/import - 粘贴名单批量创建球员（admin only）
+router.post('/import', requirePermission('players:write'), wrap(async (req, res) => {
+  await ensurePlayerPublicProfileSchema();
+  const b = req.body || {};
+  const level = b.level === 'verified' ? 'verified' : 'casual';
+  const photoMap = buildPlayerPhotoMap(b.photos || b.photoMap || {});
+  const { rows, invalid } = parsePlayerImportText(b.text || b.playersText || '');
+  if (!rows.length) {
+    return res.status(400).json({ error: 'bad_request', message: '请粘贴球员名单' });
+  }
+  if (rows.length > 100) {
+    return res.status(400).json({ error: 'too_many_players', message: '一次最多导入 100 名球员' });
+  }
+
+  const existingRows = await db.q('SELECT id, name, aliases FROM players');
+  const existingKeys = new Map();
+  for (const player of existingRows || []) {
+    const names = [player.name, ...parseJsonArray(player.aliases)];
+    for (const name of names) {
+      const key = canonicalNameKey(name);
+      if (key && !existingKeys.has(key)) existingKeys.set(key, player);
+    }
+  }
+
+  const seenImportKeys = new Set();
+  const created = [];
+  const skipped = [];
+  for (const row of rows) {
+    const key = canonicalNameKey(row.name);
+    if (!key) {
+      invalid.push({ line: row.line, text: row.name, reason: '姓名无效' });
+      continue;
+    }
+    if (existingKeys.has(key)) {
+      skipped.push({
+        line: row.line,
+        name: row.name,
+        reason: `已存在：${existingKeys.get(key).name}`,
+      });
+      continue;
+    }
+    if (seenImportKeys.has(key)) {
+      skipped.push({ line: row.line, name: row.name, reason: '本次导入重复' });
+      continue;
+    }
+    seenImportKeys.add(key);
+    const photo = photoMap.get(key) || '';
+
+    const id = `p_${Date.now()}_${created.length}_${crypto.randomBytes(2).toString('hex')}`;
+    await db.q(
+      `INSERT INTO players (id, name, number, position, photo, slogan, bats, throws_, join_year, titles, aliases, level)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        row.name,
+        row.number || '',
+        row.position || '',
+        photo || null,
+        '',
+        row.bats || '',
+        row.throws || '',
+        row.joinYear || null,
+        JSON.stringify([]),
+        row.aliases.length ? JSON.stringify(row.aliases) : null,
+        level,
+      ]
+    );
+    const inserted = await db.qOne('SELECT * FROM players WHERE id = ?', [id]);
+    created.push(rowToPlayer(inserted));
+  }
+  const matchedPhotoCount = created.filter(player => player.photo).length;
+
+  await logAudit({
+    actorUserId: req.user?.id,
+    action: 'player_batch_import',
+    targetType: 'player',
+    targetId: '',
+    summary: `批量导入球员 ${created.length} 人`,
+    metadata: {
+      level,
+      created: created.map(player => ({ id: player.id, name: player.name })),
+      matchedPhotoCount,
+      skipped,
+      invalid,
+      totalRows: rows.length,
+    },
+  }).catch(() => {});
+
+  res.status(201).json({
+    ok: true,
+    level,
+    created,
+    skipped,
+    invalid,
+    summary: {
+      total: rows.length,
+      created: created.length,
+      skipped: skipped.length,
+      invalid: invalid.length,
+      photoMatched: matchedPhotoCount,
+    },
+  });
 }));
 
 // GET /api/players/:id - 单球员

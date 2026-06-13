@@ -13,7 +13,7 @@ Claude Design / Claude Code 接手摘要（2026-05-29）：
 - 文案要求：面向中文队员，分类标签使用中文 + emoji，不回退到英文 chip；“高光图片”统一为“精彩时刻”；B站只提供复制/跳转语义，不在小程序内做外链播放器。
 - 验证状态：小程序上传前完整 `npm run test:miniprogram-ci` 与 `git diff --check` 通过；微信后台开发版本 `1.0.2` 上传成功；云托管 `express-knlw-049` 已通过 `deploy:verify`，线上 `/api/health` 200 且 DB OK；线上 `admin.html` 已包含“微信登录已关联 / 核验信息”的绑定申请展示口径。后续视觉改动也要同步本文件与 `orion-demo/HANDOFF.md`。
 
-2026-06-13（四）小程序 tabBar/登录三次反馈修复（仅本地,未上传）:① 页面底部避让 tabBar 的 padding 不能用 `calc(rpx + env())` 混合单位(部分机型失效),必须纯 rpx fallback + calc 双声明。② tabBar 图标用 CSS `background-image`(非 `<image>` 组件),避免切换页面时图标解码空白帧。③ 个人页口径:登录态底部固定"退出登录"按钮(二次确认 + 清 session/globalData/页面态);未登录态只展示登录引导,空 section 一律登录后才出现。验证:`npm run test:miniprogram-ci` 16 项全绿。
+2026-06-13（四）小程序 tabBar/登录三次反馈修复（已上传开发版本 `1.0.6`,robot `1`）:① 页面底部避让 tabBar 的 padding 不能用 `calc(rpx + env())` 混合单位(部分机型失效),必须纯 rpx fallback + calc 双声明。② tabBar 图标用 CSS `background-image`(非 `<image>` 组件),避免切换页面时图标解码空白帧。③ 个人页口径:登录态底部固定"退出登录"按钮(二次确认 + 清 session/globalData/页面态);未登录态只展示登录引导,空 section 一律登录后才出现。验证:`npm run test:miniprogram-ci` 16 项全绿。
 
 2026-06-13（三）小程序 UI 二次反馈修复（已上传开发版本 `1.0.5`,robot `1`）:① 自定义 tabBar 必须 `position:fixed` 固定底部(否则混入文档流与内容重叠、切换重排闪烁),页面 `.page` 底部须留出 `132rpx + 安全区` 避让;此为自定义 tabBar 的硬性布局口径。② 未登录态个人页只展示"未登录引导 + 登录按钮",快捷入口 cell 一律 `wx:if 登录` 后才出现。③ 登录体验口径:首次输入昵称 + 勾选三项同意;之后用 `orionLoginPrefs` 记住昵称与同意,二次进入显示"欢迎回来 + 一键登录"(可"修改昵称/重新阅读协议"切回完整表单),不再每次手填。验证:`npm run test:miniprogram-ci` 16 项全绿。
 

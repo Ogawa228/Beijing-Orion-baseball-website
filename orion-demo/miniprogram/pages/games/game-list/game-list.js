@@ -15,6 +15,7 @@ Page({
     allActive: 'active',
     softballActive: '',
     baseballActive: '',
+    canRecordGame: false,
     canImport: false,
     loading: true,
     loadingMore: false,
@@ -50,6 +51,7 @@ Page({
       const tournaments = this.buildTournamentFilters(tournamentsRes.tournaments || [], tournamentsRes.totalGameCount);
       this.setData({
         tournaments,
+        canRecordGame: canRecordGames(meRes.user),
         canImport: canImportGames(meRes.user),
         tournamentHasMore: !!tournamentsRes.hasMore,
         tournamentNextOffset: normalizeNextOffset(tournamentsRes.nextOffset, (tournamentsRes.tournaments || []).length),
@@ -274,5 +276,13 @@ function canImportGames(user) {
   if (!user) return false;
   const permissions = user.permissions || [];
   if (permissions.includes('games:draft') && permissions.includes('games:confirm')) return true;
+  return user.role === 'admin' && !permissions.length;
+}
+
+function canRecordGames(user) {
+  if (!user) return false;
+  const permissions = user.permissions || [];
+  if (permissions.includes('events:write')) return true;
+  if (permissions.includes('games:draft') || permissions.includes('games:confirm')) return true;
   return user.role === 'admin' && !permissions.length;
 }

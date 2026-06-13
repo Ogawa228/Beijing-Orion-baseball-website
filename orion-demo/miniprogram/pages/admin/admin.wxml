@@ -16,138 +16,51 @@
     <button class="btn btn-primary" bindtap="go" data-url="/pages/profile/profile">返回个人面板</button>
   </view>
 
-  <view wx:if="{{isAdmin}}" class="stats-grid section">
-    <view wx:for="{{stats}}" wx:key="label" class="stat-card card panel">
-      <view class="stat-value">{{item.value}}</view>
-      <view class="subtle">{{item.label}}</view>
-    </view>
-  </view>
-
-  <view wx:if="{{isAdmin && canManageSiteSettings}}" class="section card panel stack system-panel">
+  <view wx:if="{{isAdmin}}" class="section card panel stack">
     <view>
-      <view class="eyebrow">🌌 星阵</view>
-      <view class="card-title">星阵全站发布</view>
-      <view class="subtle">复用网页球员页同一份 players-starfield 配置。这里负责移动端发布，不复制网页粒子编队台。</view>
+      <view class="eyebrow">📋 待办摘要</view>
+      <view class="card-title">需要处理的事项</view>
+      <view class="subtle">待审绑定、待审时刻、近期接龙、未关联比赛</view>
     </view>
-    <view class="starfield-status">{{starfieldUpdatedText}}</view>
-    <picker mode="selector" range="{{starfieldPresetOptions}}" range-key="label" value="{{starfieldPresetIndex}}" bindchange="onStarfieldPresetChange">
-      <view class="picker-like">预设 · {{starfieldPresetLabel}}</view>
-    </picker>
-    <view class="two-col">
-      <picker mode="selector" range="{{starfieldFormationOptions}}" range-key="label" value="{{starfieldFormationIndex}}" bindchange="onStarfieldFormationChange">
-        <view class="picker-like compact-picker">{{starfieldFormationLabel}}</view>
-      </picker>
-      <picker mode="selector" range="{{starfieldPathOptions}}" range-key="label" value="{{starfieldPathIndex}}" bindchange="onStarfieldPathChange">
-        <view class="picker-like compact-picker">{{starfieldPathLabel}}</view>
-      </picker>
-    </view>
-    <view class="two-col">
-      <picker mode="selector" range="{{starfieldParticleModeOptions}}" range-key="label" value="{{starfieldParticleModeIndex}}" bindchange="onStarfieldParticleModeChange">
-        <view class="picker-like compact-picker">{{starfieldParticleModeLabel}}</view>
-      </picker>
-      <input class="input" type="number" placeholder="年份" value="{{starfieldYear}}" bindinput="onStarfieldYearInput" />
-    </view>
-    <view class="starfield-grid">
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">年份节点</text>
-          <text class="setting-value">{{starfieldYearLimit}}</text>
-        </view>
-        <slider min="24" max="160" step="1" value="{{starfieldYearLimit}}" data-field="starfieldYearLimit" bindchange="onStarfieldSliderChange" activeColor="#e4c77a" backgroundColor="rgba(255,255,255,.16)" block-size="20" />
+    <view class="stats-grid">
+      <view wx:for="{{stats}}" wx:key="label" class="stat-card" bindtap="openTodo" data-kind="{{item.kind}}">
+        <view class="stat-value">{{item.value}}</view>
+        <view class="subtle">{{item.label}}</view>
       </view>
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">路径速度</text>
-          <text class="setting-value">{{starfieldPathDuration}}</text>
-        </view>
-        <slider min="5.6" max="24" step="0.2" value="{{starfieldPathDuration}}" data-field="starfieldPathDuration" bindchange="onStarfieldSliderChange" activeColor="#e4c77a" backgroundColor="rgba(255,255,255,.16)" block-size="20" />
-      </view>
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">呼吸节奏</text>
-          <text class="setting-value">{{starfieldBreatheDuration}}</text>
-        </view>
-        <slider min="5.8" max="18" step="0.2" value="{{starfieldBreatheDuration}}" data-field="starfieldBreatheDuration" bindchange="onStarfieldSliderChange" activeColor="#e4c77a" backgroundColor="rgba(255,255,255,.16)" block-size="20" />
-      </view>
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">摆动幅度</text>
-          <text class="setting-value">{{starfieldSway}}</text>
-        </view>
-        <slider min="0.2" max="2.6" step="0.1" value="{{starfieldSway}}" data-field="starfieldSway" bindchange="onStarfieldSliderChange" activeColor="#e4c77a" backgroundColor="rgba(255,255,255,.16)" block-size="20" />
-      </view>
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">星阵间距</text>
-          <text class="setting-value">{{starfieldSpread}}</text>
-        </view>
-        <slider min="0.82" max="1.28" step="0.01" value="{{starfieldSpread}}" data-field="starfieldSpread" bindchange="onStarfieldSliderChange" activeColor="#e4c77a" backgroundColor="rgba(255,255,255,.16)" block-size="20" />
-      </view>
-      <view class="starfield-control">
-        <view class="row between">
-          <text class="subtle">随机种子</text>
-          <text class="setting-value">{{starfieldRandomSeed}}</text>
-        </view>
-        <input class="input compact-input" type="number" placeholder="1-999999" value="{{starfieldRandomSeed}}" bindinput="onStarfieldRandomSeedInput" />
-      </view>
-    </view>
-    <view class="request-actions">
-      <button class="btn btn-ghost" loading="{{saving}}" bindtap="resetStarfieldDefaults">恢复默认</button>
-      <button class="btn btn-primary" loading="{{saving}}" bindtap="publishStarfieldSettings">发布到全站</button>
-    </view>
-    <view class="subtle">发布会写入同一套 site_settings，并进入后台审计；网页球员页和 wallpaper 模式读取同一份配置。</view>
-  </view>
-
-  <view wx:if="{{isAdmin && canManageEvents}}" class="section card panel stack">
-    <view>
-      <view class="eyebrow">📋 接龙</view>
-      <view class="card-title">队内接龙管理</view>
-      <view class="subtle">批量清理误发或测试接龙。日常修改优先进入接龙详情编辑，删除会写后台审计。</view>
-    </view>
-    <view class="event-admin-tools">
-      <input class="input compact-input" placeholder="搜索标题、分类、日期、地点" value="{{eventSearch}}" bindinput="onEventSearchInput" />
-      <picker mode="selector" range="{{eventTagFilterOptions}}" range-key="label" value="{{eventTagFilterIndex}}" bindchange="onEventTagFilterChange">
-        <view class="picker-like compact-picker">{{eventTagFilterLabel}}</view>
-      </picker>
-    </view>
-    <view class="game-batch-toolbar">
-      <text class="subtle">已选 {{selectedEventCount}} 条</text>
-      <view class="game-batch-actions">
-        <button class="link" bindtap="selectAllBatchEvents">全选当前</button>
-        <button class="link" bindtap="clearBatchEvents">清空</button>
-      </view>
-    </view>
-    <checkbox-group class="game-batch-list" bindchange="onEventBatchSelectionChange">
-      <label wx:for="{{visibleBatchEvents}}" wx:key="id" class="game-batch-row">
-        <checkbox value="{{item.id}}" checked="{{item.selected}}" />
-        <view class="game-batch-meta">
-          <view class="game-batch-title">{{item.title}}</view>
-          <view class="subtle">{{item.tagLabel}}</view>
-          <view class="subtle">{{item.meta}}</view>
-        </view>
-        <view class="event-row-actions">
-          <button class="link tiny-link" catchtap="openBatchEvent" data-id="{{item.id}}">详情</button>
-          <button class="link tiny-link" catchtap="editBatchEvent" data-id="{{item.id}}">编辑</button>
-        </view>
-      </label>
-    </checkbox-group>
-    <view wx:if="{{!visibleBatchEvents.length}}" class="empty compact-empty">暂无接龙</view>
-    <button wx:if="{{eventsHasMore}}" class="link load-more-games inline-load-more" loading="{{loadingMoreEvents}}" bindtap="loadMoreAdminEvents">加载更多接龙</button>
-    <view class="danger-zone batch-delete-zone">
-      <view class="card-title danger-title">危险操作</view>
-      <input class="input" placeholder="输入“删除接龙”确认" value="{{eventDeleteConfirmText}}" bindinput="onEventDeleteConfirmInput" />
-      <button class="btn btn-danger" loading="{{saving}}" bindtap="batchDeleteEvents">删除选中接龙</button>
-      <view class="subtle">删除后接龙详情和报名名单会移除；已经形成的签到、积分或比赛记录不会被批量改写。</view>
     </view>
   </view>
 
-  <view wx:if="{{isAdmin && canWritePlayers}}" class="section card panel stack player-merge-panel">
+  <view wx:if="{{isAdmin}}" class="admin-tool-nav section">
+    <scroll-view scroll-x class="admin-tool-scroll">
+      <view class="admin-tool-track">
+        <button
+          wx:for="{{adminToolTabs}}"
+          wx:key="key"
+          class="admin-tool-tab {{activeTool === item.key ? 'active' : ''}}"
+          bindtap="switchTool"
+          data-tool="{{item.key}}"
+        >{{item.label}}</button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view wx:if="{{isAdmin && canWritePlayers && activeTool === 'players'}}" class="section card panel stack player-merge-panel">
     <view>
       <view class="eyebrow">👥 球员</view>
       <view class="card-title">球员档案管理</view>
       <view class="subtle">新增试训/正式球员，或处理重复档案和历史姓名归并。</view>
+      <view class="subtle">球员池 / 新增球员 / 批量导入 / 合并档案</view>
     </view>
-    <view class="account-action-box player-pool-box">
+    <view class="player-panel-tabs">
+      <button
+        wx:for="{{playerPanelTabs}}"
+        wx:key="key"
+        class="player-panel-tab {{activePlayerPanel === item.key ? 'active' : ''}}"
+        bindtap="switchPlayerPanel"
+        data-panel="{{item.key}}"
+      >{{item.label}}</button>
+    </view>
+    <view wx:if="{{activePlayerPanel === 'pool'}}" class="account-action-box player-pool-box">
       <view class="row between">
         <view>
           <view class="card-title compact-title">注册球员池</view>
@@ -178,14 +91,13 @@
             <button class="link tiny-link" data-id="{{item.id}}" bindtap="openPoolHighlights">时刻</button>
             <button class="link tiny-link" data-id="{{item.id}}" bindtap="selectPoolMergeSource">合并</button>
             <button wx:if="{{item.canUpgrade}}" class="link tiny-link primary-link" data-id="{{item.id}}" bindtap="upgradePoolPlayer">升级</button>
-            <button wx:if="{{canManageBindCodes && item.canCreateBindCode}}" class="link tiny-link" data-id="{{item.id}}" bindtap="createPoolBindCode">绑码</button>
           </view>
         </view>
         <view wx:if="{{!visiblePlayerPool.length}}" class="empty compact-empty">暂无匹配球员</view>
       </scroll-view>
       <button wx:if="{{playersHasMore}}" class="link load-more-games inline-load-more" loading="{{loadingMorePlayers}}" bindtap="loadMoreAdminPlayers">加载更多球员</button>
     </view>
-    <view class="account-action-box player-create-box">
+    <view wx:if="{{activePlayerPanel === 'create'}}" class="account-action-box player-create-box">
       <view class="card-title compact-title">新增球员</view>
       <view class="two-col">
         <picker mode="selector" range="{{playerCreateLevelOptions}}" range-key="label" value="{{createPlayerLevelIndex}}" bindchange="onCreatePlayerLevelChange">
@@ -221,7 +133,7 @@
       <view wx:if="{{createPlayerResultText}}" class="invite-code">{{createPlayerResultText}}</view>
       <button class="btn btn-primary" loading="{{saving}}" bindtap="createPlayer">新增球员</button>
     </view>
-    <view class="account-action-box player-batch-box">
+    <view wx:if="{{activePlayerPanel === 'batch'}}" class="account-action-box player-batch-box">
       <view class="card-title compact-title">批量粘贴导入</view>
       <view class="subtle">每行一个球员：姓名,球衣号,守位；也可继续补打席、投球、入队年份、别名。</view>
       <picker mode="selector" range="{{playerCreateLevelOptions}}" range-key="label" value="{{batchPlayerLevelIndex}}" bindchange="onBatchPlayerLevelChange">
@@ -243,127 +155,34 @@
       <view wx:if="{{batchPlayerResultText}}" class="invite-code">{{batchPlayerResultText}}</view>
       <button class="btn btn-ghost" loading="{{saving}}" bindtap="importPlayersBatch">导入名单</button>
     </view>
-    <view class="divider"></view>
-    <view>
-      <view class="card-title compact-title">合并球员档案</view>
-      <view class="subtle">用于试训转正式、重复档案或 PDF/比赛记录姓名归并。</view>
-    </view>
-    <picker mode="selector" range="{{mergeSourceOptions}}" range-key="label" value="{{mergeSourceIndex}}" bindchange="onMergeSourceChange">
-      <view class="picker-like">{{mergeSourceLabel}}</view>
-    </picker>
-    <picker mode="selector" range="{{mergeTargetOptions}}" range-key="label" value="{{mergeTargetIndex}}" bindchange="onMergeTargetChange">
-      <view class="picker-like">{{mergeTargetLabel}}</view>
-    </picker>
-    <checkbox-group class="merge-options" bindchange="onMergeKeepAliasChange">
-      <label class="admin-group-option merge-option">
-        <checkbox value="keep" checked="{{mergeKeepAliasValues.length > 0}}" />
-        <text>保留源姓名和别名用于历史统计归并</text>
-      </label>
-    </checkbox-group>
-    <view class="merge-preview">{{mergePreviewText}}</view>
-    <view wx:if="{{mergeResultText}}" class="invite-code">{{mergeResultText}}</view>
-    <button class="btn btn-primary" loading="{{saving}}" bindtap="mergePlayers">确认合并</button>
-  </view>
-
-  <view wx:if="{{isAdmin && (canManageTournaments || canMoveGames)}}" class="section card panel stack">
-    <view>
-      <view class="eyebrow">🏆 赛事</view>
-      <view class="card-title">赛事设置</view>
-      <view class="subtle">创建/编辑赛事容器，或把历史比赛批量移动到目标赛事。</view>
-    </view>
-    <block wx:if="{{canManageTournaments}}">
-      <picker mode="selector" range="{{tournamentOptions}}" range-key="label" value="{{tournamentIndex}}" bindchange="onTournamentChange">
-        <view class="picker-like">{{tournamentLabel}}</view>
-      </picker>
-      <button wx:if="{{tournamentHasMore}}" class="btn btn-ghost small-btn" loading="{{loadingMoreTournaments}}" bindtap="loadMoreAdminTournaments">加载更多赛事</button>
-      <view class="two-col">
-        <picker mode="selector" range="{{tournamentTypeOptions}}" range-key="label" value="{{tournamentTypeIndex}}" bindchange="onTournamentTypeChange">
-          <view class="picker-like compact-picker">{{tournamentTypeLabel}}</view>
-        </picker>
-        <picker mode="selector" range="{{tournamentSportOptions}}" range-key="label" value="{{tournamentSportIndex}}" bindchange="onTournamentSportChange">
-          <view class="picker-like compact-picker">{{tournamentSportLabel}}</view>
-        </picker>
-      </view>
-      <input class="input" placeholder="赛事全称，例如 奥体慢垒春季赛" value="{{tournamentName}}" bindinput="onTournamentNameInput" />
-      <view class="two-col">
-        <input class="input" placeholder="短名" value="{{tournamentShortName}}" bindinput="onTournamentShortNameInput" />
-        <input class="input" placeholder="赛季，例如 2026-slow" value="{{tournamentSeason}}" bindinput="onTournamentSeasonInput" />
-      </view>
-      <input class="input" placeholder="地点" value="{{tournamentLocation}}" bindinput="onTournamentLocationInput" />
-      <view class="two-col">
-        <picker mode="date" value="{{tournamentStartDate}}" bindchange="onTournamentStartDateChange">
-          <view class="picker-like compact-picker">{{tournamentStartDate || '开始日期'}}</view>
-        </picker>
-        <picker mode="date" value="{{tournamentEndDate}}" bindchange="onTournamentEndDateChange">
-          <view class="picker-like compact-picker">{{tournamentEndDate || '结束日期'}}</view>
-        </picker>
-      </view>
-      <view class="tournament-cover-box">
-        <view class="tournament-cover-head">
-          <text>赛事封面</text>
-          <text wx:if="{{tournamentCoverUploadText}}" class="subtle mini-subtle">{{tournamentCoverUploadText}}</text>
-        </view>
-        <image wx:if="{{tournamentCover}}" class="tournament-cover-preview" src="{{tournamentCover}}" mode="aspectFill" lazy-load="{{true}}" />
-        <input class="input" placeholder="COS 图片地址，可手动粘贴" value="{{tournamentCover}}" bindinput="onTournamentCoverInput" />
-        <view class="tournament-cover-actions">
-          <button class="btn btn-ghost small-btn" loading="{{uploadingTournamentCover}}" bindtap="chooseTournamentCover">{{tournamentCover ? '更换封面' : '上传封面'}}</button>
-          <button class="btn btn-ghost small-btn" bindtap="clearTournamentCover">清空封面</button>
-        </view>
-      </view>
-      <textarea class="textarea compact" placeholder="赛事说明，可选" value="{{tournamentDescription}}" bindinput="onTournamentDescriptionInput" />
-      <button class="btn btn-primary" loading="{{saving}}" bindtap="saveTournament">保存赛事</button>
-      <view wx:if="{{canDeleteTournaments && tournamentIndex > 0}}" class="account-action-box danger-zone">
-        <view class="card-title danger-title">危险操作</view>
-        <input class="input" placeholder="输入“删除赛事”确认" value="{{tournamentDeleteConfirmText}}" bindinput="onTournamentDeleteConfirmInput" />
-        <button class="btn btn-danger" loading="{{saving}}" bindtap="deleteTournament">删除赛事</button>
-        <view class="subtle">删除赛事容器不会删除比赛记录；需要归档时可用下方批量移动比赛。</view>
-      </view>
-    </block>
-    <view wx:if="{{canMoveGames}}" class="account-action-box game-batch-box">
+    <view wx:if="{{activePlayerPanel === 'merge'}}" class="account-action-box player-merge-box">
       <view>
-        <view class="card-title compact-title">批量移动比赛</view>
-        <view class="subtle">用于把导入或旧赛季比赛归档到正确赛事；只改赛事归属和赛季字段，不改比分和技术统计。</view>
+        <view class="card-title compact-title">合并球员档案</view>
+        <view class="subtle">用于试训转正式、重复档案或 PDF/比赛记录姓名归并。</view>
       </view>
-      <picker mode="selector" range="{{gameMoveTournamentOptions}}" range-key="label" value="{{gameMoveTournamentIndex}}" bindchange="onGameMoveTournamentChange">
-        <view class="picker-like">{{gameMoveTournamentLabel}}</view>
+      <picker mode="selector" range="{{mergeSourceOptions}}" range-key="label" value="{{mergeSourceIndex}}" bindchange="onMergeSourceChange">
+        <view class="picker-like">{{mergeSourceLabel}}</view>
       </picker>
-      <picker mode="selector" range="{{gameFilterOptions}}" range-key="label" value="{{gameFilterIndex}}" bindchange="onGameFilterChange">
-        <view class="picker-like compact-picker">{{gameFilterLabel}}</view>
+      <picker mode="selector" range="{{mergeTargetOptions}}" range-key="label" value="{{mergeTargetIndex}}" bindchange="onMergeTargetChange">
+        <view class="picker-like">{{mergeTargetLabel}}</view>
       </picker>
-      <view class="game-batch-toolbar">
-        <text class="subtle">已选 {{selectedGameCount}} 场</text>
-        <view class="game-batch-actions">
-          <button class="link" bindtap="selectAllBatchGames">全选当前</button>
-          <button class="link" bindtap="clearBatchGames">清空</button>
-        </view>
-      </view>
-      <checkbox-group class="game-batch-list" bindchange="onGameBatchSelectionChange">
-        <label wx:for="{{visibleBatchGames}}" wx:key="id" class="game-batch-row">
-          <checkbox value="{{item.id}}" checked="{{item.selected}}" />
-          <view class="game-batch-meta">
-            <view class="game-batch-title">{{item.title}}</view>
-            <view class="subtle">{{item.tournamentLabel}}</view>
-            <view class="subtle">{{item.meta}}</view>
-          </view>
+      <checkbox-group class="merge-options" bindchange="onMergeKeepAliasChange">
+        <label class="admin-group-option merge-option">
+          <checkbox value="keep" checked="{{mergeKeepAliasValues.length > 0}}" />
+          <text>保留源姓名和别名用于历史统计归并</text>
         </label>
       </checkbox-group>
-      <view wx:if="{{!visibleBatchGames.length}}" class="empty compact-empty">暂无可移动比赛</view>
-      <button wx:if="{{gamesHasMore}}" class="link load-more-games" loading="{{loadingMoreGames}}" bindtap="loadMoreAdminGames">加载更多比赛</button>
-      <button class="btn btn-primary" loading="{{saving}}" bindtap="batchReassignGames">移动选中比赛</button>
-      <view wx:if="{{canDeleteGames}}" class="danger-zone batch-delete-zone">
-        <view class="card-title danger-title">危险操作</view>
-        <input class="input" placeholder="输入“删除比赛”确认" value="{{gameDeleteConfirmText}}" bindinput="onGameDeleteConfirmInput" />
-        <button class="btn btn-danger" loading="{{saving}}" bindtap="batchDeleteGames">删除选中比赛</button>
-        <view class="subtle">删除会移除选中比赛的比分、技术统计和事件日志；数据录入错误优先使用比赛详情里的修订。</view>
-      </view>
+      <view class="merge-preview">{{mergePreviewText}}</view>
+      <view wx:if="{{mergeResultText}}" class="invite-code">{{mergeResultText}}</view>
+      <button class="btn btn-primary" loading="{{saving}}" bindtap="mergePlayers">确认合并</button>
     </view>
   </view>
 
-  <view wx:if="{{isAdmin && (canManageUsers || canCreateAppConnectCode || canResetPassword || canBindDirect || canDeleteUsers)}}" class="section card panel stack">
+  <view wx:if="{{isAdmin && (canManageUsers || canResetPassword) && activeTool === 'accounts'}}" class="section card panel stack">
     <view>
       <view class="eyebrow">👤 权限</view>
       <view class="card-title">账号管理</view>
-      <view class="subtle">A 级可调整后台等级、生成网页关联码、重置网页密码，并直接处理账号与正式球员档案的绑定关系。</view>
+      <view class="subtle">A 级可调整后台等级和重置网页密码；球员绑定统一走申请审批。</view>
     </view>
     <view class="admin-user-filters">
       <input class="input admin-user-search" placeholder="搜索昵称、邮箱、球员、号码" value="{{adminUserSearch}}" bindinput="onAdminUserSearchInput" />
@@ -401,35 +220,14 @@
       </checkbox-group>
       <button class="btn btn-primary" loading="{{saving}}" bindtap="saveAdminPermission">保存权限</button>
     </view>
-    <view wx:if="{{canCreateAppConnectCode}}" class="account-action-box">
-      <button class="btn btn-ghost" loading="{{saving}}" bindtap="createAdminAppConnectCode">生成网页关联码</button>
-      <view wx:if="{{appConnectCode}}" class="invite-code">网页关联码：{{appConnectCode}}</view>
-      <view class="subtle">关联码 30 分钟内有效，生成后会自动复制。</view>
-    </view>
     <view wx:if="{{canResetPassword}}" class="account-action-box">
       <input class="input" password="{{true}}" placeholder="新网页密码，至少 6 位" value="{{resetPasswordValue}}" bindinput="onResetPasswordInput" />
       <button class="btn btn-ghost" loading="{{saving}}" bindtap="resetAdminPassword">重置网页密码</button>
       <view class="subtle">只影响邮箱网页登录；不能在这里重置当前登录账号自己的密码。</view>
     </view>
-    <view wx:if="{{canBindDirect}}" class="account-action-box">
-      <picker mode="selector" range="{{directBindPlayerOptions}}" range-key="label" value="{{directBindPlayerIndex}}" bindchange="onDirectBindPlayerChange">
-        <view class="picker-like">{{directBindPlayerLabel}}</view>
-      </picker>
-      <view class="request-actions">
-        <button class="btn btn-primary small-btn" loading="{{saving}}" bindtap="bindAdminUserToPlayer">直接绑定</button>
-        <button class="btn btn-danger small-btn" loading="{{saving}}" bindtap="unbindAdminUserFromPlayer">解除绑定</button>
-      </view>
-      <view class="subtle">用于管理员线下确认身份后的修正；常规用户仍优先走绑定申请审批。</view>
-    </view>
-    <view wx:if="{{canDeleteUsers}}" class="account-action-box danger-zone">
-      <view class="card-title danger-title">危险操作</view>
-      <input class="input" placeholder="输入“删除账号”确认" value="{{deleteConfirmText}}" bindinput="onDeleteConfirmInput" />
-      <button class="btn btn-danger" loading="{{saving}}" bindtap="deleteAdminUser">删除账号</button>
-      <view class="subtle">删除账号不会删除正式球员档案；所有者账号和当前登录账号不能删除。</view>
-    </view>
   </view>
 
-  <view wx:if="{{isAdmin}}" class="section card panel stack">
+  <view wx:if="{{isAdmin && activeTool === 'reviews'}}" class="section card panel stack">
     <view class="row between">
       <view>
         <view class="eyebrow">✅ 审批</view>
@@ -459,57 +257,7 @@
     <view wx:if="{{!pendingRequests.length}}" class="empty">{{bindRequestEmptyText}}</view>
   </view>
 
-  <view wx:if="{{isAdmin && canBindInvite}}" class="section card panel stack">
-    <view>
-      <view class="eyebrow">🔗 绑定</view>
-      <view class="card-title">发送绑定邀请</view>
-      <view class="subtle">给已注册账号发送站内信邀请，附带正式球员绑定码。</view>
-    </view>
-    <picker mode="selector" range="{{inviteUserOptions}}" range-key="label" value="{{inviteUserIndex}}" bindchange="onInviteUserChange">
-      <view class="picker-like">{{inviteUserLabel}}</view>
-    </picker>
-    <button wx:if="{{inviteUsersHasMore}}" class="btn btn-ghost load-more" loading="{{loadingMoreInviteUsers}}" bindtap="loadMoreInviteUsers">加载更多可邀请用户</button>
-    <picker mode="selector" range="{{invitePlayerOptions}}" range-key="label" value="{{invitePlayerIndex}}" bindchange="onInvitePlayerChange">
-      <view class="picker-like">{{invitePlayerLabel}}</view>
-    </picker>
-    <textarea class="textarea compact" placeholder="站内信备注，可选" value="{{inviteMessage}}" bindinput="onInviteMessageInput" />
-    <button class="btn btn-primary" loading="{{saving}}" bindtap="sendBindInvitation">发送绑定邀请</button>
-    <view wx:if="{{inviteCode}}" class="invite-code">绑定码：{{inviteCode}}</view>
-  </view>
-
-  <view wx:if="{{isAdmin && canManageBindCodes}}" class="section card panel stack">
-    <view>
-      <view class="eyebrow">🔐 绑定码</view>
-      <view class="card-title">绑定码中心</view>
-      <view class="subtle">备用绑定路径：生成正式球员绑定码、复制给队员，或作废不再使用的码。</view>
-    </view>
-    <picker mode="selector" range="{{bindCodePlayerOptions}}" range-key="label" value="{{bindCodePlayerIndex}}" bindchange="onBindCodePlayerChange">
-      <view class="picker-like">{{bindCodePlayerLabel}}</view>
-    </picker>
-    <button class="btn btn-primary" loading="{{saving}}" bindtap="createBindCode">生成绑定码</button>
-    <view wx:if="{{generatedBindCode}}" class="invite-code">新绑定码：{{generatedBindCode}}</view>
-    <input class="input" placeholder="搜索绑定码、球员名、背号或状态" value="{{bindCodeSearch}}" bindinput="onBindCodeSearchInput" />
-    <view class="bind-code-list">
-      <view wx:for="{{visibleBindCodes}}" wx:key="code" class="bind-code-row">
-        <view class="bind-code-main">
-          <view class="bind-code-value">{{item.code}}</view>
-          <view class="subtle">{{item.playerText}}</view>
-          <view wx:if="{{item.meta}}" class="subtle">{{item.meta}}</view>
-        </view>
-        <view class="bind-code-side">
-          <view class="bind-code-status {{item.statusClass}}">{{item.statusLabel}}</view>
-          <view class="bind-code-actions">
-            <button class="link tiny-link" data-code="{{item.code}}" bindtap="copyBindCode">复制</button>
-            <button class="link tiny-link danger-link" data-code="{{item.code}}" bindtap="deleteBindCode">作废</button>
-          </view>
-        </view>
-      </view>
-    </view>
-    <button wx:if="{{bindCodesHasMore}}" class="btn btn-ghost load-more" loading="{{loadingMoreBindCodes}}" bindtap="loadMoreBindCodes">加载更多绑定码</button>
-    <view wx:if="{{!visibleBindCodes.length}}" class="empty compact-empty">暂无匹配绑定码</view>
-  </view>
-
-  <view wx:if="{{isAdmin && (canWritePoints || canWriteAttendances)}}" class="section card panel stack points-panel">
+  <view wx:if="{{isAdmin && (canWritePoints || canWriteAttendances) && activeTool === 'points'}}" class="section card panel stack points-panel">
     <view>
       <view class="eyebrow">🧾 操作</view>
       <view class="card-title">积分与签到</view>
@@ -622,21 +370,7 @@
     </view>
   </view>
 
-  <view wx:if="{{isAdmin}}" class="section card panel stack">
-    <view>
-      <view class="eyebrow">🏛 荣誉</view>
-      <view class="card-title">名人堂授予</view>
-    </view>
-    <input class="input" type="number" placeholder="入选年份" value="{{hofYear}}" bindinput="onHofYearInput" />
-    <textarea class="textarea compact" placeholder="入选理由，例如赛季 MVP、长期贡献、关键比赛表现" value="{{hofReason}}" bindinput="onHofReasonInput" />
-    <view class="request-actions">
-      <button class="btn btn-primary small-btn" loading="{{saving}}" bindtap="addHallOfFame">加入名人堂</button>
-      <button class="btn btn-danger small-btn" loading="{{saving}}" bindtap="removeHallOfFame">移出名人堂</button>
-    </view>
-    <view class="subtle">使用上方选中的球员；移出名人堂不会删除球员档案或比赛数据。</view>
-  </view>
-
-  <view wx:if="{{isAdmin && canReadAudit}}" class="section card panel stack">
+  <view wx:if="{{isAdmin && canReadAudit && activeTool === 'audit'}}" class="section card panel stack">
     <view class="row between">
       <view>
         <view class="eyebrow">🧭 审计</view>
@@ -662,39 +396,43 @@
       <view class="card-title">常用入口</view>
     </view>
     <view class="shortcut-grid">
-      <button class="shortcut card" bindtap="go" data-url="/pages/events/event-create/event-create">
+      <button class="shortcut" bindtap="go" data-url="/pages/events/event-list/event-list">
         <text class="shortcut-icon">📌</text>
+        <text>赛事活动</text>
+      </button>
+      <button class="shortcut" bindtap="go" data-url="/pages/events/event-create/event-create">
+        <text class="shortcut-icon">➕</text>
         <text>发起接龙</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/score/create/create">
-        <text class="shortcut-icon">⚾</text>
-        <text>新建比赛</text>
+      <button wx:if="{{canManageTournaments}}" class="shortcut" bindtap="go" data-url="/pages/tournaments/tournament-manage/tournament-manage">
+        <text class="shortcut-icon">🏆</text>
+        <text>新建赛事</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/games/game-import/game-import">
+      <button class="shortcut" bindtap="go" data-url="/pages/games/game-import/game-import">
         <text class="shortcut-icon">📄</text>
         <text>数据导入</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/players/player-list/player-list">
+      <button class="shortcut" bindtap="go" data-url="/pages/players/player-list/player-list">
         <text class="shortcut-icon">👥</text>
         <text>球员阵容</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/hall-of-fame/hall-of-fame">
+      <button class="shortcut" bindtap="go" data-url="/pages/hall-of-fame/hall-of-fame">
         <text class="shortcut-icon">🏛</text>
         <text>名人堂</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/highlights/highlights">
+      <button class="shortcut" bindtap="go" data-url="/pages/highlights/highlights">
         <text class="shortcut-icon">📸</text>
         <text>精彩时刻</text>
       </button>
-      <button class="shortcut card" bindtap="go" data-url="/pages/notifications/notifications">
+      <button class="shortcut" bindtap="go" data-url="/pages/notifications/notifications">
         <text class="shortcut-icon">🔔</text>
         <text>站内通知</text>
       </button>
-      <button wx:if="{{canReadAudit}}" class="shortcut card" bindtap="go" data-url="/pages/admin/audit/audit">
+      <button wx:if="{{canReadAudit}}" class="shortcut" bindtap="go" data-url="/pages/admin/audit/audit">
         <text class="shortcut-icon">🧭</text>
         <text>审计日志</text>
       </button>
     </view>
-    <view class="subtle">比赛 PDF / Excel 可在小程序解析预览后入库；星阵配置由上方“星阵全站发布”同步到网页。</view>
+    <view class="subtle">开始记录比赛可从赛事活动或比赛中心进入；PDF / Excel 数据导入仅保留给数据组使用。</view>
   </view>
 </view>

@@ -28,12 +28,9 @@ const permissionLabels = {
   'hof:write': '名人堂',
   'highlights:write': '精彩时刻',
   'notifications:write': '站内通知',
-  'bind_codes:manage': '绑定邀请',
   'users:read': '账号列表',
   'users:grant_admin': '权限管理',
   'users:password_reset': '密码重置',
-  'users:app_connect_code': '网页关联码',
-  'users:bind_direct': '直接绑定',
   'audit:read': '审计日志',
   'audit:game_read': '比赛审计',
   'destructive:delete': '高危删除',
@@ -129,6 +126,21 @@ const bindRequestStatusOptions = [
   { label: '已驳回', value: 'rejected', emptyText: '暂无已驳回申请' },
 ];
 
+const adminToolOptions = [
+  { key: 'reviews', label: '绑定审批' },
+  { key: 'players', label: '球员档案' },
+  { key: 'points', label: '积分签到' },
+  { key: 'accounts', label: '账号权限' },
+  { key: 'audit', label: '最近操作' },
+];
+
+const playerPanelTabs = [
+  { key: 'pool', label: '球员池' },
+  { key: 'create', label: '新增球员' },
+  { key: 'batch', label: '批量导入' },
+  { key: 'merge', label: '合并档案' },
+];
+
 const starfieldDefaults = {
   formation: 'scatter',
   path: 'or',
@@ -190,6 +202,10 @@ Page({
     user: null,
     isAdmin: false,
     permissionChips: [],
+    activeTool: 'reviews',
+    adminToolTabs: adminToolOptions,
+    activePlayerPanel: 'pool',
+    playerPanelTabs,
     canManageUsers: false,
     canCreateAppConnectCode: false,
     canResetPassword: false,
@@ -360,12 +376,11 @@ Page({
     mergeKeepAliasValues: ['keep'],
     mergePreviewText: '选择源球员和目标球员后，会显示合并影响。',
     mergeResultText: '',
-    stats: [
+        stats: [
       { label: '待审绑定', value: 0 },
-      { label: '正式球员', value: 0 },
-      { label: '试训队员', value: 0 },
-      { label: '近期接龙', value: 0 },
       { label: '待审时刻', value: 0 },
+      { label: '近期接龙', value: 0 },
+      { label: '未关联比赛', value: 0 },
     ],
     pendingRequests: [],
     bindRequestStatusOptions,
@@ -455,16 +470,16 @@ Page({
         this.setData({ user, isAdmin: false, loading: false });
         return;
       }
-      const canBindInvite = hasPermission(user, 'bind_codes:manage');
+      const canBindInvite = false;
       const canReadAudit = hasPermission(user, 'audit:read') || hasPermission(user, 'audit:game_read');
       const canWritePoints = hasPermission(user, 'points:write');
       const canWriteAttendances = hasPermission(user, 'attendances:write');
       const canViewPointsOverview = canWritePoints || canWriteAttendances;
       const canManageUsers = hasPermission(user, 'users:read') && hasPermission(user, 'users:grant_admin');
-      const canCreateAppConnectCode = hasPermission(user, 'users:read') && hasPermission(user, 'users:app_connect_code');
+      const canCreateAppConnectCode = false;
       const canResetPassword = hasPermission(user, 'users:read') && hasPermission(user, 'users:password_reset');
-      const canBindDirect = hasPermission(user, 'users:read') && hasPermission(user, 'users:bind_direct');
-      const canDeleteUsers = hasPermission(user, 'users:read') && hasPermission(user, 'destructive:delete');
+      const canBindDirect = false;
+      const canDeleteUsers = false;
       const canWritePlayers = hasPermission(user, 'players:write');
       const canManageEvents = hasPermission(user, 'events:write');
       const canManageSiteSettings = hasPermission(user, 'system:settings');
@@ -506,7 +521,7 @@ Page({
         canReadAudit
           ? api.get('/admin/audit-logs', { limit: 20 }).catch(() => ({ logs: [] }))
           : Promise.resolve({ logs: [] }),
-        canManageUsers || canCreateAppConnectCode || canResetPassword || canBindDirect || canDeleteUsers
+        canManageUsers || canResetPassword
           ? api.get('/admin/users', { limit: ADMIN_USER_PAGE_LIMIT, offset: 0 }).catch(() => ({ users: [], hasMore: false, nextOffset: 0 }))
           : Promise.resolve({ users: [], hasMore: false, nextOffset: 0 }),
 	        canManageTournaments || canMoveGames || canWritePoints
@@ -599,9 +614,21 @@ Page({
         tag: currentEventTagFilter(this.data),
       });
       const starfieldState = buildStarfieldState(siteSettingRes.setting);
+      const adminToolTabs = buildAdminToolTabs({
+        canWritePlayers,
+        canWritePoints,
+        canWriteAttendances,
+        canManageUsers,
+        canCreateAppConnectCode,
+        canResetPassword,
+        canDeleteUsers,
+        canReadAudit,
+      });
       this.setData({
         user,
         isAdmin,
+        activeTool: normalizeActiveTool(this.data.activeTool, adminToolTabs),
+        adminToolTabs,
         canBindInvite,
         canManageBindCodes: canBindInvite,
         canReadAudit,
@@ -688,10 +715,10 @@ Page({
         bindRequestEmptyText: (bindRequestStatusOptions[this.data.bindRequestStatusIndex] || bindRequestStatusOptions[0]).emptyText,
         stats: buildStats(
           pendingBindRes ? (pendingBindRes.requests || []) : (bindRes.requests || []),
-          players,
           eventsRes.events || [],
           highlightsRes.highlights || [],
-          highlightsRes.total
+          highlightsRes.total,
+          gamesRes.games || []
         ),
       });
     } catch (err) {
@@ -703,6 +730,35 @@ Page({
 
   go(e) {
     nav.go(e.currentTarget.dataset.url);
+  },
+
+  switchTool(e) {
+    const activeTool = e.currentTarget.dataset.tool || 'reviews';
+    this.setData({ activeTool });
+  },
+
+  switchPlayerPanel(e) {
+    const activePlayerPanel = e.currentTarget.dataset.panel || 'pool';
+    this.setData({ activePlayerPanel });
+  },
+
+  openTodo(e) {
+    const kind = e.currentTarget.dataset.kind || '';
+    if (kind === 'bind') {
+      this.setData({ activeTool: 'reviews' });
+      return;
+    }
+    if (kind === 'players') {
+      this.setData({ activeTool: 'players' });
+      return;
+    }
+    if (kind === 'events') {
+      nav.go('/pages/events/event-list/event-list');
+      return;
+    }
+    if (kind === 'highlights') {
+      nav.go('/pages/highlights/highlights');
+    }
   },
 
   onReviewNoteInput(e) {
@@ -895,9 +951,9 @@ Page({
       if (code && wx.setClipboardData) {
         wx.setClipboardData({ data: code });
       }
-      toast('网页关联码已生成');
+      toast('账号关联入口已下线');
     } catch (err) {
-      showError(err, '生成网页关联码失败');
+      showError(err, '账号关联操作失败');
     } finally {
       this.setData({ saving: false });
     }
@@ -960,7 +1016,7 @@ Page({
     this.setData({ saving: true });
     try {
       await api.post(`/admin/users/${target.id}/unbind-player`, {});
-      toast('已解除绑定');
+      toast('账号关联已解除');
       await this.load();
     } catch (err) {
       showError(err, '解绑球员失败');
@@ -1607,7 +1663,7 @@ Page({
         visibleBindCodes: buildVisibleBindCodes(bindCodes, this.data.players, this.data.bindCodeSearch),
       });
     } catch (err) {
-      showError(err, '加载更多绑定码失败');
+      showError(err, '加载历史绑定入口失败');
     } finally {
       this.setData({ loadingMoreBindCodes: false });
     }
@@ -1630,9 +1686,9 @@ Page({
         bindCodePlayerLabel: this.data.bindCodePlayerOptions[0]?.label || '请选择正式球员',
         generatedBindCode: code,
       });
-      toast(code ? '绑定码已生成并复制' : '绑定码已生成');
+      toast(code ? '历史绑定入口已生成并复制' : '历史绑定入口已生成');
     } catch (err) {
-      showError(err, '生成绑定码失败');
+      showError(err, '历史绑定入口操作失败');
     } finally {
       this.setData({ saving: false });
     }
@@ -1644,7 +1700,7 @@ Page({
     wx.setClipboardData({
       data: code,
       success() {
-        toast('绑定码已复制');
+        toast('历史绑定内容已复制');
       },
     });
   },
@@ -1657,7 +1713,7 @@ Page({
     try {
       await new Promise((resolve, reject) => {
         wx.showModal({
-          title: '作废绑定码',
+          title: '停用历史绑定入口',
           content: `确认作废 ${code}？作废后不能再用于绑定。`,
           confirmText: '作废',
           success(res) {
@@ -1668,11 +1724,11 @@ Page({
         });
       });
       await api.del(`/bind-codes/${encodeURIComponent(code)}`);
-      toast('绑定码已作废');
+      toast('历史绑定入口已停用');
       await this.load();
     } catch (err) {
       if (err && err.message === 'cancelled') return;
-      showError(err, '作废绑定码失败');
+      showError(err, '停用历史绑定入口失败');
     } finally {
       this.setData({ saving: false });
     }
@@ -1691,10 +1747,10 @@ Page({
         playerId: player.id,
         message: this.data.inviteMessage,
       });
-      toast('绑定邀请已发送');
+      toast('历史邀请已发送');
       this.setData({ inviteMessage: '', inviteCode: res.code || '' });
     } catch (err) {
-      showError(err, '发送绑定邀请失败');
+      showError(err, '发送历史邀请失败');
     } finally {
       this.setData({ saving: false });
     }
@@ -1806,10 +1862,10 @@ Page({
         }),
         stats: buildStats(
           this.data.pendingRequests || [],
-          players,
           this.data.events || [],
           [],
-          (this.data.stats || []).find(item => item.label === '待审时刻')?.value
+          (this.data.stats || []).find(item => item.label === '待审时刻')?.value,
+          this.data.games || []
         ),
       });
     } catch (err) {
@@ -1859,7 +1915,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     const player = (this.data.players || []).find(item => item.id === id);
     if (!player) return toast('未找到球员');
-    if (player.level !== 'verified') return toast('绑定码只给正式球员');
+    if (player.level !== 'verified') return toast('该入口已下线');
     this.setData({ saving: true, generatedBindCode: '' });
     try {
       const res = await api.post('/bind-codes', { playerId: id });
@@ -1873,9 +1929,9 @@ Page({
         generatedBindCode: code,
         visibleBindCodes: buildVisibleBindCodes(bindCodes, this.data.players, this.data.bindCodeSearch),
       });
-      toast(code ? '绑定码已生成并复制' : '绑定码已生成');
+      toast(code ? '历史绑定入口已生成并复制' : '历史绑定入口已生成');
     } catch (err) {
-      showError(err, '生成绑定码失败');
+      showError(err, '历史绑定入口操作失败');
     } finally {
       this.setData({ saving: false });
     }
@@ -2559,12 +2615,9 @@ function canUseAdmin(user) {
     'games:revise',
     'games:cover_write',
     'tournaments:write',
-    'bind_codes:manage',
     'users:read',
     'users:grant_admin',
-    'users:app_connect_code',
     'users:password_reset',
-    'users:bind_direct',
     'audit:read',
     'audit:game_read',
     'destructive:delete',
@@ -2577,6 +2630,22 @@ function canUseAdmin(user) {
 
 function hasPermission(user, permission) {
   return (user?.permissions || []).includes(permission);
+}
+
+function buildAdminToolTabs(state) {
+  const tabs = [adminToolOptions[0]];
+  if (state.canWritePlayers) tabs.push(adminToolOptions[1]);
+  if (state.canWritePoints || state.canWriteAttendances) tabs.push(adminToolOptions[2]);
+  if (state.canManageUsers || state.canResetPassword) {
+    tabs.push(adminToolOptions[3]);
+  }
+  if (state.canReadAudit) tabs.push(adminToolOptions[4]);
+  return tabs;
+}
+
+function normalizeActiveTool(activeTool, tabs) {
+  const keys = (tabs || []).map(item => item.key);
+  return keys.includes(activeTool) ? activeTool : (keys[0] || 'reviews');
 }
 
 function splitList(value) {
@@ -2657,7 +2726,7 @@ function buildVisiblePlayerPool(players, query = '', level = '') {
         levelLabel: player.level === 'verified' ? '正式球员' : '试训队员',
         levelClass: player.level === 'verified' ? 'verified' : 'casual',
         canUpgrade: player.level !== 'verified',
-        canCreateBindCode: player.level === 'verified',
+        canCreateBindCode: false,
         meta: [
           player.bats ? `打 ${player.bats}` : '',
           player.throws ? `投 ${player.throws}` : '',
@@ -3666,9 +3735,9 @@ function actionLabel(action) {
     site_setting_publish: '发布系统设置',
     approve_bind_request: '批准绑定',
     reject_bind_request: '驳回绑定',
-    send_bind_invitation: '绑定邀请',
-    create_bind_code: '生成绑定码',
-    delete_bind_code: '作废绑定码',
+    send_bind_invitation: '历史绑定操作',
+    create_bind_code: '历史绑定操作',
+    delete_bind_code: '历史绑定操作',
     manual_point_adjustment: '积分调整',
     points_adjust: '积分调整',
     points_adjust_delete: '删除积分调整',
@@ -3678,29 +3747,27 @@ function actionLabel(action) {
     hall_of_fame_delete: '名人堂移出',
     send_notification: '发送通知',
     reset_password: '重置密码',
-    bind_user_player: '直接绑定',
-    unbind_user_player: '解除绑定',
-    create_app_connect_code: '网页关联码',
-    app_connect_code_create: '网页关联码',
+    bind_user_player: '历史账号操作',
+    unbind_user_player: '历史账号操作',
+    create_app_connect_code: '历史账号操作',
+    app_connect_code_create: '历史账号操作',
     delete_user: '删除账号',
     delete_tournament: '删除赛事',
   };
   return map[action] || action || '审计记录';
 }
 
-function buildStats(requests, players, events, highlights, pendingHighlightTotal) {
-  const verified = players.filter(player => player.level === 'verified').length;
-  const casual = players.filter(player => player.level !== 'verified').length;
+function buildStats(requests, events, highlights, pendingHighlightTotal, games) {
   const total = Number(pendingHighlightTotal);
   const pendingHighlights = Number.isFinite(total)
     ? total
     : highlights.filter(item => item.status === 'pending').length;
+  const unassignedGames = (games || []).filter(game => !game.isAggregate && !game.tournamentId).length;
   return [
-    { label: '待审绑定', value: requests.length },
-    { label: '正式球员', value: verified },
-    { label: '试训队员', value: casual },
-    { label: '近期接龙', value: events.length },
-    { label: '待审时刻', value: pendingHighlights },
+    { label: '待审绑定', value: requests.length, kind: 'bind' },
+    { label: '待审时刻', value: pendingHighlights, kind: 'highlights' },
+    { label: '近期接龙', value: events.length, kind: 'events' },
+    { label: '未关联比赛', value: unassignedGames, kind: 'events' },
   ];
 }
 

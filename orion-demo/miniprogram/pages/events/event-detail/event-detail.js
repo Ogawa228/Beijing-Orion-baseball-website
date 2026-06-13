@@ -50,7 +50,7 @@ function hasPermission(user, permission) {
 }
 
 function canStartScorebook(user) {
-  return hasPermission(user, 'games:draft') || hasPermission(user, 'games:confirm');
+  return hasPermission(user, 'events:write') || hasPermission(user, 'games:draft') || hasPermission(user, 'games:confirm');
 }
 
 function formatLinkedGame(game) {
@@ -445,7 +445,7 @@ Page({
 
   startScoreFromEvent() {
     if (!this.data.canStartGame) {
-      toast('需要比赛记录权限');
+      toast('需要运营组或比赛记录权限');
       return;
     }
     wx.navigateTo({ url: `/pages/score/create/create?eventId=${this.data.id}` });
@@ -460,7 +460,7 @@ Page({
   copySourceLink() {
     const link = String(this.data.event?.sourceLink || '').trim();
     if (!link || link === 'orion-miniprogram') {
-      toast('暂无原帖链接');
+      toast('暂无外部链接');
       return;
     }
     wx.setClipboardData({

@@ -13,6 +13,7 @@
 .source-link-btn {
   min-height: 68rpx;
   margin-top: 18rpx;
+  border-radius: 22rpx;
   font-size: 24rpx;
 }
 
@@ -49,8 +50,17 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
   color: #8fb0ff;
+  background: rgba(143, 176, 255, .08);
   font-size: 24rpx;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .signup-actions {
@@ -64,6 +74,7 @@
   min-width: 148rpx;
   min-height: 72rpx;
   padding: 0 10rpx;
+  border-radius: 22rpx;
   font-size: 24rpx;
 }
 
@@ -109,14 +120,22 @@
 }
 
 .tiny-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 52rpx;
-  min-height: 42rpx;
-  padding: 0;
+  min-height: 48rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  background: rgba(143, 176, 255, .08);
   font-size: 22rpx;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .danger-link {
   color: #ffb7b7;
+  background: rgba(255, 138, 138, .08);
 }
 
 .linked-game-list {
@@ -159,6 +178,7 @@
 
 .linked-game-more {
   min-height: 70rpx;
+  border-radius: 22rpx;
   font-size: 24rpx;
 }
 
@@ -178,6 +198,7 @@
 .manual-player-more {
   min-height: 70rpx;
   padding: 0 12rpx;
+  border-radius: 22rpx;
   font-size: 24rpx;
 }
 
@@ -204,6 +225,7 @@
   min-width: 0;
   min-height: 78rpx;
   padding: 0 14rpx;
+  border-radius: 24rpx;
   font-size: 25rpx;
 }
 

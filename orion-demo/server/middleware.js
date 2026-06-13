@@ -39,6 +39,20 @@ function requirePermission(permission) {
   };
 }
 
+function requireAnyPermission(permissions) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'unauthorized', message: '请先登录' });
+    if (!permissions.some(permission => hasPermission(req.user, permission))) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: '权限不足',
+        permission: permissions.join('|'),
+      });
+    }
+    next();
+  };
+}
+
 // 统一错误处理中间件（最后 mount）
 function errorHandler(err, _req, res, _next) {
   console.error('[API ERROR]', err.stack || err);
@@ -54,4 +68,4 @@ function wrap(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
 
-module.exports = { attachUser, requireAuth, requireAdmin, requirePermission, errorHandler, wrap };
+module.exports = { attachUser, requireAuth, requireAdmin, requirePermission, requireAnyPermission, errorHandler, wrap };

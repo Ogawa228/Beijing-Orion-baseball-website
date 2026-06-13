@@ -1,0 +1,137 @@
+.tournament-manage-page .card-title {
+  color: #f6f8ff;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.label {
+  margin-bottom: 10rpx;
+  color: #e8eefa;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.picker-arrow {
+  flex: 0 0 auto;
+  color: #8fb0ff;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.cover-box {
+  display: grid;
+  grid-template-columns: 160rpx minmax(0, 1fr);
+  gap: 16rpx;
+  align-items: center;
+  padding: 16rpx;
+  border: 1rpx solid rgba(228, 199, 122, .2);
+  border-radius: 8rpx;
+  background: rgba(228, 199, 122, .055);
+}
+
+.cover-preview {
+  width: 160rpx;
+  height: 116rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .08);
+}
+
+.cover-main {
+  min-width: 0;
+}
+
+.cover-input {
+  min-height: 68rpx;
+  padding: 0 16rpx;
+  font-size: 23rpx;
+}
+
+.cover-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.small-btn {
+  min-height: 68rpx;
+  padding: 0 12rpx;
+  border-radius: 22rpx;
+  font-size: 24rpx;
+}
+
+.game-batch-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.game-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.game-batch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 18rpx;
+  border: 1rpx solid rgba(255, 255, 255, .1);
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, .04);
+}
+
+.game-batch-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.game-batch-title {
+  color: #f6f8ff;
+  font-size: 27rpx;
+  font-weight: 900;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.game-batch-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10rpx;
+  min-height: 36rpx;
+  padding: 0 12rpx;
+  border-radius: 999rpx;
+  color: #e4c77a;
+  background: rgba(228, 199, 122, .12);
+  font-size: 21rpx;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.compact-empty {
+  padding: 28rpx 16rpx;
+}
+
+.danger-zone {
+  border-color: rgba(255, 95, 95, .26);
+}
+
+.danger-title {
+  color: #ffb7b7;
+}

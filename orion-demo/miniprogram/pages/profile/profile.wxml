@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page tab-page profile-page">
   <view class="profile card panel">
     <image class="avatar-lg" src="{{avatarSrc}}" mode="aspectFill" />
     <view wx:if="{{user}}">
@@ -132,5 +132,5 @@
   </view>
 
   <button wx:if="{{!user}}" class="btn btn-primary login" bindtap="go" data-url="/pages/login/login">微信登录</button>
-  <button wx:if="{{user}}" class="btn btn-ghost logout" bindtap="logout">退出登录</button>
+  <button wx:if="{{user}}" class="btn btn-danger logout" bindtap="logout">退出登录</button>
 </view>

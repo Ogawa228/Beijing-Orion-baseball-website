@@ -9,7 +9,7 @@
     <view wx:if="{{event.images.length}}" class="event-gallery">
       <image wx:for="{{event.images}}" wx:key="*this" class="event-gallery-image" mode="aspectFill" lazy-load="{{true}}" src="{{item}}" bindtap="previewEventImage" data-index="{{index}}" />
     </view>
-    <button wx:if="{{event.sourceLink && event.sourceLink !== 'orion-miniprogram'}}" class="btn btn-ghost source-link-btn" bindtap="copySourceLink">复制原帖链接</button>
+    <button wx:if="{{event.sourceLink && event.sourceLink !== 'orion-miniprogram'}}" class="btn btn-ghost source-link-btn" bindtap="copySourceLink">复制外部链接</button>
   </view>
 
   <view wx:if="{{event}}" class="section card panel stack">
@@ -58,7 +58,7 @@
         <view class="eyebrow">⚾ 比赛</view>
         <view class="card-title">关联比赛</view>
       </view>
-      <button wx:if="{{canStartGame}}" class="link" bindtap="startScoreFromEvent">从接龙记分</button>
+      <button wx:if="{{canStartGame}}" class="link" bindtap="startScoreFromEvent">开始记录比赛</button>
     </view>
     <view wx:if="{{linkedGames.length}}" class="linked-game-list">
       <view wx:for="{{linkedGames}}" wx:key="id" class="linked-game-row" bindtap="openGame" data-id="{{item.id}}">
@@ -71,7 +71,7 @@
     </view>
     <view wx:elif="{{!linkedGamesHasMore}}" class="empty compact-empty">还没有关联比赛记录</view>
     <button wx:if="{{linkedGamesHasMore}}" class="btn btn-ghost linked-game-more" loading="{{loadingMoreLinkedGames}}" bindtap="loadMoreLinkedGames">加载更多关联比赛</button>
-    <view class="subtle">从这条接龙发起的记分会自动写入同一个接龙 ID，赛后比分、打线、MVP 和事件日志可从这里回看。</view>
+    <view class="subtle">从这条活动发起的比赛记录会自动写入同一个接龙 ID，赛后比分、打线、MVP 和事件日志可从这里回看。</view>
   </view>
 
   <view wx:if="{{canManageSignups}}" class="section card panel stack">
@@ -117,8 +117,8 @@
     </view>
     <textarea class="textarea relay-import" placeholder="粘贴微信群接龙，例如：&#10;1. 张三&#10;2. 李四 待定 晚到&#10;3. 王五 请假" value="{{importText}}" bindinput="onImportInput" />
     <view class="relay-import-actions">
-      <button class="btn btn-primary" loading="{{importing}}" bindtap="pasteAndImportRelay">粘贴并识别</button>
-      <button class="btn btn-ghost" loading="{{importing}}" bindtap="importRelayPaste">识别输入框</button>
+      <button class="btn btn-primary" loading="{{importing}}" bindtap="pasteAndImportRelay">粘贴并识别群接龙</button>
+      <button class="btn btn-ghost" loading="{{importing}}" bindtap="importRelayPaste">识别输入框内容</button>
     </view>
     <view class="subtle">从微信群复制接龙后点“粘贴并识别”。能匹配到正式球员档案的会自动关联，未匹配的先保留为手动姓名。</view>
     <view wx:if="{{importSummary}}" class="import-summary">{{importSummary}}</view>

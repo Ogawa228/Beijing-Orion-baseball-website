@@ -2,8 +2,8 @@
   <view class="score-create-hero card">
     <view>
       <view class="eyebrow">⚾ 比赛</view>
-      <view class="title">发起比赛</view>
-      <view class="subtle">先确认比赛信息和出场名单，再进入中文现场记录。</view>
+      <view class="title">开始记录比赛</view>
+      <view class="subtle">按三步确认：比赛信息、出场名单、守位确认。</view>
     </view>
     <view class="hero-metrics">
       <view class="hero-metric">
@@ -17,7 +17,14 @@
     </view>
   </view>
 
-  <view class="section card panel">
+  <view class="setup-steps card panel">
+    <view wx:for="{{setupSteps}}" wx:key="key" class="setup-step {{item.active ? 'active' : ''}} {{item.done ? 'done' : ''}}" data-step="{{item.key}}" bindtap="setSetupStep">
+      <view class="step-index">{{item.index}}</view>
+      <view class="step-label">{{item.label}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{setupStep == 'info'}}" class="section card panel">
     <view class="row between block-head">
       <view>
         <view class="eyebrow">🧾 基础</view>
@@ -58,7 +65,11 @@
     </view>
   </view>
 
-  <view class="section card panel">
+  <view wx:if="{{setupStep == 'info'}}" class="step-actions">
+    <button class="btn btn-primary" bindtap="nextSetupStep">下一步：出场名单</button>
+  </view>
+
+  <view wx:if="{{setupStep == 'roster'}}" class="section card panel">
     <view class="row between block-head">
       <view>
         <view class="eyebrow">👥 名单</view>
@@ -81,6 +92,20 @@
       </picker>
       <button wx:if="{{rosterEventsHasMore}}" class="btn btn-ghost relay-more" loading="{{loadingMoreRosterEvents}}" bindtap="loadMoreRosterEvents">加载更多接龙候选</button>
       <view class="relay-summary">{{relaySummary}}</view>
+      <view class="relay-status-grid">
+        <view class="relay-status-card">
+          <text class="relay-status-value">{{relaySignups.length}}</text>
+          <text class="relay-status-label">已识别</text>
+        </view>
+        <view class="relay-status-card bound">
+          <text class="relay-status-value">{{lineup.length}}</text>
+          <text class="relay-status-label">已绑定</text>
+        </view>
+        <view class="relay-status-card missing">
+          <text class="relay-status-value">{{relayUnmatchedNames.length}}</text>
+          <text class="relay-status-label">需手动添加</text>
+        </view>
+      </view>
       <view wx:for="{{relaySignups}}" wx:key="id" class="relay-row">
         <view>
           <view class="relay-name">{{item.displayName}}</view>
@@ -117,12 +142,17 @@
     <button wx:if="{{playersHasMore}}" class="btn btn-ghost player-more" loading="{{loadingMorePlayers}}" bindtap="loadMorePlayers">加载更多球员</button>
   </view>
 
-  <view wx:if="{{lineup.length}}" class="section card panel">
+  <view wx:if="{{setupStep == 'roster'}}" class="step-actions two">
+    <button class="btn btn-ghost" bindtap="prevSetupStep">上一步</button>
+    <button class="btn btn-primary" bindtap="nextSetupStep">下一步：守位确认</button>
+  </view>
+
+  <view wx:if="{{setupStep == 'lineup' && lineup.length}}" class="section card panel">
     <view class="row between block-head">
       <view>
         <view class="eyebrow">🧢 阵容</view>
         <view class="card-title">阵容工作台</view>
-        <view class="subtle">拖动球员块上下调整棒次；选中或拖到场地图位置可改守位。</view>
+        <view class="subtle">先点选球员，再点场地图守位；也可以拖动球员块调整棒次。</view>
       </view>
       <view wx:if="{{selectedLineupName}}" class="pill">{{selectedLineupName}}</view>
     </view>
@@ -162,5 +192,10 @@
     </view>
   </view>
 
-  <button class="btn btn-primary save" bindtap="startGame">进入比赛记录</button>
+  <view wx:if="{{setupStep == 'lineup' && !lineup.length}}" class="section card empty">还没有出场名单，请回到“出场名单”选择球员。</view>
+
+  <view wx:if="{{setupStep == 'lineup'}}" class="step-actions two">
+    <button class="btn btn-ghost" bindtap="prevSetupStep">上一步</button>
+    <button class="btn btn-primary" bindtap="startGame">进入现场记分台</button>
+  </view>
 </view>

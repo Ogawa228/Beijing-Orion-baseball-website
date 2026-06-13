@@ -1,0 +1,116 @@
+<view class="page tournament-manage-page">
+  <view class="card panel stack">
+    <view>
+      <view class="eyebrow">🏆 赛事容器</view>
+      <view class="title">{{pageTitle}}</view>
+      <view class="subtle">{{pageSubtle}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{permissionChecked && !canManageTournaments}}" class="section card panel stack">
+    <view class="card-title">需要赛事管理权限</view>
+    <view class="subtle">新建和编辑赛事只开放给运营组或赛事管理员。</view>
+    <button class="btn btn-primary" bindtap="backToEventHub">返回赛事活动</button>
+  </view>
+
+  <view wx:if="{{canManageTournaments}}" class="section card panel stack">
+    <view>
+      <view class="eyebrow">基本信息</view>
+      <view class="card-title">赛事资料</view>
+    </view>
+    <view class="form-grid">
+      <picker mode="selector" range="{{tournamentTypeOptions}}" range-key="label" value="{{tournamentTypeIndex}}" bindchange="onTournamentTypeChange">
+        <view class="picker-like picker-row">
+          <text>{{tournamentTypeLabel}}</text>
+          <text class="picker-arrow">赛事类型</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{tournamentSportOptions}}" range-key="label" value="{{tournamentSportIndex}}" bindchange="onTournamentSportChange">
+        <view class="picker-like picker-row">
+          <text>{{tournamentSportLabel}}</text>
+          <text class="picker-arrow">项目</text>
+        </view>
+      </picker>
+      <input class="input" placeholder="赛事全称，例如 2026 奥体慢垒春季赛" value="{{name}}" bindinput="onNameInput" />
+      <input class="input" placeholder="简称，例如 奥体慢垒" value="{{shortName}}" bindinput="onShortNameInput" />
+      <input class="input" placeholder="赛季，例如 2026-slow" value="{{season}}" bindinput="onSeasonInput" />
+      <view class="date-grid">
+        <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+          <view class="picker-like picker-row">
+            <text>{{startDate}}</text>
+            <text class="picker-arrow">开始日期</text>
+          </view>
+        </picker>
+        <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+          <view class="picker-like picker-row">
+            <text>{{endDate}}</text>
+            <text class="picker-arrow">结束日期</text>
+          </view>
+        </picker>
+      </view>
+      <view class="label">地点</view>
+      <input class="input" placeholder="地点，例如 北京奥体中心棒垒球场" value="{{location}}" bindinput="onLocationInput" />
+      <view wx:if="{{locationMetaText}}" class="subtle">{{locationMetaText}}</view>
+      <button class="btn btn-ghost" bindtap="chooseTournamentLocation">地图选择</button>
+    </view>
+
+    <view class="cover-box">
+      <image wx:if="{{cover}}" class="cover-preview" mode="aspectFill" src="{{cover}}" />
+      <view class="cover-main">
+        <view class="label">赛事封面</view>
+        <input class="input cover-input" placeholder="COS 图片地址，可上传或粘贴" value="{{cover}}" bindinput="onCoverInput" />
+        <view wx:if="{{coverUploadText}}" class="subtle">{{coverUploadText}}</view>
+      </view>
+      <view class="cover-actions">
+        <button class="btn btn-ghost small-btn" loading="{{uploadingCover}}" bindtap="chooseCoverImage">{{cover ? '更换封面' : '上传封面'}}</button>
+        <button class="btn btn-ghost small-btn" bindtap="clearCover">清空封面</button>
+      </view>
+    </view>
+
+    <textarea class="textarea" placeholder="赛事简介、赛制、备注，可选" value="{{description}}" bindinput="onDescriptionInput" />
+    <button class="btn btn-primary" loading="{{saving}}" disabled="{{saving}}" bindtap="submit">{{submitLabel}}</button>
+  </view>
+
+  <view wx:if="{{editing && canMoveGames}}" class="section card panel stack">
+    <view class="row between">
+      <view>
+        <view class="eyebrow">比赛归属整理</view>
+        <view class="card-title">把比赛移动到当前赛事</view>
+        <view class="subtle">适合把历史未关联比赛整理到这个杯赛、联赛或训练赛容器。</view>
+      </view>
+      <button class="link" bindtap="clearGameSelection">清空</button>
+    </view>
+    <picker mode="selector" range="{{gameFilterOptions}}" range-key="label" value="{{gameFilterIndex}}" bindchange="onGameFilterChange">
+      <view class="picker-like picker-row">
+        <text>{{gameFilterLabel}}</text>
+        <text class="picker-arrow">筛选</text>
+      </view>
+    </picker>
+    <view class="game-batch-toolbar">
+      <button class="btn btn-ghost small-btn" bindtap="selectAllVisibleGames">全选当前</button>
+      <button class="btn btn-primary small-btn" loading="{{saving}}" disabled="{{saving || !selectedGameCount}}" bindtap="moveSelectedGames">移动 {{selectedGameCount}} 场</button>
+    </view>
+    <checkbox-group class="game-batch-list" bindchange="onGameSelectionChange">
+      <label wx:for="{{visibleGames}}" wx:key="id" class="game-batch-row">
+        <checkbox value="{{item.id}}" checked="{{item.selected}}" />
+        <view class="game-batch-main">
+          <view class="game-batch-title">{{item.title}}</view>
+          <view class="subtle">{{item.meta}}</view>
+          <view class="game-batch-status">{{item.statusText}}</view>
+        </view>
+      </label>
+    </checkbox-group>
+    <view wx:if="{{!visibleGames.length && !loading}}" class="empty compact-empty">暂无可整理比赛</view>
+    <button wx:if="{{gamesHasMore}}" class="btn btn-ghost" loading="{{loadingMoreGames}}" bindtap="loadMoreGames">加载更多比赛</button>
+  </view>
+
+  <view wx:if="{{editing && canDeleteTournaments}}" class="section card panel stack danger-zone">
+    <view>
+      <view class="eyebrow danger-title">高危操作</view>
+      <view class="card-title">删除赛事容器</view>
+      <view class="subtle">只删除赛事容器，不删除已记录比赛。</view>
+    </view>
+    <input class="input" placeholder="输入“删除赛事”确认" value="{{deleteConfirmText}}" bindinput="onDeleteConfirmInput" />
+    <button class="btn btn-danger" loading="{{deleting}}" bindtap="deleteTournament">删除赛事</button>
+  </view>
+</view>

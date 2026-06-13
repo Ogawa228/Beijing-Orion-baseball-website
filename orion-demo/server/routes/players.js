@@ -595,7 +595,7 @@ router.delete('/:id', requirePermission('destructive:delete'), wrap(async (req, 
 }));
 
 // POST /api/players/:id/upgrade - admin 手动升级 casual → verified
-// 重名检测：如果已有 verified player 同名，拒绝直接升级，提示走绑定码合并
+// 重名检测：如果已有 verified player 同名，拒绝直接升级，提示走绑定申请审批合并
 router.post('/:id/upgrade', requirePermission('players:write'), wrap(async (req, res) => {
   const player = await db.qOne('SELECT * FROM players WHERE id = ?', [req.params.id]);
   if (!player) return res.status(404).json({ error: 'not_found' });
@@ -607,7 +607,7 @@ router.post('/:id/upgrade', requirePermission('players:write'), wrap(async (req,
   if (dup) {
     return res.status(409).json({
       error: 'name_conflict',
-      message: `已有同名正式队员「${dup.name}」(${dup.id})；请用绑定码把当前账号合并到对方，不要独立创建`,
+      message: `已有同名正式队员「${dup.name}」(${dup.id})；请提交绑定申请，由管理员审核后合并到对方，不要独立创建`,
       conflictWith: dup.id,
     });
   }

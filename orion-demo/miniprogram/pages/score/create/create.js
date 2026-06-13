@@ -17,6 +17,12 @@ const rosterSources = [
   { label: '从活动接龙导入', value: 'relay' },
 ];
 
+const setupSteps = [
+  { key: 'info', label: '比赛信息' },
+  { key: 'roster', label: '出场名单' },
+  { key: 'lineup', label: '守位确认' },
+];
+
 const EVENT_PAGE_LIMIT = 60;
 const TOURNAMENT_PAGE_LIMIT = 30;
 const PLAYER_PAGE_LIMIT = 50;
@@ -114,6 +120,20 @@ function buildTournamentOptions(tournaments) {
   return [{ id: '', name: '不关联赛事' }].concat(tournaments || []);
 }
 
+function buildSetupSteps(activeKey) {
+  return setupSteps.map((step, index) => ({
+    ...step,
+    index: index + 1,
+    active: step.key === activeKey,
+    done: setupSteps.findIndex(item => item.key === activeKey) > index,
+  }));
+}
+
+function setupStepLabel(activeKey) {
+  const step = setupSteps.find(item => item.key === activeKey);
+  return step ? step.label : setupSteps[0].label;
+}
+
 function mergeTournamentsById(existing, incoming) {
   const seen = new Set();
   return []
@@ -170,6 +190,9 @@ Page({
     sports,
     venues,
     rosterSources,
+    setupSteps: buildSetupSteps('info'),
+    setupStep: 'info',
+    setupStepLabel: setupStepLabel('info'),
     positions: POSITIONS,
     sportIndex: 0,
     sportLabel: sports[0].label,
@@ -362,6 +385,43 @@ Page({
 
   onOpponentInput(e) { this.setData({ opponent: e.detail.value }); },
   onDateChange(e) { this.setData({ date: e.detail.value }); },
+
+  setSetupStep(e) {
+    const step = e.currentTarget.dataset.step || 'info';
+    this.setData({
+      setupStep: step,
+      setupStepLabel: setupStepLabel(step),
+      setupSteps: buildSetupSteps(step),
+    });
+  },
+
+  nextSetupStep() {
+    const currentIndex = setupSteps.findIndex(step => step.key === this.data.setupStep);
+    const next = setupSteps[Math.min(currentIndex + 1, setupSteps.length - 1)] || setupSteps[0];
+    if (this.data.setupStep === 'info' && !String(this.data.opponent || '').trim()) {
+      toast('先填写对手队名');
+      return;
+    }
+    if (this.data.setupStep === 'roster' && !this.data.lineup.length) {
+      toast('先选择出场球员');
+      return;
+    }
+    this.setData({
+      setupStep: next.key,
+      setupStepLabel: setupStepLabel(next.key),
+      setupSteps: buildSetupSteps(next.key),
+    });
+  },
+
+  prevSetupStep() {
+    const currentIndex = setupSteps.findIndex(step => step.key === this.data.setupStep);
+    const prev = setupSteps[Math.max(currentIndex - 1, 0)] || setupSteps[0];
+    this.setData({
+      setupStep: prev.key,
+      setupStepLabel: setupStepLabel(prev.key),
+      setupSteps: buildSetupSteps(prev.key),
+    });
+  },
 
   onRosterChange(e) {
     this.setLineupFromVisibleSelection(e.detail.value || []);

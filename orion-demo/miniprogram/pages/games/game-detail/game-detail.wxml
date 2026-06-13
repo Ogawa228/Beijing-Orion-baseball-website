@@ -14,6 +14,10 @@
     <view class="matchup">{{game.away}} vs {{game.home}}</view>
     <view class="big-score">{{game.awayScore}} : {{game.homeScore}}</view>
     <view class="pill">{{game.sportLabel || '⚾🥎 综合'}}</view>
+    <view wx:if="{{scoreRules}}" class="origin-strip score-rule-strip">
+      <text>{{scoreRules.title}}：初始球数 {{scoreRules.initial}}</text>
+      <text class="origin-meta">{{scoreRules.description}}</text>
+    </view>
     <view class="score-actions">
       <button class="btn btn-primary detail-action-btn" loading="{{exportingPdf}}" disabled="{{exportingPdf}}" bindtap="exportGamePdf">📄 导出 PDF</button>
       <button wx:if="{{canEditGame}}" class="btn btn-ghost detail-action-btn" bindtap="editGame">修订比赛数据</button>
@@ -174,6 +178,8 @@
       <view>
           <view class="log-title {{item.nameClass}}">{{item.label}}</view>
         <view class="subtle">{{item.inningLabel}} · {{item.offenseName}} · {{item.outs}} 出 · {{item.bases}}</view>
+        <view wx:if="{{item.countText}}" class="subtle">球数 {{item.countText}} · {{item.resultLabel}}</view>
+        <view wx:if="{{item.baseMoveText}}" class="subtle">垒位 {{item.baseMoveText}}</view>
         <view wx:if="{{item.scoredRunners.length}}" class="log-runners">
           <text>得分：</text>
           <text wx:for="{{item.scoredRunners}}" wx:for-item="runner" wx:for-index="runnerIndex" wx:key="displayName" class="{{runner.linked ? 'runner-link' : ''}} {{runner.nameClass}}" catchtap="openPlayer" data-player-id="{{runner.playerId}}">{{runner.displayName}}{{runnerIndex < item.scoredRunners.length - 1 ? '、' : ''}}</text>

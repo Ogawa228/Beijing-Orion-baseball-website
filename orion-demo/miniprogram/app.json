@@ -14,6 +14,7 @@
     "pages/highlights/highlights",
     "pages/games/game-list/game-list",
     "pages/tournaments/tournament-detail/tournament-detail",
+    "pages/tournaments/tournament-manage/tournament-manage",
     "pages/games/game-detail/game-detail",
     "pages/games/game-edit/game-edit",
     "pages/games/game-import/game-import",
@@ -40,7 +41,7 @@
     "backgroundColor": "#0a1527",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/events/event-list/event-list", "text": "活动中心" },
+      { "pagePath": "pages/events/event-list/event-list", "text": "赛事活动" },
       { "pagePath": "pages/home/home", "text": "数据中心" },
       { "pagePath": "pages/checkin/checkin", "text": "签到" },
       { "pagePath": "pages/points/points", "text": "积分榜" },

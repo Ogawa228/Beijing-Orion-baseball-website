@@ -1,6 +1,10 @@
 const api = require('../../../utils/request');
 const { showError, toast } = require('../../../utils/format');
 
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 Page({
   data: {
     id: '',
@@ -17,7 +21,9 @@ Page({
       { label: '🤝 团队活动', value: '🤝 团队活动' },
     ],
     tagIndex: 0,
-    date: '',
+    date: today(),
+    eventDate: today(),
+    eventTime: '',
     location: '奥体中心棒垒球场',
     locationAddress: '',
     locationLatitude: null,
@@ -32,8 +38,6 @@ Page({
     galleryUploadText: '',
     uploadingGallery: false,
     sourceLink: '',
-    xhsRaw: '',
-    xhsParseText: '',
     body: '',
     permissionChecked: false,
     canCreateEvent: false,
@@ -92,10 +96,13 @@ Page({
       const event = res.event || {};
       const tagIndex = pickTagIndex(this.data.tagOptions, event.tag);
       const locationMeta = extractLocationMetadata(event);
+      const dateParts = parseEventDate(event.date);
       this.setData({
         title: event.title || '',
         tagIndex,
-        date: event.date || '',
+        date: buildEventDate(dateParts.eventDate, dateParts.eventTime),
+        eventDate: dateParts.eventDate,
+        eventTime: dateParts.eventTime,
         location: event.location || '',
         ...locationMeta,
         eventMetadata: event.metadata && typeof event.metadata === 'object' ? event.metadata : {},
@@ -115,7 +122,26 @@ Page({
 
   onTitleInput(e) { this.setData({ title: e.detail.value }); },
   onTagChange(e) { this.setData({ tagIndex: Number(e.detail.value) || 0 }); },
-  onDateInput(e) { this.setData({ date: e.detail.value }); },
+  onEventDateChange(e) {
+    const eventDate = e.detail.value || today();
+    this.setData({
+      eventDate,
+      date: buildEventDate(eventDate, this.data.eventTime),
+    });
+  },
+  onEventTimeChange(e) {
+    const eventTime = e.detail.value || '';
+    this.setData({
+      eventTime,
+      date: buildEventDate(this.data.eventDate, eventTime),
+    });
+  },
+  clearEventTime() {
+    this.setData({
+      eventTime: '',
+      date: buildEventDate(this.data.eventDate, ''),
+    });
+  },
   onLocationInput(e) {
     this.setData({
       location: e.detail.value,
@@ -128,54 +154,7 @@ Page({
   },
   onCoverInput(e) { this.setData({ cover: e.detail.value }); },
   onSourceLinkInput(e) { this.setData({ sourceLink: e.detail.value }); },
-  onXhsRawInput(e) { this.setData({ xhsRaw: e.detail.value, xhsParseText: '' }); },
   onBodyInput(e) { this.setData({ body: e.detail.value }); },
-
-  pasteAndParseXhs() {
-    if (!wx.getClipboardData) {
-      toast('当前微信版本不支持读取剪贴板');
-      return Promise.resolve(null);
-    }
-    return new Promise(resolve => {
-      wx.getClipboardData({
-        success: res => {
-          const raw = String(res.data || '').trim();
-          if (!raw) {
-            toast('剪贴板没有可识别内容');
-            resolve(null);
-            return;
-          }
-          this.setData({ xhsRaw: raw });
-          this.parseXhsPaste();
-          resolve(raw);
-        },
-        fail: err => {
-          showError(err, '读取剪贴板失败');
-          resolve(null);
-        },
-      });
-    });
-  },
-
-  parseXhsPaste() {
-    const parsed = parseXhsContent(this.data.xhsRaw, this.data.tagOptions);
-    if (!parsed.title && !parsed.body) {
-      toast('未识别到有效帖子内容');
-      return;
-    }
-    this.setData({
-      title: parsed.title || this.data.title,
-      body: parsed.body || this.data.body,
-      tagIndex: parsed.tagIndex >= 0 ? parsed.tagIndex : this.data.tagIndex,
-      sourceLink: parsed.sourceLink || this.data.sourceLink,
-      xhsParseText: parsed.summary,
-    });
-    toast('已识别帖子内容');
-  },
-
-  clearXhsPaste() {
-    this.setData({ xhsRaw: '', xhsParseText: '' });
-  },
 
   chooseEventLocation() {
     if (!wx.chooseLocation) {
@@ -320,7 +299,7 @@ Page({
       const payload = {
         title,
         tag: tagOption.value,
-        date: this.data.date,
+        date: buildEventDate(this.data.eventDate, this.data.eventTime),
         location: this.data.location,
         cover: String(this.data.cover || '').trim(),
         body: this.data.body,
@@ -334,6 +313,7 @@ Page({
       const res = this.data.editing
         ? await api.patch(`/events/${this.data.id}`, payload)
         : await api.post('/events', payload);
+      try { wx.setStorageSync('orionEventHubDirty', true); } catch (e) { /* 忽略 */ }
       toast(this.data.editing ? '已保存' : '已发布');
       setTimeout(() => {
         wx.redirectTo({ url: `/pages/events/event-detail/event-detail?id=${res.event.id}` });
@@ -357,72 +337,20 @@ function pickTagIndex(options, value) {
   return found >= 0 ? found : 0;
 }
 
-function parseXhsContent(raw, tagOptions = []) {
-  const text = String(raw || '').trim();
-  if (!text) return { title: '', body: '', tagIndex: -1, sourceLink: '', summary: '' };
-  const sourceLink = extractFirstUrl(text);
-  const lines = text.split(/\r?\n/)
-    .map(line => cleanXhsLine(line))
-    .filter(line => line && !isXhsNoiseLine(line));
-  const contentLines = lines
-    .map(line => sourceLink ? line.replace(sourceLink, '').trim() : line)
-    .map(line => line.replace(/https?:\/\/\S+/g, '').trim())
-    .filter(Boolean);
-  const title = shortenTitle(stripTitleMarks(contentLines[0] || ''));
-  const bodyLines = contentLines.slice(1);
-  const body = bodyLines.length ? bodyLines.join('\n') : title;
-  const tagIndex = inferTagIndex(tagOptions, text);
-  const pickedTag = tagIndex >= 0 && tagOptions[tagIndex] ? tagOptions[tagIndex].label : '原分类';
+function parseEventDate(value) {
+  const raw = String(value || '').trim();
+  const dateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  const timeMatch = raw.match(/(?:\s|T)(\d{2}:\d{2})/);
   return {
-    title,
-    body,
-    tagIndex,
-    sourceLink,
-    summary: `已识别：${title || '未命名'} · ${pickedTag}${sourceLink ? ' · 含原帖链接' : ''}`,
+    eventDate: dateMatch ? dateMatch[1] : today(),
+    eventTime: timeMatch ? timeMatch[1] : '',
   };
 }
 
-function cleanXhsLine(line) {
-  return String(line || '')
-    .replace(/\u00a0/g, ' ')
-    .replace(/^[「『《【\[]|[」』》】\]]$/g, '')
-    .trim();
-}
-
-function isXhsNoiseLine(line) {
-  return /^(复制|打开|点击|保存|分享|来自|小红书号|#小红书|发现更多|展开全文)/i.test(line)
-    || /^-+\s*$/.test(line);
-}
-
-function stripTitleMarks(title) {
-  return String(title || '')
-    .replace(/^[#＃\s📕📍🗓⭐✨🌟🏆⚾🥎🏋️🧢🤝]+/, '')
-    .replace(/[#＃]\S+$/g, '')
-    .trim();
-}
-
-function shortenTitle(title) {
-  const value = String(title || '').trim();
-  return value.length > 60 ? value.slice(0, 60) : value;
-}
-
-function extractFirstUrl(text) {
-  const match = String(text || '').match(/https?:\/\/[^\s，。；、)）]+/i);
-  return match ? match[0] : '';
-}
-
-function inferTagIndex(options, raw) {
-  const text = String(raw || '').toLowerCase();
-  const label = (() => {
-    if (/队内赛|scrimmage/.test(text)) return '🧢 队内赛';
-    if (/比赛|杯|邀请赛|联赛|tournament|game|match/.test(text)) return '⚾ 比赛';
-    if (/训练|training|练球/.test(text)) return '🏋️ 训练';
-    if (/试训|招新|recruit|tryout/.test(text)) return '🌟 试训';
-    if (/团建|年会|聚餐|活动|team building|annual/.test(text)) return '🤝 团队活动';
-    return '';
-  })();
-  if (!label) return -1;
-  return (options || []).findIndex(option => option.label === label || option.value === label);
+function buildEventDate(eventDate, eventTime) {
+  const date = eventDate || today();
+  const time = String(eventTime || '').trim();
+  return time ? `${date} ${time}` : date;
 }
 
 function chooseImageFile() {

@@ -101,6 +101,11 @@
           "query": "id=t_test"
         },
         {
+          "name": "赛事管理",
+          "pathName": "pages/tournaments/tournament-manage/tournament-manage",
+          "query": ""
+        },
+        {
           "name": "比赛修订",
           "pathName": "pages/games/game-edit/game-edit",
           "query": "id=g_test"

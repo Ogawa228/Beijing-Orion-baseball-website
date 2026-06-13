@@ -62,10 +62,12 @@
 .cover-upload-btn {
   grid-column: 1 / -1;
   min-height: 68rpx;
+  border-radius: 22rpx;
 }
 
 .tournament-more {
   min-height: 68rpx;
+  border-radius: 22rpx;
 }
 
 .reason {

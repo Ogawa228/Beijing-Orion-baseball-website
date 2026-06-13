@@ -87,6 +87,7 @@
 
 .bind-cta-btn {
   min-height: 82rpx;
+  border-radius: 24rpx;
 }
 
 .card-title {
@@ -97,12 +98,18 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48rpx;
   padding: 0 14rpx;
+  border-radius: 999rpx;
   color: #e4c77a;
-  background: transparent;
+  background: rgba(228, 199, 122, .08);
   font-size: 23rpx;
   font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .public-preview {
@@ -129,6 +136,7 @@
 
 .small-action {
   min-height: 64rpx;
+  border-radius: 20rpx;
   font-size: 23rpx;
 }
 
@@ -198,8 +206,18 @@
 }
 
 .logout {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100% !important;
+  min-width: 100%;
   margin-top: 40rpx;
-  min-height: 88rpx;
+  min-height: 96rpx;
+  border-radius: 26rpx;
   color: #ffb4b4;
   border-color: rgba(255, 138, 138, .3);
+  font-size: 28rpx;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
 }

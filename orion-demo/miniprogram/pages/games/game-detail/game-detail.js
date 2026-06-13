@@ -279,6 +279,32 @@ function displayLogLabel(row, player, viewer) {
   return String(label).replace(String(row.playerName), displayPlayer(player, row.playerName, viewer));
 }
 
+function formatCountMeta(value) {
+  if (!value) return '';
+  if (value.text) return value.text;
+  if (value.balls !== undefined && value.strikes !== undefined) return `${value.balls}-${value.strikes}`;
+  return '';
+}
+
+function logCountText(row) {
+  const before = formatCountMeta(row.countBefore);
+  const after = formatCountMeta(row.countAfter);
+  if (before && after) return `${before} -> ${after}`;
+  return row.pitchCount || before || after || '';
+}
+
+function gameScoreRules(game) {
+  const rules = (game.metadata || {}).scoreRules;
+  if (!rules) return null;
+  const initial = `${Number(rules.initialBalls || 0)}-${Number(rules.initialStrikes || 0)}`;
+  return {
+    ...rules,
+    initial,
+    title: rules.name ? `${rules.name}规则` : '记分规则',
+    description: rules.description || `初始球数 ${initial}`,
+  };
+}
+
 function linkGameLog(rows, indexes, viewer) {
   return (rows || []).map(row => {
     const player = (row.playerId && indexes.byId[row.playerId]) || indexes.byName[norm(row.playerName)];
@@ -297,6 +323,8 @@ function linkGameLog(rows, indexes, viewer) {
       playerName: displayPlayer(player, row.playerName, viewer),
       nameClass: playerNameClass(player, viewer),
       label: displayLogLabel(row, player, viewer),
+      countText: logCountText(row),
+      baseMoveText: row.baseBefore && row.baseAfter ? `${row.baseBefore} -> ${row.baseAfter}` : '',
       scoredRunners,
       scoredRunnerNames: scoredRunners.map(runner => runner.displayName).filter(Boolean).join('、'),
     };
@@ -342,6 +370,7 @@ Page({
     homeTotals: {},
     awayTotals: {},
     gameLog: [],
+    scoreRules: null,
     highlights: [],
     highlightImages: [],
     highlightsHasMore: false,
@@ -406,6 +435,7 @@ Page({
       this.setData({
         game,
         canEditGame: hasPermission(user, 'games:revise'),
+        scoreRules: gameScoreRules(game),
         origin: gameOrigin(game),
         mvp: linkMvp(game, indexes, viewer),
         lineHome: (game.linescore && game.linescore.home) || [],

@@ -1,4 +1,4 @@
-// 自定义 tabBar:活动中心 / 数据中心 / 签到(中央大钮) / 积分榜 / 我的
+// 自定义 tabBar:赛事活动 / 数据中心 / 签到(中央大钮) / 积分榜 / 我的
 // 图标用内联 SVG data-uri(矢量高清,灰/金两态),中央"签到"金色凸起圆钮内嵌矢量对勾。
 // 频闪修复:attached 即用 getCurrentPages() 取当前页 route 同步 active,首帧渲染就是正确选中态,
 // 不再依赖页面 onShow 后置 setData 把选中态从默认值闪到目标值。
@@ -21,7 +21,7 @@ function svgIcon(body, color, strokeWidth) {
 }
 
 const TABS = [
-  { pagePath: '/pages/events/event-list/event-list', text: '活动中心', icon: svgIcon(ICON_BODY.events, INACTIVE), iconActive: svgIcon(ICON_BODY.events, ACTIVE) },
+  { pagePath: '/pages/events/event-list/event-list', text: '赛事活动', icon: svgIcon(ICON_BODY.events, INACTIVE), iconActive: svgIcon(ICON_BODY.events, ACTIVE) },
   { pagePath: '/pages/home/home', text: '数据中心', icon: svgIcon(ICON_BODY.data, INACTIVE), iconActive: svgIcon(ICON_BODY.data, ACTIVE) },
   { pagePath: '/pages/checkin/checkin', text: '签到', primary: true },
   { pagePath: '/pages/points/points', text: '积分榜', icon: svgIcon(ICON_BODY.trophy, INACTIVE), iconActive: svgIcon(ICON_BODY.trophy, ACTIVE) },

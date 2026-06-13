@@ -12,22 +12,6 @@
   </view>
 
   <view wx:if="{{canCreateEvent}}" class="section card panel stack">
-    <view class="xhs-import-box">
-      <view class="row between xhs-import-head">
-        <view>
-          <view class="label">📕 一键导入帖子内容</view>
-          <view class="subtle">从小红书或群公告复制标题和正文，识别后请再确认日期、地点和封面。</view>
-        </view>
-      </view>
-      <textarea class="textarea xhs-textarea" placeholder="把帖子标题 + 正文粘贴到这里，例如训练通知、杯赛招募、团建说明..." value="{{xhsRaw}}" bindinput="onXhsRawInput" />
-      <view class="xhs-actions">
-        <button class="btn btn-primary xhs-btn" bindtap="parseXhsPaste">识别并填充</button>
-        <button class="btn btn-ghost xhs-btn" bindtap="pasteAndParseXhs">粘贴识别</button>
-        <button class="btn btn-ghost xhs-btn" bindtap="clearXhsPaste">清空</button>
-      </view>
-      <view wx:if="{{xhsParseText}}" class="subtle">{{xhsParseText}}</view>
-    </view>
-
     <view>
       <view class="label">活动标题</view>
       <input class="input" placeholder="例如 周末常规训练" value="{{title}}" bindinput="onTitleInput" />
@@ -43,8 +27,25 @@
     </view>
     <view class="form-grid">
       <view>
-        <view class="label">时间</view>
-        <input class="input" placeholder="2026-05-30 09:00" value="{{date}}" bindinput="onDateInput" />
+        <view class="label">日期</view>
+        <picker mode="date" value="{{eventDate}}" bindchange="onEventDateChange">
+          <view class="picker-like picker-row">
+            <text>{{eventDate}}</text>
+            <text class="picker-arrow">选择日期</text>
+          </view>
+        </picker>
+      </view>
+      <view>
+        <view class="label">具体时间（可选）</view>
+        <view class="time-picker-row">
+          <picker class="time-picker-main" mode="time" value="{{eventTime}}" bindchange="onEventTimeChange">
+            <view class="picker-like picker-row">
+              <text>{{eventTime || '未设置具体时刻'}}</text>
+              <text class="picker-arrow">选择时间</text>
+            </view>
+          </picker>
+          <button class="btn btn-ghost clear-time-btn" bindtap="clearEventTime">清空</button>
+        </view>
       </view>
       <view>
         <view class="location-edit-box">
@@ -67,8 +68,8 @@
       <button class="btn btn-ghost cover-upload-btn" loading="{{uploadingCover}}" bindtap="chooseCoverImage">{{cover ? '更换封面' : '上传封面'}}</button>
     </view>
     <view>
-      <view class="label">原帖链接</view>
-      <input class="input" placeholder="小红书、B站或官网链接，可选" value="{{sourceLink}}" bindinput="onSourceLinkInput" />
+      <view class="label">外部链接（可选）</view>
+      <input class="input" placeholder="官网、通知页或视频链接，可选" value="{{sourceLink}}" bindinput="onSourceLinkInput" />
     </view>
     <view class="gallery-edit-box">
       <view class="row between gallery-head">

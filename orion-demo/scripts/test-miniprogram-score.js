@@ -97,12 +97,50 @@ function input(value) {
 
 async function main() {
   assert(pageDef, 'score/live page definition should load');
+
+  const slowpitchPage = createPage(pageDef);
+  storage.set('orionGameDraft', TEST_DRAFT);
+  slowpitchPage.onLoad();
+  assert.strictEqual(slowpitchPage.data.scoreRules.sport, 'softball');
+  assert.strictEqual(slowpitchPage.data.balls, 1, 'slowpitch should start each plate appearance with one ball');
+  assert.strictEqual(slowpitchPage.data.strikes, 1, 'slowpitch should start each plate appearance with one strike');
+  slowpitchPage.recordPitch(tap({ kind: 'foul' }));
+  assert.strictEqual(slowpitchPage.data.strikes, 2, 'slowpitch foul ball should add a strike before two strikes');
+  assert.strictEqual(slowpitchPage.data.outs, 0);
+  slowpitchPage.recordPitch(tap({ kind: 'foul' }));
+  assert.strictEqual(slowpitchPage.data.outs, 1, 'slowpitch two-strike foul should be a strikeout');
+  assert.strictEqual(slowpitchPage.data.batting[0].SO, 1);
+  assert.strictEqual(slowpitchPage.data.currentBatter.name, '二棒捕手');
+  assert.strictEqual(slowpitchPage.data.balls, 1, 'new slowpitch batter should reset to 1 ball');
+  assert.strictEqual(slowpitchPage.data.strikes, 1, 'new slowpitch batter should reset to 1 strike');
+  assert.strictEqual(slowpitchPage.data.playLog[0].resultKey, 'FOUL_SO');
+  assert.deepStrictEqual(slowpitchPage.data.playLog[0].countBefore, { balls: 1, strikes: 2, text: '1-2' });
+  assert.deepStrictEqual(slowpitchPage.data.playLog[0].countAfter, { balls: 1, strikes: 3, text: '1-3' });
+  storage.delete(SNAPSHOT_KEY);
+
+  const baseballPage = createPage(pageDef);
+  storage.set('orionGameDraft', { ...TEST_DRAFT, sport: 'baseball' });
+  baseballPage.onLoad();
+  assert.strictEqual(baseballPage.data.scoreRules.sport, 'baseball');
+  assert.strictEqual(baseballPage.data.balls, 0, 'baseball should start with zero balls');
+  assert.strictEqual(baseballPage.data.strikes, 0, 'baseball should start with zero strikes');
+  baseballPage.recordPitch(tap({ kind: 'strike' }));
+  baseballPage.recordPitch(tap({ kind: 'strike' }));
+  baseballPage.recordPitch(tap({ kind: 'foul' }));
+  assert.strictEqual(baseballPage.data.outs, 0, 'baseball two-strike foul should not be a strikeout');
+  assert.strictEqual(baseballPage.data.strikes, 2, 'baseball two-strike foul should keep the count at two strikes');
+  assert.strictEqual(baseballPage.data.currentBatter.name, '一棒投手');
+  storage.delete(SNAPSHOT_KEY);
+  storage.set('orionGameDraft', TEST_DRAFT);
+
   const page = createPage(pageDef);
   page.onLoad();
 
   assert.strictEqual(page.data.homeName, '猎户座');
   assert.strictEqual(page.data.awayName, '测试对手');
   assert.strictEqual(page.data.sportLabel, '🥎 慢垒');
+  assert.strictEqual(page.data.scoreRules.foulWithTwoStrikesIsOut, true);
+  assert.strictEqual(page.data.countText, '1 坏 1 好');
   assert.strictEqual(page.data.lineHome.length, 1, 'scorebook should start with one inning and grow from actual recording');
   page.nextInning();
   assert.strictEqual(page.data.inning, 1, 'next inning should be allowed without a preset inning count');
@@ -217,6 +255,7 @@ async function main() {
   assert(savedPayload.gameLog.some(item => item.playerId === 'p1' && item.actionType === 'batting'), 'batting gameLog entries should keep player ids');
   assert(savedPayload.gameLog.some(item => item.playerId === 'p1' && item.actionType === 'pitching'), 'pitching gameLog entries should keep player ids');
   assert(savedPayload.gameLog.some(item => (item.scoredRunners || []).some(runner => runner.playerId === 'p1')), 'gameLog should keep scored runner ids');
+  assert(savedPayload.gameLog.some(item => item.countBefore && item.countAfter && item.resultKey), 'gameLog should keep count and result metadata for new scorebook entries');
   assert.strictEqual(savedPayload.metadata.source, 'mini_scorebook');
   assert.strictEqual(savedPayload.eventId, 'e_test');
   assert.strictEqual(savedPayload.metadata.gameId, savedPayload.id);
@@ -225,6 +264,10 @@ async function main() {
   assert.strictEqual(savedPayload.metadata.relatedTournamentId, 't_test');
   assert.strictEqual(savedPayload.metadata.rosterEventId, 'e_test');
   assert.strictEqual(savedPayload.metadata.rosterEventTitle, '测试比赛接龙');
+  assert.strictEqual(savedPayload.metadata.scoreRules.sport, 'softball');
+  assert.strictEqual(savedPayload.metadata.scoreRules.initialBalls, 1);
+  assert.strictEqual(savedPayload.metadata.scoreRules.initialStrikes, 1);
+  assert.strictEqual(savedPayload.metadata.scoreRules.foulWithTwoStrikesIsOut, true);
   assert.deepStrictEqual(savedPayload.metadata.lineupPlayerIds, ['p1', 'p2']);
   assert(savedPayload.metadata.battingPlayerIds.includes('p1'), 'metadata should keep batting player ids');
   assert.strictEqual(savedPayload.metadata.mvpPlayerId, 'p1');

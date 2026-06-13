@@ -2,11 +2,19 @@
   <view class="section-head game-list-head">
     <view>
       <view class="eyebrow">⚾ 比赛</view>
-      <view class="title">比赛记录</view>
+      <view class="title">比赛工作台</view>
     </view>
-    <view class="game-list-actions">
-      <button wx:if="{{canImport}}" class="btn btn-ghost create-btn import-btn" bindtap="importPdf">导入</button>
-      <button class="btn btn-primary create-btn" bindtap="create">发起</button>
+  </view>
+
+  <view wx:if="{{canRecordGame || canImport}}" class="game-workbench card panel">
+    <button wx:if="{{canRecordGame}}" class="btn btn-primary record-main-btn" bindtap="create">开始记录比赛</button>
+    <button wx:if="{{canImport}}" class="btn btn-ghost import-main-btn" bindtap="importPdf">导入 GameChanger</button>
+  </view>
+
+  <view class="filter-title-row">
+    <view>
+      <view class="eyebrow">筛选比赛</view>
+      <view class="subtle">按项目、赛事赛季快速查看记录。</view>
     </view>
   </view>
 
@@ -20,7 +28,7 @@
     <view class="section-head compact-head">
       <view>
         <view class="eyebrow">🏆 赛事</view>
-        <view class="title">赛事 / 赛季</view>
+        <view class="title">赛事赛季</view>
       </view>
     </view>
     <scroll-view scroll-x class="tournament-scroll">
@@ -61,5 +69,8 @@
     <text>{{loadingMore ? '加载中...' : '加载更多比赛'}}</text>
   </view>
 
-  <view wx:if="{{!visibleGames.length && !loading}}" class="card empty">{{emptyText}}</view>
+  <view wx:if="{{!visibleGames.length && !loading}}" class="card empty game-empty">
+    <view>{{emptyText}}，开始记录第一场。</view>
+    <button wx:if="{{canRecordGame}}" class="btn btn-primary empty-record" bindtap="create">开始记录比赛</button>
+  </view>
 </view>

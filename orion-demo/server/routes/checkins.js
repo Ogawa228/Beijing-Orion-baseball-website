@@ -8,6 +8,32 @@ const { RULES, getPlayerPoints } = require('../points');
 
 const router = express.Router();
 const AUTO_UPGRADE_TRAINING_COUNT = 8;
+// 签到地理围栏:签到位置必须在接龙地图选点(chooseLocation)半径内。
+// wx.getLocation 与 wx.chooseLocation 同为 GCJ-02 坐标系,可直接算距离。
+const CHECKIN_RADIUS_METERS = 500;
+
+function toRadians(deg) {
+  return (Number(deg) * Math.PI) / 180;
+}
+
+// Haversine 球面距离,返回米
+function haversineMeters(a, b) {
+  const R = 6371000;
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLng = toRadians(b.longitude - a.longitude);
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function readTargetLatLng(target) {
+  if (!target || typeof target !== 'object') return null;
+  const latitude = Number(target.latitude);
+  const longitude = Number(target.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude };
+}
 
 let attendanceMetadataReady = false;
 let eventMetadataReady = false;
@@ -173,6 +199,22 @@ router.post('/direct', requireAuth, wrap(async (req, res) => {
   const id = `att_${Date.now()}_${crypto.randomBytes(2).toString('hex')}`;
   const note = clean(b.note || (kind === 'training' ? '小程序训练签到' : '小程序活动签到'), 255);
   const location = normalizeLocation(b.location || {});
+  // 地理围栏:接龙用地图选点设了坐标时,签到位置必须在 500 米内
+  const target = readTargetLatLng(event && event.metadata && event.metadata.location);
+  if (target) {
+    if (!location) {
+      return res.status(400).json({ error: 'location_required', message: '请在签到时开启定位后再试' });
+    }
+    const distance = Math.round(haversineMeters(location, target));
+    if (distance > CHECKIN_RADIUS_METERS) {
+      return res.status(403).json({
+        error: 'too_far',
+        message: `距离签到地点约 ${distance} 米，需走到 ${CHECKIN_RADIUS_METERS} 米内才能签到`,
+        distance,
+        radius: CHECKIN_RADIUS_METERS,
+      });
+    }
+  }
   const metadata = {
     source: clean(b.source || 'mini_program', 40),
     method: location?.type === 'precise' ? 'one_tap_location' : 'one_tap_fuzzy_location',

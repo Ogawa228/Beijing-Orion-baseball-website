@@ -69,7 +69,7 @@ router.post('/', requirePermission('attendances:write'), wrap(async (req, res) =
 
   // 钩子：满 8 次 training 且 casual → 检查重名 + 自动升 verified
   // 重名场景（如试训"虞婧"撞预置"虞婧"）：不升级，标记 nameConflict 给前端提示
-  // 让用户知道要走绑定码合并路径，避免独立两份同名 verified player
+  // 让用户知道要走绑定申请审批合并路径，避免独立两份同名 verified player
   let triggeredUpgrade = false;
   let nameConflict = null;
   if (b.kind === 'training') {

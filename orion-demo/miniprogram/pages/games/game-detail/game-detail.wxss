@@ -49,6 +49,7 @@
   min-width: 230rpx;
   min-height: 66rpx;
   margin: 0;
+  border-radius: 22rpx;
   font-size: 24rpx;
 }
 
@@ -206,6 +207,9 @@
 }
 
 .sort-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
   min-width: 104rpx;
   min-height: 54rpx;
@@ -217,7 +221,8 @@
   color: #dbe5f8;
   font-size: 22rpx;
   font-weight: 800;
-  line-height: 54rpx;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .sort-chip.active {

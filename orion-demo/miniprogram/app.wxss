@@ -11,12 +11,17 @@ view, text, button, input, textarea {
 }
 
 button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   padding: 0;
-  border-radius: 0;
-  line-height: 1.2;
+  border-radius: 24rpx;
+  line-height: normal;
   background: transparent;
   color: inherit;
+  text-align: center;
+  overflow: hidden;
 }
 
 button::after {
@@ -26,13 +31,19 @@ button::after {
 .page {
   min-height: 100vh;
   /* 底部留出自定义 tabBar(108rpx 主体 + 中央凸起钮 + 安全区)。
-     calc 混合 rpx + env(px) 在部分机型会整体失效导致 padding 丢失,故先给足够大的纯 rpx fallback,再用 calc 精确化 */
+     避免 rpx + env(px) 混算在部分基础库失效,统一使用足量固定留白。 */
   padding: 28rpx 28rpx 0;
-  padding-bottom: 200rpx;
-  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+  padding-bottom: 240rpx;
   background:
     radial-gradient(circle at 12% 8%, rgba(46, 107, 255, .24), transparent 34%),
     linear-gradient(180deg, #050b18 0%, #0a1628 52%, #050b18 100%);
+}
+
+.tab-page {
+  height: calc(100vh - 150rpx);
+  min-height: calc(100vh - 150rpx);
+  overflow-y: auto;
+  padding-bottom: 220rpx;
 }
 
 .section {
@@ -122,18 +133,21 @@ button::after {
 }
 
 .btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8rpx;
   width: 100%;
-  min-height: 78rpx;
-  padding: 0 24rpx;
-  border-radius: 14rpx;
+  min-height: 82rpx;
+  padding: 0 28rpx;
+  border-radius: 24rpx;
   font-size: 26rpx;
   font-weight: 700;
+  line-height: 1.2;
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
+  transition: opacity .16s ease, transform .16s ease, background .16s ease;
 }
 
 .btn-primary {
@@ -151,6 +165,30 @@ button::after {
   color: #ffdddd;
   border: 1rpx solid rgba(255, 138, 138, .38);
   background: rgba(255, 138, 138, .1);
+}
+
+.btn-small {
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.btn-pill {
+  border-radius: 999rpx;
+}
+
+.button-hover,
+.btn-hover {
+  opacity: .86;
+  transform: scale(.99);
+}
+
+button[disabled],
+.btn[disabled],
+.btn.disabled {
+  opacity: .46;
+  transform: none;
 }
 
 .pill {

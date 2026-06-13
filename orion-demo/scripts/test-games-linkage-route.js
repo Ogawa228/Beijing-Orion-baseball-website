@@ -174,6 +174,11 @@ function installMocks() {
         req.user = { id: 'u_admin' };
         next();
       },
+      requireAnyPermission: permissions => (req, _res, next) => {
+        assert.deepStrictEqual(permissions, ['games:confirm', 'events:write']);
+        req.user = { id: 'u_admin' };
+        next();
+      },
       wrap: fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next),
     },
   };

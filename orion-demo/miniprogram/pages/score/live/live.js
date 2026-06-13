@@ -11,6 +11,42 @@ const PITCH_DECISIONS = [
   { label: '中继', value: 'H' },
 ];
 
+const MODE_TABS = [
+  { key: 'batting', label: '打席' },
+  { key: 'runners', label: '跑垒' },
+  { key: 'pitching', label: '投手' },
+  { key: 'lineup', label: '阵容' },
+  { key: 'log', label: '日志' },
+  { key: 'postgame', label: '赛后' },
+];
+
+const SCORE_RULES = {
+  softball: {
+    sport: 'softball',
+    name: '慢投垒',
+    badge: '慢投垒 1-1',
+    initialBalls: 1,
+    initialStrikes: 1,
+    maxBalls: 4,
+    maxStrikes: 3,
+    foulCountsAsStrike: true,
+    foulWithTwoStrikesIsOut: true,
+    description: '慢投垒：每个打席 1 坏 1 好开局，界外球算好球，两好后界外球三振出局。',
+  },
+  baseball: {
+    sport: 'baseball',
+    name: '棒球',
+    badge: '棒球 0-0',
+    initialBalls: 0,
+    initialStrikes: 0,
+    maxBalls: 4,
+    maxStrikes: 3,
+    foulCountsAsStrike: true,
+    foulWithTwoStrikesIsOut: false,
+    description: '棒球：每个打席 0 坏 0 好开局，两好后界外球不加好球。',
+  },
+};
+
 const HALF_OPTIONS = ['上半局', '下半局'];
 const EMPTY_BASES = { first: false, second: false, third: false };
 const BATTER_ACTION_LABELS = {
@@ -24,6 +60,10 @@ const BATTER_ACTION_LABELS = {
   SO: '三振',
   OUT: '出局',
   E: '守备失误',
+  ROE: '失误上垒',
+  FC: '野选上垒',
+  SAC: '牺牲打',
+  DP: '双杀',
 };
 const OPP_ACTION_LABELS = {
   _1B: '对手一垒安打',
@@ -37,7 +77,7 @@ const OPP_ACTION_LABELS = {
   OUT: '对手出局',
   E: '对手失误',
 };
-const PLATE_APPEARANCE_KEYS = ['_1B', '_2B', '_3B', 'HR', 'BB', 'SO', 'OUT'];
+const PLATE_APPEARANCE_KEYS = ['_1B', '_2B', '_3B', 'HR', 'BB', 'SO', 'OUT', 'ROE', 'FC', 'SAC', 'DP'];
 const LIVE_SNAPSHOT_KEY = 'orionLiveScoreSnapshot';
 // history 是撤销栈、positions/pitchDecisions 是常量、saving 是瞬时态,都不进恢复快照
 const SNAPSHOT_EXCLUDED_KEYS = ['history', 'positions', 'pitchDecisions', 'saving'];
@@ -90,6 +130,46 @@ function createOpponentBatting(opponent) {
     HR: 0,
     E: 0,
   };
+}
+
+function scoreRulesForSport(sport) {
+  const key = sport === 'baseball' ? 'baseball' : 'softball';
+  return { ...SCORE_RULES[key] };
+}
+
+function countState(balls, strikes, rules = SCORE_RULES.softball) {
+  const safeBalls = Math.max(0, Math.min(Number(balls || 0), Number(rules.maxBalls || 4)));
+  const safeStrikes = Math.max(0, Math.min(Number(strikes || 0), Number(rules.maxStrikes || 3)));
+  return {
+    balls: safeBalls,
+    strikes: safeStrikes,
+    pitchCount: `${safeBalls}-${safeStrikes}`,
+    countText: `${safeBalls} 坏 ${safeStrikes} 好`,
+    countHint: rules.description || '',
+  };
+}
+
+function initialCountState(rules) {
+  return countState(rules.initialBalls, rules.initialStrikes, rules);
+}
+
+function countMeta(balls, strikes) {
+  const safeBalls = Number(balls || 0);
+  const safeStrikes = Number(strikes || 0);
+  return {
+    balls: safeBalls,
+    strikes: safeStrikes,
+    text: `${safeBalls}-${safeStrikes}`,
+  };
+}
+
+function modeTabs(activeMode) {
+  return MODE_TABS.map(tab => ({ ...tab, active: tab.key === activeMode }));
+}
+
+function modeLabel(activeMode) {
+  const found = MODE_TABS.find(tab => tab.key === activeMode);
+  return found ? found.label : MODE_TABS[0].label;
 }
 
 function clone(value) {
@@ -167,7 +247,7 @@ function normalizeLines(lineHome, lineAway, inningIndex = 0) {
   };
 }
 
-function buildGameMetadata(draft, batting, pitchers, gameId, mvpPlayer) {
+function buildGameMetadata(draft, batting, pitchers, gameId, mvpPlayer, scoreRules) {
   const lineup = draft.lineup || [];
   return {
     gameId: gameId || '',
@@ -182,6 +262,7 @@ function buildGameMetadata(draft, batting, pitchers, gameId, mvpPlayer) {
     battingPlayerIds: (batting || []).map(row => row.playerId).filter(Boolean),
     pitchingPlayerIds: (pitchers || []).map(row => row.playerId).filter(Boolean),
     mvpPlayerId: (mvpPlayer && mvpPlayer.id) || '',
+    scoreRules: scoreRules || scoreRulesForSport(draft.sport),
     savedFrom: 'wechat_miniprogram',
   };
 }
@@ -216,7 +297,7 @@ function advanceBasesForOutcome(bases, key, batter) {
       if (current[base]) scoredRunners.push(current[base]);
     });
     scoredRunners.push(batterRunner);
-  } else if (key === 'BB') {
+  } else if (key === 'BB' || key === 'ROE' || key === 'FC') {
     if (!current.first) {
       next.first = batterRunner;
       next.second = current.second || false;
@@ -286,6 +367,16 @@ Page({
     halfIndex: 0,
     halfLabel: HALF_OPTIONS[0],
     offenseName: '',
+    scoreRules: SCORE_RULES.softball,
+    balls: 1,
+    strikes: 1,
+    pitchCount: '1-1',
+    countText: '1 坏 1 好',
+    countHint: SCORE_RULES.softball.description,
+    modeTabs: modeTabs('batting'),
+    activeMode: 'batting',
+    activeModeLabel: '打席',
+    showMoreResults: false,
     outs: 0,
     outDots: buildOutDots(0),
     bases: EMPTY_BASES,
@@ -329,11 +420,18 @@ Page({
     const firstPitcher = pitcherOptions.find(p => p.slot === 'P') || pitcherOptions[0];
     const pitchers = firstPitcher ? [createPitcher(firstPitcher)] : [];
     const firstPositionIndex = Math.max(POSITIONS.indexOf((batting[0] || {}).pos), 0);
+    const scoreRules = scoreRulesForSport(draft.sport);
     this.setData({
       draft,
       sportLabel: sportLabel(draft.sport),
       homeName,
       awayName,
+      scoreRules,
+      ...initialCountState(scoreRules),
+      modeTabs: modeTabs('batting'),
+      activeMode: 'batting',
+      activeModeLabel: '打席',
+      showMoreResults: false,
       lineHome: emptyLine(draft.innings),
       lineAway: emptyLine(draft.innings),
       batting,
@@ -413,6 +511,141 @@ Page({
     this.persistSnapshot();
   },
 
+  currentCountMeta() {
+    return countMeta(this.data.balls, this.data.strikes);
+  },
+
+  setCount(balls, strikes) {
+    const rules = this.data.scoreRules || scoreRulesForSport((this.data.draft || {}).sport);
+    this.setData(countState(balls, strikes, rules));
+    this.persistSnapshot();
+  },
+
+  resetPlateCount(extra = {}) {
+    const rules = this.data.scoreRules || scoreRulesForSport((this.data.draft || {}).sport);
+    this.setData({
+      ...initialCountState(rules),
+      ...extra,
+    });
+  },
+
+  setActiveMode(e) {
+    const activeMode = e.currentTarget.dataset.mode || 'batting';
+    this.setData({
+      activeMode,
+      activeModeLabel: modeLabel(activeMode),
+      modeTabs: modeTabs(activeMode),
+    });
+    this.persistSnapshot();
+  },
+
+  toggleMoreResults() {
+    this.setData({ showMoreResults: !this.data.showMoreResults });
+    this.persistSnapshot();
+  },
+
+  recordPitch(e) {
+    const kind = e.currentTarget.dataset.kind;
+    if (!kind) return;
+    const rules = this.data.scoreRules || scoreRulesForSport((this.data.draft || {}).sport);
+    const countBefore = this.currentCountMeta();
+    const baseBefore = clone(this.data.bases);
+    const batter = this.data.currentBatter || {};
+    const playerContext = {
+      playerId: batter.playerId,
+      playerName: batter.name,
+      actionType: 'pitch',
+      team: 'orion',
+      baseBefore,
+      baseAfter: clone(this.data.bases),
+    };
+    this.remember(`${batter.name || '打者'} ${kind}`);
+
+    if (kind === 'ball') {
+      const nextBalls = Number(this.data.balls || 0) + 1;
+      const countAfter = countMeta(nextBalls, this.data.strikes);
+      if (nextBalls >= Number(rules.maxBalls || 4)) {
+        this.applyBatterOutcome('BB', {
+          skipRemember: true,
+          label: '四坏保送',
+          countBefore,
+          countAfter,
+          baseBefore,
+          resultKey: 'BB',
+          resultLabel: '四坏保送',
+        });
+        return;
+      }
+      this.setData(countState(nextBalls, this.data.strikes, rules));
+      this.appendPlay(`坏球：当前 ${this.data.countText}`, {
+        ...playerContext,
+        actionKey: 'BALL',
+        resultKey: 'BALL',
+        resultLabel: '坏球',
+        countBefore,
+        countAfter,
+      });
+      return;
+    }
+
+    if (kind === 'strike') {
+      const nextStrikes = Number(this.data.strikes || 0) + 1;
+      const countAfter = countMeta(this.data.balls, nextStrikes);
+      if (nextStrikes >= Number(rules.maxStrikes || 3)) {
+        this.applyBatterOutcome('SO', {
+          skipRemember: true,
+          label: '好球三振',
+          countBefore,
+          countAfter,
+          baseBefore,
+          resultKey: 'SO',
+          resultLabel: '好球三振',
+        });
+        return;
+      }
+      this.setData(countState(this.data.balls, nextStrikes, rules));
+      this.appendPlay(`好球：当前 ${this.data.countText}`, {
+        ...playerContext,
+        actionKey: 'STRIKE',
+        resultKey: 'STRIKE',
+        resultLabel: '好球',
+        countBefore,
+        countAfter,
+      });
+      return;
+    }
+
+    if (kind === 'foul') {
+      const atTwoStrikes = Number(this.data.strikes || 0) >= Number(rules.maxStrikes || 3) - 1;
+      if (atTwoStrikes && rules.foulWithTwoStrikesIsOut) {
+        const countAfter = countMeta(this.data.balls, Number(rules.maxStrikes || 3));
+        this.applyBatterOutcome('SO', {
+          skipRemember: true,
+          label: '界外球三振',
+          countBefore,
+          countAfter,
+          baseBefore,
+          resultKey: 'FOUL_SO',
+          resultLabel: '界外球三振',
+        });
+        return;
+      }
+      const nextStrikes = rules.foulCountsAsStrike && !atTwoStrikes
+        ? Number(this.data.strikes || 0) + 1
+        : Number(this.data.strikes || 0);
+      const countAfter = countMeta(this.data.balls, nextStrikes);
+      this.setData(countState(this.data.balls, nextStrikes, rules));
+      this.appendPlay(atTwoStrikes ? '界外球：两好后不加好球' : `界外球：当前 ${this.data.countText}`, {
+        ...playerContext,
+        actionKey: 'FOUL',
+        resultKey: 'FOUL',
+        resultLabel: '界外球',
+        countBefore,
+        countAfter,
+      });
+    }
+  },
+
   remember(label) {
     const history = this.data.history.slice(-19);
     history.push({
@@ -425,6 +658,15 @@ Page({
       halfIndex: this.data.halfIndex,
       halfLabel: this.data.halfLabel,
       offenseName: this.data.offenseName,
+      balls: this.data.balls,
+      strikes: this.data.strikes,
+      pitchCount: this.data.pitchCount,
+      countText: this.data.countText,
+      countHint: this.data.countHint,
+      modeTabs: clone(this.data.modeTabs),
+      activeMode: this.data.activeMode,
+      activeModeLabel: this.data.activeModeLabel,
+      showMoreResults: this.data.showMoreResults,
       outs: this.data.outs,
       outDots: clone(this.data.outDots),
       bases: clone(this.data.bases),
@@ -443,6 +685,10 @@ Page({
   },
 
   appendPlay(label, context = {}) {
+    const countBefore = context.countBefore || null;
+    const countAfter = context.countAfter || null;
+    const baseBefore = context.baseBefore || null;
+    const baseAfter = context.baseAfter || null;
     const entry = {
       id: `log_${Date.now()}_${this.data.playLog.length}`,
       inningLabel: `第 ${this.data.inning + 1} 局${this.data.halfLabel}`,
@@ -453,6 +699,13 @@ Page({
       actionKey: context.actionKey || '',
       actionType: context.actionType || '',
       team: context.team || '',
+      countBefore,
+      countAfter,
+      pitchCount: context.pitchCount || (countAfter && countAfter.text) || (countBefore && countBefore.text) || this.data.pitchCount || '',
+      baseBefore: baseBefore ? baseSummary(baseBefore) : '',
+      baseAfter: baseAfter ? baseSummary(baseAfter) : '',
+      resultKey: context.resultKey || context.actionKey || '',
+      resultLabel: context.resultLabel || label,
       scoredRunners: scoredRunnerList(context.scoredRunners || []),
       scoredRunnerNames: scoredRunnerList(context.scoredRunners || []).map(runner => runner.playerName).filter(Boolean).join('、'),
       score: `${this.data.awayScore}:${this.data.homeScore}`,
@@ -476,6 +729,15 @@ Page({
       halfIndex: last.halfIndex,
       halfLabel: last.halfLabel,
       offenseName: last.offenseName,
+      balls: last.balls,
+      strikes: last.strikes,
+      pitchCount: last.pitchCount,
+      countText: last.countText,
+      countHint: last.countHint,
+      modeTabs: last.modeTabs,
+      activeMode: last.activeMode,
+      activeModeLabel: last.activeModeLabel,
+      showMoreResults: last.showMoreResults,
       outs: last.outs,
       outDots: last.outDots,
       bases: last.bases,
@@ -570,6 +832,8 @@ Page({
       inning: nextInning,
       lineHome: ensureLineLength(this.data.lineHome, nextInning),
       lineAway: ensureLineLength(this.data.lineAway, nextInning),
+      ...initialCountState(this.data.scoreRules || scoreRulesForSport((this.data.draft || {}).sport)),
+      showMoreResults: false,
       ...situationPatch({
         halfIndex: nextHalfIndex,
         outs: 0,
@@ -721,7 +985,7 @@ Page({
 
   applyOutcomeBases(key, team, batter) {
     const result = advanceBasesForOutcome(this.data.bases, key, batter);
-    if (!['_1B', '_2B', '_3B', 'HR', 'BB'].includes(key)) return result;
+    if (!['_1B', '_2B', '_3B', 'HR', 'BB', 'ROE', 'FC'].includes(key)) return result;
     if (result.runs) this.addRunsToTeam(team, result.runs);
     this.setData(situationPatch({
       halfIndex: this.data.halfIndex,
@@ -733,43 +997,73 @@ Page({
     return result;
   },
 
-  incStat(e) {
-    const key = e.currentTarget.dataset.key;
-    this.remember(`${this.data.currentBatter.name || '球员'} ${key}`);
+  applyBatterOutcome(key, options = {}) {
+    if (!this.data.batting.length) return toast('没有当前打者');
+    const resultLabel = options.label || BATTER_ACTION_LABELS[key] || key;
+    const countBefore = options.countBefore || this.currentCountMeta();
+    const baseBefore = options.baseBefore || clone(this.data.bases);
+    if (!options.skipRemember) this.remember(`${this.data.currentBatter.name || '球员'} ${resultLabel}`);
     let batting = this.data.batting.slice();
     const i = this.data.currentIndex;
     const row = { ...batting[i] };
     let outcomeRuns = 0;
     let scoredRunners = [];
+    let outDelta = 0;
     row[key] = Number(row[key] || 0) + 1;
     if (['_1B', '_2B', '_3B', 'HR'].includes(key)) {
       row.H = Number(row.H || 0) + 1;
       row.AB = Number(row.AB || 0) + 1;
     }
-    if (['_1B', '_2B', '_3B', 'HR', 'BB'].includes(key)) {
+    if (['ROE', 'FC'].includes(key)) {
+      row.AB = Number(row.AB || 0) + 1;
+    }
+    if (['_1B', '_2B', '_3B', 'HR', 'BB', 'ROE', 'FC'].includes(key)) {
       const outcome = this.applyOutcomeBases(key, this.orionTeamKey(), row);
       outcomeRuns = Number(outcome.runs || 0);
       scoredRunners = outcome.scoredRunners || [];
-      if (outcomeRuns) row.RBI = Number(row.RBI || 0) + outcomeRuns;
+      if (outcomeRuns && !['ROE', 'FC'].includes(key)) row.RBI = Number(row.RBI || 0) + outcomeRuns;
     }
     if (key === 'SO') row.AB = Number(row.AB || 0) + 1;
     if (key === 'OUT') row.AB = Number(row.AB || 0) + 1;
+    if (key === 'DP') {
+      row.AB = Number(row.AB || 0) + 1;
+      outDelta = 2;
+    } else if (key === 'SO' || key === 'OUT' || key === 'SAC') {
+      outDelta = 1;
+    }
     batting[i] = row;
     batting = creditScoredRunnerRuns(batting, scoredRunners);
     this.setData({ batting, currentBatter: row });
     if (key === 'R') this.addRunToTeam(this.orionTeamKey());
-    if (key === 'SO' || key === 'OUT') this.setOuts(Number(this.data.outs || 0) + 1);
+    if (outDelta) this.setOuts(Number(this.data.outs || 0) + outDelta);
+    let countAfter = options.countAfter || this.currentCountMeta();
+    if (PLATE_APPEARANCE_KEYS.includes(key)) {
+      const rules = this.data.scoreRules || scoreRulesForSport((this.data.draft || {}).sport);
+      this.resetPlateCount({ showMoreResults: false });
+      if (!options.countAfter) countAfter = countMeta(rules.initialBalls, rules.initialStrikes);
+    }
     const runnerSuffix = scoredRunnerList(scoredRunners).map(runner => runner.playerName).filter(Boolean).join('、');
     const suffix = outcomeRuns ? `，带回 ${outcomeRuns} 分${runnerSuffix ? `（${runnerSuffix} 得分）` : ''}` : '';
-    this.appendPlay(`${row.name || '球员'}：${BATTER_ACTION_LABELS[key] || key}${suffix}`, {
+    this.appendPlay(`${row.name || '球员'}：${resultLabel}${suffix}`, {
       playerId: row.playerId,
       playerName: row.name,
       actionKey: key,
       actionType: 'batting',
       team: 'orion',
+      countBefore,
+      countAfter,
+      baseBefore,
+      baseAfter: clone(this.data.bases),
+      resultKey: options.resultKey || key,
+      resultLabel: options.resultLabel || resultLabel,
       scoredRunners,
     });
     this.advanceBatterAfterPlateAppearance(key, batting);
+  },
+
+  incStat(e) {
+    const key = e.currentTarget.dataset.key;
+    this.applyBatterOutcome(key);
   },
 
   onPitcherChange(e) {
@@ -931,7 +1225,7 @@ Page({
         oppBatting: [this.data.opponentBatting],
         oppPitching: [],
         gameLog,
-        metadata: buildGameMetadata(draft, this.data.batting, this.data.pitchers, gameId, mvpPlayer),
+        metadata: buildGameMetadata(draft, this.data.batting, this.data.pitchers, gameId, mvpPlayer, this.data.scoreRules),
         mvpPlayerName: mvpPlayer.id ? (mvpPlayer.name || '') : '',
         mvpPlayerId: mvpPlayer.id || '',
         mvpNote: [this.data.mvpNote, this.data.gameNote].filter(Boolean).join('\n'),
@@ -946,7 +1240,7 @@ Page({
       toast('已保存');
       wx.redirectTo({ url: `/pages/games/game-detail/game-detail?id=${res.game.id}` });
     } catch (err) {
-      showError(err, '保存失败，可能需要数据组权限');
+      showError(err, '保存失败，可能需要运营组或数据组权限');
     } finally {
       this.setData({ saving: false });
     }

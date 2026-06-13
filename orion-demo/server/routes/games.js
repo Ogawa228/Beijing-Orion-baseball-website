@@ -1,7 +1,7 @@
 // /api/games/* 路由 —— games 是核心表，JSON 字段最多
 const express = require('express');
 const db = require('../db');
-const { wrap, requirePermission } = require('../middleware');
+const { wrap, requirePermission, requireAnyPermission } = require('../middleware');
 const { findPlayerByName, resolveRegisteredPlayerName } = require('../name-utils');
 const { logAudit } = require('../people-helpers');
 const { parseGameChangerPdfBuffer, parseGameChangerExcelBuffer, MAX_PDF_BYTES, MAX_EXCEL_BYTES } = require('../gamechanger-import');
@@ -288,7 +288,7 @@ router.get('/:id', wrap(async (req, res) => {
   res.json({ game: rowToGame(row) });
 }));
 
-router.post('/', requirePermission('games:confirm'), wrap(async (req, res) => {
+router.post('/', requireAnyPermission(['games:confirm', 'events:write']), wrap(async (req, res) => {
   await ensureGameSchema();
   const players = await loadPlayerPool();
   const b = normalizeGamePayload(req.body || {}, players);

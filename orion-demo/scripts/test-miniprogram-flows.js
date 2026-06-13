@@ -547,16 +547,15 @@ async function testEventCreateEditFlow() {
   assert.strictEqual(page.data.canCreateEvent, true);
   assert.strictEqual(page.data.pageTitle, '编辑队内接龙');
   assert.strictEqual(page.data.title, '周末训练');
+  assert.strictEqual(page.data.eventDate, '2026-06-06');
+  assert.strictEqual(page.data.eventTime, '09:00');
   assert.strictEqual(page.data.locationMetaText, '北京市朝阳区测试球场 · 39.91000, 116.42000');
   assert.strictEqual(page.data.cover, 'https://cos.example/old-event.jpg');
   assert.deepStrictEqual(page.data.images, ['https://cos.example/old-gallery.jpg']);
-  page.onXhsRawInput(input('第六届 OR 杯慢垒邀请赛\n报名开启，欢迎正式球员和试训队员参加。\nhttps://www.xiaohongshu.com/explore/orion-new'));
-  page.parseXhsPaste();
-  assert.strictEqual(page.data.title, '第六届 OR 杯慢垒邀请赛');
-  assert.strictEqual(page.data.tagOptions[page.data.tagIndex].label, '⚾ 比赛');
-  assert(page.data.body.includes('报名开启'));
-  assert.strictEqual(page.data.sourceLink, 'https://www.xiaohongshu.com/explore/orion-new');
-  assert(page.data.xhsParseText.includes('含原帖链接'));
+  assert.strictEqual(typeof page.parseXhsPaste, 'undefined');
+  page.onEventDateChange(input('2026-06-08'));
+  page.onEventTimeChange(input('18:30'));
+  assert.strictEqual(page.data.date, '2026-06-08 18:30');
   mediaFiles = [{ tempFilePath: '/tmp/event-cover.png', name: 'event-cover.png', size: 1024 }];
   fileReads['/tmp/event-cover.png'] = 'event_cover_base64';
   await page.chooseCoverImage();
@@ -603,6 +602,7 @@ async function testEventCreateEditFlow() {
   await new Promise(resolve => setTimeout(resolve, 380));
   assert.strictEqual(patches[0].url, '/events/e1');
   assert.strictEqual(patches[0].payload.title, '周末常规训练');
+  assert.strictEqual(patches[0].payload.date, '2026-06-08 18:30');
   assert.strictEqual(patches[0].payload.location, '奥体中心棒垒球场');
   assert.strictEqual(patches[0].payload.metadata.location.source, 'wx.chooseLocation');
   assert.strictEqual(patches[0].payload.metadata.location.latitude, 39.99234);
@@ -639,19 +639,43 @@ async function testEventListGalleryFlow() {
         assert(params.eventId === 'e_cover' || params.eventId === 'e_gallery');
         return { signups: params.eventId === 'e_cover' ? [{ id: 's1' }] : [] };
       }
+      if (url === '/tournaments') {
+        assert.strictEqual(params.includeGameCount, 'true');
+        return {
+          tournaments: [
+            { id: 't_slow', type: 'league', name: '奥体慢垒春季赛', shortName: '奥体慢垒', sport: 'softball', season: '2026-slow', startDate: '2026-06-01', endDate: '2026-06-20', location: '奥体', gameCount: 2 },
+          ],
+        };
+      }
+      if (url === '/games') {
+        return { games: [{ id: 'g_recent', away: '神策', home: '猎户座', awayScore: 3, homeScore: 7, sport: 'softball', date: '2026-06-02', seasonName: '奥体慢垒' }] };
+      }
       throw new Error(`unexpected GET ${url}`);
     },
   });
 
   await page.load();
   assert.strictEqual(page.data.events.length, 2);
+  assert.strictEqual(page.data.tournaments[0].displayName, '奥体慢垒');
+  assert.strictEqual(page.data.recentGames[0].scoreText, '3 : 7');
   assert.strictEqual(page.data.events[0].previewCover, 'https://cos.example/cover.jpg');
   assert.strictEqual(page.data.events[1].previewCover, 'https://cos.example/gallery-first.jpg');
   assert.strictEqual(page.data.events[0].signupCount, 3);
   assert.strictEqual(page.data.canCreateEvent, false);
+  assert.strictEqual(page.data.canRecordGame, false);
   assert.strictEqual(signupFetchCount, 0, 'event list should use /events signupCount instead of N+1 signup requests');
   page.create();
   assert.strictEqual(toasts.pop(), '需要运营组权限');
+  page.startRecord();
+  assert.strictEqual(toasts.pop(), '需要运营或记录权限');
+  page.createTournament();
+  assert.strictEqual(toasts.pop(), '需要赛事管理权限');
+  page.switchSection(tap({ key: 'tournament' }));
+  assert.strictEqual(page.data.activeSection, 'tournament');
+  page.openTournament(tap({ id: 't_slow' }));
+  assert.strictEqual(navigation.pop(), '/pages/tournaments/tournament-detail/tournament-detail?id=t_slow');
+  page.openGames();
+  assert.strictEqual(navigation.pop(), '/pages/games/game-list/game-list');
   page.open(tap({ id: 'e_gallery' }));
   assert.strictEqual(navigation.pop(), '/pages/events/event-detail/event-detail?id=e_gallery');
 
@@ -664,7 +688,7 @@ async function testEventListGalleryFlow() {
             displayName: '运营组员',
             adminLevel: 'C',
             adminPermissionGroups: ['ops'],
-            permissions: ['admin:access', 'events:write'],
+            permissions: ['admin:access', 'events:write', 'tournaments:write', 'games:draft'],
           },
           player: null,
         };
@@ -674,13 +698,21 @@ async function testEventListGalleryFlow() {
         assert.strictEqual(params.offset, 0);
         return { events: [], hasMore: false, nextOffset: 0 };
       }
+      if (url === '/tournaments') return { tournaments: [] };
+      if (url === '/games') return { games: [] };
       throw new Error(`unexpected GET ${url}`);
     },
   });
   await opsPage.load();
   assert.strictEqual(opsPage.data.canCreateEvent, true);
+  assert.strictEqual(opsPage.data.canRecordGame, true);
+  assert.strictEqual(opsPage.data.canManageTournaments, true);
   opsPage.create();
   assert.strictEqual(navigation.pop(), '/pages/events/event-create/event-create');
+  opsPage.createTournament();
+  assert.strictEqual(navigation.pop(), '/pages/tournaments/tournament-manage/tournament-manage');
+  opsPage.startRecord();
+  assert.strictEqual(navigation.pop(), '/pages/score/create/create');
 
   let legacySignupFetchCount = 0;
   const legacyPage = loadPage('miniprogram/pages/events/event-list/event-list.js', {
@@ -698,6 +730,8 @@ async function testEventListGalleryFlow() {
         assert.strictEqual(params.eventId, 'e_legacy');
         return { signups: [{ id: 's1' }, { id: 's2' }] };
       }
+      if (url === '/tournaments') return { tournaments: [] };
+      if (url === '/games') return { games: [] };
       throw new Error(`unexpected GET ${url}`);
     },
   });
@@ -2407,9 +2441,15 @@ async function testAdminConsoleFlow() {
   assert.strictEqual(page.data.isAdmin, true);
   assert(page.data.permissionChips.includes('A 级'));
   assert(page.data.permissionChips.includes('数据组'));
-  assert.strictEqual(page.data.canBindInvite, true);
-  assert.strictEqual(page.data.canManageBindCodes, true);
+  assert.strictEqual(page.data.canBindInvite, false);
+  assert.strictEqual(page.data.canManageBindCodes, false);
   assert.strictEqual(page.data.canReadAudit, true);
+  assert.deepStrictEqual(page.data.adminToolTabs.map(item => item.key), ['reviews', 'players', 'points', 'accounts', 'audit']);
+  assert.strictEqual(page.data.activeTool, 'reviews');
+  page.switchTool(tap({ tool: 'players' }));
+  assert.strictEqual(page.data.activeTool, 'players');
+  page.switchTool(tap({ tool: 'accounts' }));
+  assert.strictEqual(page.data.activeTool, 'accounts');
   assert.strictEqual(page.data.canManageEvents, true);
   assert.strictEqual(page.data.canManageTournaments, true);
   assert.strictEqual(page.data.canMoveGames, true);
@@ -2475,13 +2515,15 @@ async function testAdminConsoleFlow() {
   assert.strictEqual(page.data.visibleBatchEvents.length, 2);
   assert.strictEqual(page.data.canManageUsers, true);
   assert.strictEqual(page.data.canResetPassword, true);
-  assert.strictEqual(page.data.canBindDirect, true);
-  assert.strictEqual(page.data.canDeleteUsers, true);
+  assert.strictEqual(page.data.canCreateAppConnectCode, false);
+  assert.strictEqual(page.data.canBindDirect, false);
+  assert.strictEqual(page.data.canDeleteUsers, false);
   assert.strictEqual(page.data.canWritePlayers, true);
   assert.strictEqual(page.data.visiblePlayerPool.length, 2);
   assert.strictEqual(page.data.playerPoolSummary, '2/2 名已加载球员，继续加载可查看更多');
   assert.deepStrictEqual(page.data.visiblePlayerPool.map(item => item.id), ['p1', 'p2']);
   assert.strictEqual(page.data.visiblePlayerPool[0].levelLabel, '正式球员');
+  assert.strictEqual(page.data.visiblePlayerPool[0].canCreateBindCode, false);
   assert.strictEqual(page.data.playersHasMore, true);
   assert.strictEqual(page.data.playersNextOffset, 2);
   await page.loadMoreAdminPlayers();
@@ -2569,27 +2611,16 @@ async function testAdminConsoleFlow() {
   assert.strictEqual(page.data.adminUserOptions.length, 6);
   assert.strictEqual(page.data.adminUsersHasMore, false);
   assert.strictEqual(page.data.adminUserFilterSummary, '5/5 个已加载账号');
-  assert.strictEqual(page.data.visibleBindCodes.length, 2);
-  assert.strictEqual(page.data.visibleBindCodes[0].playerText, '#1 一号队员');
+  assert.deepStrictEqual(page.data.visibleBindCodes, []);
   page.onBindCodeSearchInput(input('未使用'));
-  assert.deepStrictEqual(page.data.visibleBindCodes.map(item => item.code), ['ORION-OLD']);
-  page.copyBindCode(tap({ code: 'ORION-OLD' }));
-  assert.strictEqual(clipboardWrites.pop(), 'ORION-OLD');
+  assert.deepStrictEqual(page.data.visibleBindCodes, []);
   page.onBindCodeSearchInput(input(''));
   page.onBindCodePlayerChange(input('1'));
+  const bindCodePostsBefore = posts.filter(item => item.url === '/bind-codes').length;
   await page.createBindCode();
-  const bindCodePost = posts.find(item => item.url === '/bind-codes');
-  assert(bindCodePost, 'admin console should create standalone bind codes');
-  assert.strictEqual(bindCodePost.payload.playerId, 'p1');
-  assert.strictEqual(page.data.generatedBindCode, 'ORION-NEW');
-  assert.strictEqual(clipboardWrites.pop(), 'ORION-NEW');
-  await page.deleteBindCode(tap({ code: 'ORION-OLD' }));
-  assert(deletes.some(item => item.url === '/bind-codes/ORION-OLD'), 'admin console should delete standalone bind codes');
   await page.createPoolBindCode(tap({ id: 'p1' }));
-  const poolBindCodePosts = posts.filter(item => item.url === '/bind-codes');
-  assert(poolBindCodePosts.length >= 2, 'admin player pool should create bind codes from player rows');
-  assert.strictEqual(poolBindCodePosts[poolBindCodePosts.length - 1].payload.playerId, 'p1');
-  assert.strictEqual(clipboardWrites.pop(), 'ORION-NEW');
+  assert.strictEqual(posts.filter(item => item.url === '/bind-codes').length, bindCodePostsBefore);
+  assert.strictEqual(page.data.generatedBindCode, '');
   page.onCreatePlayerLevelChange(input('0'));
   page.onCreatePlayerNameInput(input('新试训'));
   page.onCreatePlayerNumberInput(input('66'));
@@ -2670,29 +2701,27 @@ async function testAdminConsoleFlow() {
   assert(page.data.mergeResultText.includes('试训新人 -> 一号队员'));
   page.onAdminUserChange(input(String(page.data.adminUserOptions.findIndex(item => item.id === 'u_ops'))));
   assert.strictEqual(page.data.adminUserLabel.includes('运营组员'), true);
+  const appConnectPostsBefore = posts.filter(item => item.url === '/admin/users/u_ops/app-connect-code').length;
   await page.createAdminAppConnectCode();
-  const connectPost = posts.find(item => item.url === '/admin/users/u_ops/app-connect-code');
-  assert(connectPost, 'admin console should generate app connect code');
-  assert.strictEqual(page.data.appConnectCode, 'APP-TEST-2026');
-  assert(clipboardWrites.includes('APP-TEST-2026'), 'app connect code should be copied');
+  assert.strictEqual(posts.filter(item => item.url === '/admin/users/u_ops/app-connect-code').length, appConnectPostsBefore);
+  assert.strictEqual(page.data.appConnectCode, '');
   page.onResetPasswordInput(input('NewPass2026'));
   await page.resetAdminPassword();
   const resetPost = posts.find(item => item.url === '/admin/users/u_ops/reset-password');
   assert(resetPost, 'admin console should reset web passwords');
   assert.strictEqual(resetPost.payload.newPassword, 'NewPass2026');
   assert.strictEqual(page.data.resetPasswordValue, '');
+  const directBindPostsBefore = posts.filter(item => item.url === '/admin/users/u_ops/bind-player').length;
+  const unbindPostsBefore = posts.filter(item => item.url === '/admin/users/u_ops/unbind-player').length;
+  const deleteUserCallsBefore = deletes.filter(item => item.url === '/admin/users/u_ops').length;
   page.onDirectBindPlayerChange(input('1'));
   await page.bindAdminUserToPlayer();
-  const directBindPost = posts.find(item => item.url === '/admin/users/u_ops/bind-player');
-  assert(directBindPost, 'admin console should direct bind player files');
-  assert.strictEqual(directBindPost.payload.playerId, 'p1');
   await page.unbindAdminUserFromPlayer();
-  const unbindPost = posts.find(item => item.url === '/admin/users/u_ops/unbind-player');
-  assert(unbindPost, 'admin console should unbind player files');
   page.onDeleteConfirmInput(input('删除账号'));
   await page.deleteAdminUser();
-  const deleteUserCall = deletes.find(item => item.url === '/admin/users/u_ops');
-  assert(deleteUserCall, 'admin console should delete user accounts');
+  assert.strictEqual(posts.filter(item => item.url === '/admin/users/u_ops/bind-player').length, directBindPostsBefore);
+  assert.strictEqual(posts.filter(item => item.url === '/admin/users/u_ops/unbind-player').length, unbindPostsBefore);
+  assert.strictEqual(deletes.filter(item => item.url === '/admin/users/u_ops').length, deleteUserCallsBefore);
   page.onAdminLevelChange(input('1'));
   page.onAdminGroupChange(input(['ops']));
   await page.saveAdminPermission();
@@ -2701,7 +2730,10 @@ async function testAdminConsoleFlow() {
   assert.strictEqual(page.data.auditLogs[0].title, '修订比赛数据：测试队 vs 猎户座');
   assert(page.data.auditLogs[0].meta.includes('修订比赛'));
   assert(page.data.auditLogs[1].meta.includes('删除球员'));
-  assert.deepStrictEqual(page.data.stats.map(s => s.value), [1, 2, 0, 2, 1]);
+  assert.deepStrictEqual(page.data.stats.map(s => s.value), [1, 1, 2, 1]);
+  assert.deepStrictEqual(page.data.stats.map(s => s.label), ['待审绑定', '待审时刻', '近期接龙', '未关联比赛']);
+  page.openTodo(tap({ kind: 'events' }));
+  assert.strictEqual(navigation.pop(), '/pages/events/event-list/event-list');
   assert.strictEqual(page.data.pendingRequests[0].applicant, '测试新人');
   assert.strictEqual(page.data.pendingRequests[0].target, '#1 一号队员');
   assert.strictEqual(page.data.pendingRequests[0].statusLabel, '待审核');
@@ -2740,26 +2772,6 @@ async function testAdminConsoleFlow() {
   assert.strictEqual(starfieldCall.options.data.value.formation, 'spiral');
   assert.strictEqual(starfieldCall.options.data.value.pathDuration, 12.4);
   assert.strictEqual(page.data.starfieldUpdatedText.includes('数据管理员'), true);
-
-  page.onGameMoveTournamentChange(input('1'));
-  page.onGameFilterChange(input('1'));
-  assert.strictEqual(page.data.visibleBatchGames.length, 1, 'unassigned filter should show legacy games without tournamentId');
-  page.selectAllBatchGames();
-  assert.deepStrictEqual(page.data.selectedGameIds, ['g_old']);
-  await page.batchReassignGames();
-  const batchPatch = patches.find(item => item.url === '/games/batch-reassign');
-  assert(batchPatch, 'admin console should batch move games into tournaments');
-  assert.deepStrictEqual(batchPatch.payload, { gameIds: ['g_old'], tournamentId: 't_slow' });
-  page.onGameFilterChange(input('0'));
-  page.selectAllBatchGames();
-  assert.deepStrictEqual(page.data.selectedGameIds.sort(), ['g_linked', 'g_old']);
-  await page.batchDeleteGames();
-  assert(toasts.includes('请输入“删除比赛”确认'), 'admin batch game delete should require confirm text');
-  page.onGameDeleteConfirmInput(input('删除比赛'));
-  await page.batchDeleteGames();
-  assert(deletes.some(item => item.url === '/games/g_old'), 'admin console should batch delete selected games');
-  assert(deletes.some(item => item.url === '/games/g_linked'), 'admin console should batch delete all selected games');
-  assert.strictEqual(page.data.gameDeleteConfirmText, '');
 
   page.onReviewNoteInput(input('身份核验通过'));
   await page.approveRequest(tap({ id: 'br1' }));
@@ -2818,57 +2830,128 @@ async function testAdminConsoleFlow() {
   page.onInvitePlayerChange(input('1'));
   page.onInviteMessageInput(input('请绑定正式球员档案'));
   await page.sendBindInvitation();
-  const invitePost = posts.find(item => item.url === '/admin/bind-invitations');
-  assert(invitePost, 'admin console should send bind invitations');
-  assert.strictEqual(invitePost.payload.userId, 'u1');
-  assert.strictEqual(invitePost.payload.playerId, 'p1');
-  assert.strictEqual(invitePost.payload.message, '请绑定正式球员档案');
-  assert.strictEqual(page.data.inviteCode, 'ORION-TEST');
+  assert(!posts.some(item => item.url === '/admin/bind-invitations'), 'admin console should not send bind invitations from the cleaned UI flow');
+  assert.strictEqual(page.data.inviteCode, '');
 
-  page.onTournamentChange(input('0'));
+  assert(!posts.some(item => item.url === '/tournaments'), 'admin console should not create tournaments from the cleaned panel flow');
+}
+
+async function testTournamentManageFlow() {
+  const posts = [];
+  const patches = [];
+  const deletes = [];
+  const page = loadPage('miniprogram/pages/tournaments/tournament-manage/tournament-manage.js', {
+    get: async (url, params) => {
+      if (url === '/auth/me') {
+        return {
+          user: {
+            id: 'u_ops',
+            displayName: '赛事管理员',
+            role: 'admin',
+            permissions: ['tournaments:write', 'games:revise', 'destructive:delete'],
+          },
+          player: null,
+        };
+      }
+      if (url === '/games') {
+        assert.strictEqual(params.includeAggregate, false);
+        return {
+          games: [
+            { id: 'g_old', tournamentId: '', sport: 'softball', season: '2026-slow', seasonName: '2026 慢垒', away: '神策', home: '猎户座', awayScore: 3, homeScore: 7, date: '2026-06-10', venue: '奥体' },
+            { id: 'g_linked', tournamentId: 't_new', sport: 'softball', season: '2026-test', seasonName: '测试杯赛', away: '猎户座', home: '猛虎', awayScore: 2, homeScore: 1, date: '2026-06-11', venue: '树人' },
+          ],
+          hasMore: false,
+          nextOffset: 2,
+        };
+      }
+      throw new Error(`unexpected GET ${url}`);
+    },
+    post: async (url, payload) => {
+      posts.push({ url, payload });
+      if (url === '/upload/base64') {
+        return { url: `https://cos.example/${payload.fileName}` };
+      }
+      if (url === '/tournaments') {
+        return { tournament: { id: 't_new', ...payload } };
+      }
+      throw new Error(`unexpected POST ${url}`);
+    },
+    patch: async (url, payload) => {
+      patches.push({ url, payload });
+      if (url === '/games/batch-reassign') return { moved: payload.gameIds.length };
+      return { tournament: { id: 't_new', ...payload } };
+    },
+    del: async url => {
+      deletes.push({ url });
+      return { ok: true };
+    },
+  });
+
+  await page.onLoad({});
+  assert.strictEqual(page.data.canManageTournaments, true);
+  assert.strictEqual(page.data.canMoveGames, true);
+  assert.strictEqual(page.data.editing, false);
   page.onTournamentTypeChange(input('0'));
   page.onTournamentSportChange(input('0'));
-  page.onTournamentNameInput(input('测试杯赛'));
-  page.onTournamentShortNameInput(input('测试杯'));
-  page.onTournamentSeasonInput(input('2026-test'));
-  page.onTournamentLocationInput(input('奥体'));
-  page.onTournamentStartDateChange(input('2026-06-20'));
-  page.onTournamentEndDateChange(input('2026-06-21'));
+  page.onNameInput(input('测试杯赛'));
+  page.onShortNameInput(input('测试杯'));
+  page.onSeasonInput(input('2026-test'));
+  page.onStartDateChange(input('2026-06-20'));
+  page.onEndDateChange(input('2026-06-21'));
+  page.onLocationInput(input('奥体'));
   mediaFiles = [{ tempFilePath: '/tmp/tournament-cover.webp', name: 'tournament-cover.webp', size: 2048 }];
   fileReads['/tmp/tournament-cover.webp'] = 'tournament_cover_base64';
-  await page.chooseTournamentCover();
-  const tournamentCoverPost = posts.find(item => item.url === '/upload/base64' && item.payload.fileName === 'tournament-cover.webp');
-  assert(tournamentCoverPost, 'admin tournament settings should upload cover images');
-  assert.deepStrictEqual(tournamentCoverPost.payload, {
+  await page.chooseCoverImage();
+  const coverPost = posts.find(item => item.url === '/upload/base64');
+  assert.deepStrictEqual(coverPost.payload, {
     kind: 'tournament',
     fileName: 'tournament-cover.webp',
     contentType: 'image/webp',
     fileBase64: 'tournament_cover_base64',
   });
-  assert.strictEqual(page.data.tournamentCover, 'https://cos.example/tournament-cover.webp');
-  page.onTournamentDescriptionInput(input('小程序创建赛事'));
-  await page.saveTournament();
+  page.onDescriptionInput(input('小程序创建赛事'));
+  await page.submit();
   const tournamentPost = posts.find(item => item.url === '/tournaments');
-  assert(tournamentPost, 'admin console should create tournaments');
   assert.deepStrictEqual(tournamentPost.payload, {
     type: 'cup',
     sport: 'softball',
     name: '测试杯赛',
     shortName: '测试杯',
     season: '2026-test',
-    location: '奥体',
     startDate: '2026-06-20',
     endDate: '2026-06-21',
+    location: '奥体',
     cover: 'https://cos.example/tournament-cover.webp',
     description: '小程序创建赛事',
   });
-  page.clearTournamentCover();
-  assert.strictEqual(page.data.tournamentCover, '');
-  page.onTournamentChange(input('1'));
-  page.onTournamentDeleteConfirmInput(input('删除赛事'));
+  assert.strictEqual(page.data.id, 't_new');
+  assert.strictEqual(page.data.editing, true);
+  assert.strictEqual(page.data.visibleGames.length, 1);
+  assert.strictEqual(page.data.visibleGames[0].id, 'g_old');
+  page.selectAllVisibleGames();
+  await page.moveSelectedGames();
+  const batchPatch = patches.find(item => item.url === '/games/batch-reassign');
+  assert.deepStrictEqual(batchPatch.payload, { gameIds: ['g_old'], tournamentId: 't_new' });
+  page.onNameInput(input('测试杯赛修订'));
+  await page.submit();
+  const tournamentPatch = patches.find(item => item.url === '/tournaments/t_new');
+  assert.strictEqual(tournamentPatch.payload.name, '测试杯赛修订');
+  page.onDeleteConfirmInput(input('删除赛事'));
   await page.deleteTournament();
-  const tournamentDelete = deletes.find(item => item.url === '/tournaments/t_slow');
-  assert(tournamentDelete, 'admin console should delete tournament containers');
+  assert.strictEqual(deletes[0].url, '/tournaments/t_new');
+  assert.strictEqual(navigation.pop(), '/pages/events/event-list/event-list');
+
+  const blockedPage = loadPage('miniprogram/pages/tournaments/tournament-manage/tournament-manage.js', {
+    get: async url => {
+      if (url === '/auth/me') return { user: { id: 'u_plain', displayName: '普通队员', permissions: [] }, player: null };
+      throw new Error(`unexpected GET ${url}`);
+    },
+  });
+  await blockedPage.onLoad({});
+  assert.strictEqual(blockedPage.data.canManageTournaments, false);
+  assert.strictEqual(toasts.pop(), '需要赛事管理权限');
+  await new Promise(resolve => setTimeout(resolve, 380));
+  assert.strictEqual(navigation.pop(), '/pages/events/event-list/event-list');
 }
 
 async function testAdminAuditPageFlow() {
@@ -3051,6 +3134,7 @@ async function testGameListTournamentFlow() {
 
   await page.load();
   assert.strictEqual(page.data.canImport, true);
+  assert.strictEqual(page.data.canRecordGame, true);
   assert.deepStrictEqual(tournamentRequests[0], { includeGameCount: 'true', limit: 30, offset: 0 });
   assert.strictEqual(page.data.tournaments.length, 2);
   assert.strictEqual(page.data.tournamentHasMore, true);
@@ -3950,6 +4034,7 @@ async function main() {
   await testNotificationsFlow();
   await testBindFlow();
   await testAdminConsoleFlow();
+  await testTournamentManageFlow();
   await testAdminAuditPageFlow();
   await testGameListTournamentFlow();
   await testTournamentDetailFlow();

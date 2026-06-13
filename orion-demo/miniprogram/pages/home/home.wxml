@@ -1,4 +1,4 @@
-<view class="page home-page">
+<view class="page tab-page home-page">
   <view class="hero card">
     <image class="hero-bg" src="/assets/moon-earthrise.jpg" mode="aspectFill" />
     <view class="hero-shade"></view>
@@ -19,7 +19,7 @@
         <view class="eyebrow">📌 接龙</view>
         <view class="title">近期活动</view>
       </view>
-      <navigator class="link" url="/pages/events/event-list/event-list" open-type="switchTab" hover-class="link-hover">活动中心</navigator>
+      <navigator class="link" url="/pages/events/event-list/event-list" open-type="switchTab" hover-class="link-hover">赛事活动</navigator>
     </view>
     <view wx:if="{{loading && !nextEvent}}" class="card panel skeleton-group">
       <view class="skeleton-line short"></view>

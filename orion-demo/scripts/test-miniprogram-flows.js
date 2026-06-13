@@ -4,6 +4,7 @@ const { parseRelayPaste } = require('../server/routes/event-signups');
 
 const root = path.resolve(__dirname, '..');
 const requestPath = path.join(root, 'miniprogram/utils/request.js');
+const uploadPath = path.join(root, 'miniprogram/utils/upload.js');
 
 let pageDef = null;
 let appState = {};
@@ -182,6 +183,8 @@ function installApiMock(api) {
 function loadPage(relPath, api) {
   resetGlobals();
   installApiMock(api);
+  // upload 工具内部 require('./request'),清缓存让它重新绑定当前测试注入的 mock api
+  delete require.cache[uploadPath];
   const abs = path.join(root, relPath);
   delete require.cache[abs];
   require(abs);

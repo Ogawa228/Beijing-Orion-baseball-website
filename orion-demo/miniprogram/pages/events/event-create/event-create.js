@@ -1,5 +1,6 @@
 const api = require('../../../utils/request');
 const { showError, toast } = require('../../../utils/format');
+const upload = require('../../../utils/upload');
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -194,16 +195,8 @@ Page({
         this.setData({ coverUploadText: '' });
         return;
       }
-      const filePath = file.tempFilePath || file.path || '';
-      const fileName = file.name || filePath.split('/').pop() || `event-cover-${Date.now()}.jpg`;
-      const fileBase64 = await readFileBase64(filePath);
-      this.setData({ coverUploadText: '上传 COS 中...' });
-      const res = await api.post('/upload/base64', {
-        kind: 'event',
-        fileName,
-        contentType: inferImageContentType(fileName, filePath),
-        fileBase64,
-      });
+      this.setData({ coverUploadText: '上传中...' });
+      const res = await upload.uploadImage(file, 'event', 'event-cover');
       this.setData({
         cover: res.url || '',
         coverUploadText: '已上传封面图',
@@ -235,16 +228,8 @@ Page({
       const uploaded = [];
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
-        const filePath = file.tempFilePath || file.path || '';
-        const fileName = file.name || filePath.split('/').pop() || `event-image-${Date.now()}-${index + 1}.jpg`;
-        const fileBase64 = await readFileBase64(filePath);
         this.setData({ galleryUploadText: `上传配图 ${index + 1}/${files.length}...` });
-        const res = await api.post('/upload/base64', {
-          kind: 'event',
-          fileName,
-          contentType: inferImageContentType(fileName, filePath),
-          fileBase64,
-        });
+        const res = await upload.uploadImage(file, 'event', `event-image-${index + 1}`);
         if (res.url) uploaded.push(res.url);
       }
       this.setData({

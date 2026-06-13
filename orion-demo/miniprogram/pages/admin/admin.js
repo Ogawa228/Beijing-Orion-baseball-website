@@ -1,6 +1,7 @@
 const api = require('../../utils/request');
 const { showError, toast } = require('../../utils/format');
 const nav = require('../../utils/nav');
+const upload = require('../../utils/upload');
 
 const ADMIN_GAME_PAGE_LIMIT = 80;
 const POINT_GAME_SEARCH_LIMIT = 40;
@@ -2561,16 +2562,8 @@ async function chooseAndUploadImage(kind, fallbackPrefix, onStatus) {
   return uploadImageFile(file, kind, fallbackPrefix);
 }
 
-async function uploadImageFile(file, kind, fallbackPrefix) {
-  const filePath = file.tempFilePath || file.path || '';
-  const fileName = file.name || filePath.split('/').pop() || `${fallbackPrefix}-${Date.now()}.jpg`;
-  const fileBase64 = await readFileBase64(filePath);
-  return api.post('/upload/base64', {
-    kind,
-    fileName,
-    contentType: inferImageContentType(fileName, filePath),
-    fileBase64,
-  });
+function uploadImageFile(file, kind, fallbackPrefix) {
+  return upload.uploadImage(file, kind, fallbackPrefix);
 }
 
 function imageFileBaseName(file) {

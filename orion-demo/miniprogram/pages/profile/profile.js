@@ -2,6 +2,7 @@ const api = require('../../utils/request');
 const { showError, toast } = require('../../utils/format');
 const nav = require('../../utils/nav');
 const session = require('../../utils/session');
+const upload = require('../../utils/upload');
 
 Page({
   data: {
@@ -350,16 +351,8 @@ function chooseImageFile() {
 async function chooseAndUploadImage(kind, fallbackPrefix, onStatus) {
   const file = await chooseImageFile();
   if (!file) return null;
-  const filePath = file.tempFilePath || file.path || '';
-  const fileName = file.name || filePath.split('/').pop() || `${fallbackPrefix}-${Date.now()}.jpg`;
-  const fileBase64 = await readFileBase64(filePath);
-  if (onStatus) onStatus('上传 COS 中...');
-  return api.post('/upload/base64', {
-    kind,
-    fileName,
-    contentType: inferImageContentType(fileName, filePath),
-    fileBase64,
-  });
+  if (onStatus) onStatus('上传中...');
+  return upload.uploadImage(file, kind, fallbackPrefix);
 }
 
 function readFileBase64(filePath) {

@@ -1,4 +1,5 @@
 const api = require('../../../utils/request');
+const upload = require('../../../utils/upload');
 const { showError, toast } = require('../../../utils/format');
 const { sportLabel } = require('../../../utils/labels');
 
@@ -180,16 +181,9 @@ Page({
         this.setData({ coverUploadText: '' });
         return;
       }
-      const filePath = file.tempFilePath || file.path || '';
-      const fileName = file.name || filePath.split('/').pop() || `game-cover-${Date.now()}.jpg`;
-      const fileBase64 = await readFileBase64(filePath);
-      this.setData({ coverFileName: fileName, coverUploadText: '上传 COS 中...' });
-      const res = await api.post('/upload/base64', {
-        kind: 'game',
-        fileName,
-        contentType: inferImageContentType(fileName, filePath),
-        fileBase64,
-      });
+      const fileName = file.name || `game-cover-${Date.now()}.jpg`;
+      this.setData({ coverFileName: fileName, coverUploadText: '上传中...' });
+      const res = await upload.uploadImage(file, 'game', 'game-cover');
       const coverUrl = res.url || '';
       const draft = this.data.draft ? { ...this.data.draft, cover: coverUrl } : null;
       const filePatch = {

@@ -1,4 +1,5 @@
 const api = require('../../utils/request');
+const upload = require('../../utils/upload');
 const { showError, toast, scoreText } = require('../../utils/format');
 const { playerIdentity } = require('../../utils/player-identity');
 
@@ -249,16 +250,9 @@ Page({
         this.setData({ uploadStatusText: '' });
         return;
       }
-      const filePath = file.tempFilePath || file.path || '';
-      const fileName = file.name || filePath.split('/').pop() || `highlight-${Date.now()}.jpg`;
-      const fileBase64 = await readFileBase64(filePath);
-      this.setData({ uploadFileName: fileName, uploadStatusText: '上传 COS 中...' });
-      const res = await api.post('/upload/base64', {
-        kind: 'highlight',
-        fileName,
-        contentType: inferImageContentType(fileName, filePath),
-        fileBase64,
-      });
+      const fileName = file.name || `highlight-${Date.now()}.jpg`;
+      this.setData({ uploadFileName: fileName, uploadStatusText: '上传中...' });
+      const res = await upload.uploadImage(file, 'highlight', 'highlight');
       this.setData({
         imageInput: res.url || '',
         uploadStatusText: '已上传到 COS',

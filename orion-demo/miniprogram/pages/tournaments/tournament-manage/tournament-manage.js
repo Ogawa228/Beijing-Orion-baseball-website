@@ -1,6 +1,7 @@
 const api = require('../../../utils/request');
 const { showError, toast } = require('../../../utils/format');
 const { sportLabel } = require('../../../utils/labels');
+const upload = require('../../../utils/upload');
 
 const GAME_PAGE_LIMIT = 60;
 
@@ -520,43 +521,9 @@ function chooseImageFile() {
   });
 }
 
-// 云托管 callContainer 请求体有大小限制,原图 base64 过大会上传失败(报 cloud callContainer 错误),
-// 上传前先压缩(限宽 + 降质量),把 base64 体积压到限制内
-function compressForUpload(src) {
-  return new Promise(resolve => {
-    if (!src || !wx.compressImage) {
-      resolve(src);
-      return;
-    }
-    wx.compressImage({
-      src,
-      quality: 65,
-      compressedWidth: 1280,
-      success: res => resolve((res && res.tempFilePath) || src),
-      fail: () => {
-        // 旧基础库不支持 compressedWidth 时退回只压质量
-        wx.compressImage({
-          src,
-          quality: 65,
-          success: r => resolve((r && r.tempFilePath) || src),
-          fail: () => resolve(src),
-        });
-      },
-    });
-  });
-}
-
-async function uploadImageFile(file, kind, fallbackPrefix) {
-  const rawPath = file.tempFilePath || file.path || '';
-  const filePath = await compressForUpload(rawPath);
-  const fileName = file.name || rawPath.split('/').pop() || `${fallbackPrefix}-${Date.now()}.jpg`;
-  const fileBase64 = await readFileBase64(filePath);
-  return api.post('/upload/base64', {
-    kind,
-    fileName,
-    contentType: inferImageContentType(fileName, rawPath),
-    fileBase64,
-  });
+// 统一走高可用上传工具(压缩 + uploadFile 直传 + callContainer 兜底)
+function uploadImageFile(file, kind, fallbackPrefix) {
+  return upload.uploadImage(file, kind, fallbackPrefix);
 }
 
 function readFileBase64(filePath) {

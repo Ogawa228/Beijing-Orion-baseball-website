@@ -2898,7 +2898,8 @@ async function testTournamentManageFlow() {
   page.onSeasonInput(input('2026-test'));
   page.onStartDateChange(input('2026-06-20'));
   page.onEndDateChange(input('2026-06-21'));
-  page.onLocationInput(input('奥体'));
+  // 赛事地点改为纯地图选点(wx.chooseLocation),测试直接模拟选点回填结果
+  page.setData({ location: '奥体', locationLatitude: 39.9824, locationLongitude: 116.3956 });
   mediaFiles = [{ tempFilePath: '/tmp/tournament-cover.webp', name: 'tournament-cover.webp', size: 2048 }];
   fileReads['/tmp/tournament-cover.webp'] = 'tournament_cover_base64';
   await page.chooseCoverImage();

@@ -474,17 +474,41 @@ function normalizeLocationPickerError(err) {
   return new Error(raw || '地图选点失败');
 }
 
+// 云托管 callContainer 请求体有大小限制,原图 base64 过大会上传失败,读取前先压缩
+function compressForUpload(src) {
+  return new Promise(resolve => {
+    if (!src || !wx.compressImage) {
+      resolve(src);
+      return;
+    }
+    wx.compressImage({
+      src,
+      quality: 65,
+      compressedWidth: 1280,
+      success: res => resolve((res && res.tempFilePath) || src),
+      fail: () => {
+        wx.compressImage({
+          src,
+          quality: 65,
+          success: r => resolve((r && r.tempFilePath) || src),
+          fail: () => resolve(src),
+        });
+      },
+    });
+  });
+}
+
 function readFileBase64(filePath) {
-  return new Promise((resolve, reject) => {
+  return compressForUpload(filePath).then(compressed => new Promise((resolve, reject) => {
     wx.getFileSystemManager().readFile({
-      filePath,
+      filePath: compressed,
       encoding: 'base64',
       success(res) {
         resolve(res.data || '');
       },
       fail: reject,
     });
-  });
+  }));
 }
 
 function inferImageContentType(fileName, filePath) {

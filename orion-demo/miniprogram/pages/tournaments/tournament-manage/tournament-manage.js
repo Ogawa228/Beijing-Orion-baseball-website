@@ -221,9 +221,7 @@ Page({
     this.setData({ startDate, endDate });
   },
   onEndDateChange(e) { this.setData({ endDate: e.detail.value || this.data.startDate || today() }); },
-  onLocationInput(e) { this.setData({ location: e.detail.value }); },
-
-  // 赛事地点也走地图选点,与活动接龙一致;赛事不签到,坐标仅用于回填地点名和下次选点定位
+  // 赛事地点只走地图选点,与活动接龙一致;赛事不签到,坐标仅用于回填地点名和下次选点定位
   chooseTournamentLocation() {
     if (!wx.chooseLocation) {
       toast('当前微信版本不支持地图选点');
@@ -522,14 +520,41 @@ function chooseImageFile() {
   });
 }
 
+// 云托管 callContainer 请求体有大小限制,原图 base64 过大会上传失败(报 cloud callContainer 错误),
+// 上传前先压缩(限宽 + 降质量),把 base64 体积压到限制内
+function compressForUpload(src) {
+  return new Promise(resolve => {
+    if (!src || !wx.compressImage) {
+      resolve(src);
+      return;
+    }
+    wx.compressImage({
+      src,
+      quality: 65,
+      compressedWidth: 1280,
+      success: res => resolve((res && res.tempFilePath) || src),
+      fail: () => {
+        // 旧基础库不支持 compressedWidth 时退回只压质量
+        wx.compressImage({
+          src,
+          quality: 65,
+          success: r => resolve((r && r.tempFilePath) || src),
+          fail: () => resolve(src),
+        });
+      },
+    });
+  });
+}
+
 async function uploadImageFile(file, kind, fallbackPrefix) {
-  const filePath = file.tempFilePath || file.path || '';
-  const fileName = file.name || filePath.split('/').pop() || `${fallbackPrefix}-${Date.now()}.jpg`;
+  const rawPath = file.tempFilePath || file.path || '';
+  const filePath = await compressForUpload(rawPath);
+  const fileName = file.name || rawPath.split('/').pop() || `${fallbackPrefix}-${Date.now()}.jpg`;
   const fileBase64 = await readFileBase64(filePath);
   return api.post('/upload/base64', {
     kind,
     fileName,
-    contentType: inferImageContentType(fileName, filePath),
+    contentType: inferImageContentType(fileName, rawPath),
     fileBase64,
   });
 }

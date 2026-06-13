@@ -135,3 +135,14 @@
 .danger-title {
   color: #ffb7b7;
 }
+
+.location-pick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.location-placeholder {
+  color: #6b7894;
+}

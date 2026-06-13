@@ -49,9 +49,11 @@
         </picker>
       </view>
       <view class="label">地点</view>
-      <input class="input" placeholder="地点，例如 北京奥体中心棒垒球场" value="{{location}}" bindinput="onLocationInput" />
+      <view class="picker-like picker-row location-pick-row" bindtap="chooseTournamentLocation">
+        <text class="{{location ? '' : 'location-placeholder'}}">{{location || '点击地图选择地点'}}</text>
+        <text class="picker-arrow">地图选择</text>
+      </view>
       <view wx:if="{{locationMetaText}}" class="subtle">{{locationMetaText}}</view>
-      <button class="btn btn-ghost" bindtap="chooseTournamentLocation">地图选择</button>
     </view>
 
     <view class="cover-box">

@@ -193,4 +193,13 @@
 
 .login {
   margin-top: 28rpx;
+  min-height: 92rpx;
+  font-size: 30rpx;
+}
+
+.logout {
+  margin-top: 40rpx;
+  min-height: 88rpx;
+  color: #ffb4b4;
+  border-color: rgba(255, 138, 138, .3);
 }

@@ -103,7 +103,7 @@
     </block>
   </view>
 
-  <view class="section card panel">
+  <view wx:if="{{user}}" class="section card panel">
     <view class="row between">
       <view class="card-title">绑定申请</view>
       <button class="link" bindtap="go" data-url="/pages/bind/bind">去申请</button>
@@ -118,7 +118,7 @@
     <view wx:if="{{!bindRequests.length && !loading}}" class="empty">暂无绑定申请</view>
   </view>
 
-  <view class="section card panel">
+  <view wx:if="{{user}}" class="section card panel">
     <view class="card-title">近期报名</view>
     <view wx:for="{{signups}}" wx:key="id" class="row-item">
       <view>
@@ -131,5 +131,6 @@
     <view wx:if="{{!signups.length && !loading}}" class="empty">暂无报名记录</view>
   </view>
 
-  <button wx:if="{{!user}}" class="btn btn-primary login" bindtap="go" data-url="/pages/login/login">登录</button>
+  <button wx:if="{{!user}}" class="btn btn-primary login" bindtap="go" data-url="/pages/login/login">微信登录</button>
+  <button wx:if="{{user}}" class="btn btn-ghost logout" bindtap="logout">退出登录</button>
 </view>

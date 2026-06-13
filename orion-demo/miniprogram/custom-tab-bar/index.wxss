@@ -27,6 +27,9 @@
   width: 46rpx;
   height: 46rpx;
   margin-bottom: 4rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .orion-tabbar-text {
@@ -63,4 +66,7 @@
 .orion-tabbar-big-ico {
   width: 50rpx;
   height: 50rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }

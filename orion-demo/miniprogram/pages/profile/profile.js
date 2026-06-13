@@ -1,12 +1,14 @@
 const api = require('../../utils/request');
 const { showError, toast } = require('../../utils/format');
 const nav = require('../../utils/nav');
+const session = require('../../utils/session');
 
 Page({
   data: {
     user: null,
     player: null,
     loading: true,
+    loggingOut: false,
     avatarSrc: '/assets/orion-default-player-avatar.png',
     identityLabel: '未绑定球员档案',
     signups: [],
@@ -107,6 +109,41 @@ Page({
 
   go(e) {
     nav.go(e.currentTarget.dataset.url);
+  },
+
+  async logout() {
+    if (this.data.loggingOut) return;
+    const confirmed = await new Promise(resolve => {
+      wx.showModal({
+        title: '退出登录',
+        content: '退出后需要重新微信登录才能查看报名、签到和积分。',
+        confirmText: '退出',
+        success: res => resolve(!!res.confirm),
+        fail: () => resolve(false),
+      });
+    });
+    if (!confirmed) return;
+    this.setData({ loggingOut: true });
+    try {
+      await api.post('/auth/logout', {}).catch(() => {});
+      session.clearSession();
+      getApp().setIdentity({ user: null, player: null });
+      this._lastLoadAt = 0;
+      this.setData({
+        user: null,
+        player: null,
+        signups: [],
+        bindRequests: [],
+        showBindCta: false,
+        canAdmin: false,
+        canEditPublicProfile: false,
+      });
+      toast('已退出登录');
+    } catch (err) {
+      showError(err, '退出登录失败');
+    } finally {
+      this.setData({ loggingOut: false });
+    }
   },
 
   onAccountNameInput(e) {

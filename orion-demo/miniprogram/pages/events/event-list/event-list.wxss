@@ -32,7 +32,7 @@
   margin: 18rpx 0 8rpx;
   color: #f6f8ff;
   font-size: 32rpx;
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .signup-count {

@@ -14,24 +14,58 @@
 
 .quick {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+  flex-direction: column;
+  gap: 14rpx;
   margin-top: 20rpx;
 }
 
-.quick-card {
+.quick-cell {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 104rpx;
+  padding: 20rpx 24rpx;
+}
+
+.quick-cell-hover {
+  background: rgba(143, 176, 255, .08);
+}
+
+.quick-ico {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 calc((100% - 16rpx) / 2);
-  width: calc((100% - 16rpx) / 2);
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(228, 199, 122, .13);
+  font-size: 32rpx;
+}
+
+.quick-cell-body {
+  flex: 1;
   min-width: 0;
-  min-height: 108rpx;
+}
+
+.quick-cell-title {
   color: #f6f8ff;
   font-size: 28rpx;
-  font-weight: 800;
-  text-align: center;
-  word-break: keep-all;
+  font-weight: 600;
+}
+
+.quick-cell-sub {
+  margin-top: 2rpx;
+  color: #9aa9c4;
+  font-size: 22rpx;
+}
+
+.quick-arrow {
+  flex: 0 0 auto;
+  color: #6b7894;
+  font-size: 40rpx;
+  font-weight: 300;
+  line-height: 1;
 }
 
 .bind-cta {
@@ -59,7 +93,7 @@
   margin-bottom: 14rpx;
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .link {

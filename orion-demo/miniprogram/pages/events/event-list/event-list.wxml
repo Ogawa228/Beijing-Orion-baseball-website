@@ -10,6 +10,12 @@
     </view>
   </view>
 
+  <view wx:if="{{loading && !events.length}}" class="card panel skeleton-group">
+    <view class="skeleton-line tall"></view>
+    <view class="skeleton-line"></view>
+    <view class="skeleton-line short"></view>
+  </view>
+
   <view wx:for="{{events}}" wx:key="id" class="event-card card panel" bindtap="open" data-id="{{item.id}}">
     <image wx:if="{{item.previewCover}}" class="event-cover" mode="aspectFill" lazy-load="{{true}}" src="{{item.previewCover}}" />
     <view class="row between">

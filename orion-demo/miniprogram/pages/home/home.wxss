@@ -16,6 +16,11 @@
   height: 100%;
 }
 
+/* 占位底色贴近图片暗区,图片 decode 前后底色一致,消除首帧白闪 */
+.hero-bg {
+  background: #0a1628;
+}
+
 .hero-shade {
   background: linear-gradient(180deg, rgba(5, 11, 24, .12), rgba(5, 11, 24, .86));
 }

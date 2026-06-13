@@ -1,7 +1,7 @@
 .game-edit-page .card-title {
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 820;
+  font-weight: 800;
 }
 
 .two-col {
@@ -50,7 +50,7 @@
   margin-bottom: 10rpx;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .cover-input {

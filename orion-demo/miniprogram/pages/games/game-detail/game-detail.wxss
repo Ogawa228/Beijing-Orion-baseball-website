@@ -81,7 +81,7 @@
   margin-bottom: 18rpx;
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .line-scroll {
@@ -195,7 +195,7 @@
 .sort-hint {
   color: #9fb0cf;
   font-size: 22rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .sort-chip-row {
@@ -216,7 +216,7 @@
   background: rgba(255, 255, 255, .05);
   color: #dbe5f8;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 54rpx;
 }
 
@@ -247,7 +247,7 @@
   white-space: nowrap;
   color: #dbe5f8;
   font-size: 22rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .metric-value {
@@ -296,14 +296,14 @@
   margin-top: 6rpx;
   color: #9bbcff;
   font-size: 22rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .log-runners {
   margin-top: 6rpx;
   color: #d9bd70;
   font-size: 22rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .runner-link {
@@ -353,7 +353,7 @@
   margin-top: 10rpx;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -368,7 +368,7 @@
   border-radius: 999rpx;
   color: #9bbcff;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
   background: rgba(155, 188, 255, .08);
 }
 

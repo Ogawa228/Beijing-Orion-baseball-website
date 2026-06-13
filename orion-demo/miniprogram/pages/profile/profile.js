@@ -29,9 +29,20 @@ Page({
     profileSaving: false,
   },
 
+  onLoad() {
+    this.load();
+  },
+
   onShow() {
     nav.syncTabBar(this);
-    this.load();
+    const app = getApp();
+    if (this.data.user !== app.globalData.user) {
+      this.setData({ user: app.globalData.user });
+    }
+    // 节流:5 秒内从其他 tab 切回不重新全量加载,避免整页 loading→数据 抖动频闪
+    if (!this._lastLoadAt || Date.now() - this._lastLoadAt > 5000) {
+      this.load();
+    }
   },
 
   onPullDownRefresh() {
@@ -40,6 +51,7 @@ Page({
 
   async load() {
     this.setData({ loading: true });
+    this._lastLoadAt = Date.now();
     try {
       const me = await api.get('/auth/me');
       getApp().setIdentity(me);

@@ -60,7 +60,7 @@
 .card-title {
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .card-title.no-gap {

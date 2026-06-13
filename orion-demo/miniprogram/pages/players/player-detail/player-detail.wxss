@@ -90,7 +90,7 @@
 .admin-edit-card .card-title {
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .compact-title {
@@ -135,7 +135,7 @@
 .display-preview-name {
   color: #f6f8ff;
   font-size: 28rpx;
-  font-weight: 850;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -277,7 +277,7 @@
 .axis-label {
   color: #f6f8ff;
   font-size: 23rpx;
-  font-weight: 850;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -389,7 +389,7 @@
   flex: 0 0 auto;
   color: #e4c77a;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .trend-bar {
@@ -441,7 +441,7 @@
 .highlight-title {
   color: #f6f8ff;
   font-size: 26rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -455,7 +455,7 @@
   background: rgba(143, 176, 255, .08);
   color: #9bbcff;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 54rpx;
 }
 

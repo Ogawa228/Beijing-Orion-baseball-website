@@ -70,7 +70,7 @@
 .audit-title {
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.45;
 }
 
@@ -112,7 +112,7 @@
   margin: 12rpx 0;
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.5;
 }
 

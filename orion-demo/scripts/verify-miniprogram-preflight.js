@@ -586,7 +586,12 @@ function checkMiniProgramUiGuards() {
     assert(tabBarJs.includes(token), `custom tab bar missing ${token}`);
   });
   const tabBarWxss = fs.readFileSync(path.join(root, 'miniprogram/custom-tab-bar/index.wxss'), 'utf8');
-  assert(tabBarWxss.includes('.orion-tabbar-big') && tabBarWxss.includes('margin-top: -44rpx'), 'center checkin button should be raised and enlarged');
+  assert(tabBarWxss.includes('.orion-tabbar-big') && /margin-top:\s*-\d+rpx/.test(tabBarWxss), 'center checkin button should be raised and enlarged');
+  // tabBar 用矢量 SVG 图标(灰/金两态),非 emoji;attached 即定位 active 消除选中态频闪
+  assert(tabBarJs.includes('svgIcon') && tabBarJs.includes('iconActive') && tabBarJs.includes('checkinIcon'), 'tab bar should use vector SVG icons with active/inactive states');
+  assert(tabBarJs.includes('attached') && tabBarJs.includes('getCurrentPages'), 'tab bar should resolve active tab on attach to avoid selection flicker');
+  const tabBarWxml = fs.readFileSync(path.join(root, 'miniprogram/custom-tab-bar/index.wxml'), 'utf8');
+  assert(tabBarWxml.includes('orion-tabbar-ico') && tabBarWxml.includes('iconActive') && tabBarWxml.includes('orion-tabbar-big-ico'), 'tab bar wxml should render image icons');
   const navUtil = fs.readFileSync(path.join(root, 'miniprogram/utils/nav.js'), 'utf8');
   assert(navUtil.includes('switchTab') && navUtil.includes('isTabPath') && navUtil.includes('syncTabBar'), 'nav util should route tab pages through switchTab');
   ['pages/events/event-list/event-list', 'pages/home/home', 'pages/checkin/checkin', 'pages/points/points', 'pages/profile/profile'].forEach(pagePath => {
@@ -621,7 +626,12 @@ function checkMiniProgramUiGuards() {
   const profileWxss = fs.readFileSync(path.join(root, 'miniprogram/pages/profile/profile.wxss'), 'utf8');
   assert(profileWxml.includes('/pages/contact/contact') && profileWxml.includes('联系我们'), 'profile should expose contact page');
   assert(!profileWxml.includes('quick grid-2'), 'profile quick cards should not use grid-2 button layout');
-  assert(profileWxss.includes('display: flex') && profileWxss.includes('calc((100% - 16rpx) / 2)') && profileWxss.includes('word-break: keep-all'), 'profile quick cards should use stable two-column flex layout');
+  // 个人面板入口改为 图标圆 + 标题 + 副标题 + 箭头 的清晰 cell(单列)
+  ['quick-cell', 'quick-ico', 'quick-cell-title', 'quick-cell-sub', 'quick-arrow'].forEach(token => {
+    assert(profileWxml.includes(token), `profile quick cell should expose ${token}`);
+    assert(profileWxss.includes('.' + token) || profileWxss.includes(token), `profile quick cell should style ${token}`);
+  });
+  assert(!profileWxml.includes('My Orion') && !profileWxml.includes('Player Profile'), 'profile should not expose English eyebrows');
 
   const contactJs = fs.readFileSync(path.join(root, 'miniprogram/pages/contact/contact.js'), 'utf8');
   const contactWxml = fs.readFileSync(path.join(root, 'miniprogram/pages/contact/contact.wxml'), 'utf8');

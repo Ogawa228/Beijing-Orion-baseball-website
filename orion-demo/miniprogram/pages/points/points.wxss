@@ -11,7 +11,7 @@
   background: rgba(228, 199, 122, .11);
   color: #e4c77a;
   font-size: 24rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 62rpx;
   text-align: center;
 }
@@ -27,7 +27,7 @@
   margin-bottom: 14rpx;
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .filter-chip-row {
@@ -47,7 +47,7 @@
   background: rgba(255, 255, 255, .05);
   color: #dbe5f8;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 52rpx;
 }
 
@@ -133,7 +133,7 @@
   margin-bottom: 12rpx;
   color: #f6f8ff;
   font-size: 26rpx;
-  font-weight: 820;
+  font-weight: 800;
 }
 
 .rule-row {

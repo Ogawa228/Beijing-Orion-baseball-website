@@ -53,7 +53,7 @@
 .request-title {
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .request-title-row {
@@ -212,7 +212,7 @@
   gap: 10rpx;
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -233,7 +233,7 @@
   padding: 0 12rpx;
   border-radius: 999rpx;
   font-size: 21rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 38rpx;
 }
 
@@ -407,13 +407,13 @@
 .overview-name {
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .overview-total {
   color: #f6f8ff;
   font-size: 34rpx;
-  font-weight: 950;
+  font-weight: 900;
 }
 
 .point-game-selector {
@@ -429,7 +429,7 @@
   margin: 4rpx 0;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.42;
 }
 
@@ -506,7 +506,7 @@
   gap: 8rpx;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -534,7 +534,7 @@
 .bind-code-value {
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   word-break: break-all;
 }
 
@@ -552,7 +552,7 @@
   border-radius: 999rpx;
   text-align: center;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .bind-code-status.unused {
@@ -590,7 +590,7 @@
 .audit-title {
   color: #f6f8ff;
   font-size: 26rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.45;
 }
 
@@ -649,7 +649,7 @@
 .setting-value {
   color: #e4c77a;
   font-size: 24rpx;
-  font-weight: 850;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -717,7 +717,7 @@
 .game-batch-title {
   color: #f6f8ff;
   font-size: 26rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -766,7 +766,7 @@
   gap: 8rpx;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.45;
 }
 
@@ -808,4 +808,26 @@
   .starfield-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ===== 横向溢出兜底:用户可变长文本(姓名/别名/比赛标题)断行,
+   避免长无空格英文名/别名撑破卡片导致整页可横向拖动(管理台滑动超限根因) ===== */
+.player-pool-title,
+.attendance-player-title,
+.history-title {
+  min-width: 0;
+}
+
+.request-title,
+.player-pool-title text,
+.overview-name,
+.point-game-label,
+.attendance-player-title text,
+.audit-title,
+.game-batch-title,
+.history-title text,
+.batch-player-text,
+.compact-title {
+  min-width: 0;
+  word-break: break-all;
 }

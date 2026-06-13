@@ -107,7 +107,7 @@
   color: #9bbcff;
   background: rgba(155, 188, 255, .08);
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .upload-box {
@@ -149,5 +149,5 @@
   color: #9bbcff;
   background: rgba(143, 176, 255, .08);
   font-size: 24rpx;
-  font-weight: 850;
+  font-weight: 800;
 }

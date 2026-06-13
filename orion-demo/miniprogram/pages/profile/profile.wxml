@@ -2,7 +2,7 @@
   <view class="profile card panel">
     <image class="avatar-lg" src="{{avatarSrc}}" mode="aspectFill" />
     <view wx:if="{{user}}">
-      <view class="eyebrow">My Orion</view>
+      <view class="eyebrow">个人中心</view>
       <view class="title">{{user.displayName}}</view>
       <view class="subtle">{{identityLabel}}</view>
     </view>
@@ -14,7 +14,7 @@
 
   <view wx:if="{{showBindCta}}" class="section bind-cta card panel">
     <view>
-      <view class="eyebrow">Player Profile</view>
+      <view class="eyebrow">球员绑定</view>
       <view class="bind-cta-title">{{bindCtaTitle}}</view>
       <view class="subtle">{{bindCtaText}}</view>
     </view>
@@ -22,11 +22,46 @@
   </view>
 
   <view class="quick">
-    <button class="quick-card card panel" bindtap="go" data-url="/pages/points/points">我的积分</button>
-    <button class="quick-card card panel" bindtap="go" data-url="/pages/highlights/highlights">精彩时刻</button>
-    <button class="quick-card card panel" bindtap="go" data-url="/pages/notifications/notifications">站内通知</button>
-    <button class="quick-card card panel" bindtap="go" data-url="/pages/contact/contact">联系我们</button>
-    <button wx:if="{{canAdmin}}" class="quick-card card panel" bindtap="go" data-url="/pages/admin/admin">管理后台</button>
+    <view class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/points/points">
+      <view class="quick-ico">🏆</view>
+      <view class="quick-cell-body">
+        <view class="quick-cell-title">我的积分</view>
+        <view class="quick-cell-sub">积分构成与最近流水</view>
+      </view>
+      <view class="quick-arrow">›</view>
+    </view>
+    <view class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/highlights/highlights">
+      <view class="quick-ico">📸</view>
+      <view class="quick-cell-body">
+        <view class="quick-cell-title">精彩时刻</view>
+        <view class="quick-cell-sub">照片墙与投稿</view>
+      </view>
+      <view class="quick-arrow">›</view>
+    </view>
+    <view class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/notifications/notifications">
+      <view class="quick-ico">🔔</view>
+      <view class="quick-cell-body">
+        <view class="quick-cell-title">站内通知</view>
+        <view class="quick-cell-sub">球队通知与未读消息</view>
+      </view>
+      <view class="quick-arrow">›</view>
+    </view>
+    <view class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/contact/contact">
+      <view class="quick-ico">💬</view>
+      <view class="quick-cell-body">
+        <view class="quick-cell-title">联系我们</view>
+        <view class="quick-cell-sub">加入球队与负责人</view>
+      </view>
+      <view class="quick-arrow">›</view>
+    </view>
+    <view wx:if="{{canAdmin}}" class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/admin/admin">
+      <view class="quick-ico">🛠</view>
+      <view class="quick-cell-body">
+        <view class="quick-cell-title">管理后台</view>
+        <view class="quick-cell-sub">球队管理工具</view>
+      </view>
+      <view class="quick-arrow">›</view>
+    </view>
   </view>
 
   <view wx:if="{{user}}" class="section card panel stack">

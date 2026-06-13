@@ -7,11 +7,14 @@
     data-index="{{index}}"
   >
     <view wx:if="{{item.primary}}" class="orion-tabbar-big">
-      <text class="orion-tabbar-big-text">{{item.text}}</text>
+      <image class="orion-tabbar-big-ico" src="{{checkinIcon}}" mode="aspectFit" />
     </view>
-    <block wx:else>
-      <text class="orion-tabbar-icon">{{item.icon}}</text>
-      <text class="orion-tabbar-text">{{item.text}}</text>
-    </block>
+    <image
+      wx:else
+      class="orion-tabbar-ico"
+      src="{{active === index ? item.iconActive : item.icon}}"
+      mode="aspectFit"
+    />
+    <text class="orion-tabbar-text">{{item.text}}</text>
   </view>
 </view>

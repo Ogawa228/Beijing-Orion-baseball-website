@@ -1,7 +1,7 @@
 .import-page .card-title {
   color: #f6f8ff;
   font-size: 30rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .file-box {
@@ -62,7 +62,7 @@
 .queue-name {
   color: #f6f8ff;
   font-size: 24rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -101,7 +101,7 @@
 .cover-title {
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .cover-status {
@@ -123,14 +123,14 @@
   gap: 12rpx;
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   text-align: center;
 }
 
 .score {
   color: #e4c77a;
   font-size: 38rpx;
-  font-weight: 950;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -152,7 +152,7 @@
   margin-top: 8rpx;
   color: #f6f8ff;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -189,7 +189,7 @@
 .preview-title {
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .preview-row {

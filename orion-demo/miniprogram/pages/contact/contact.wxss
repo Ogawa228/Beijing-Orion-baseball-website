@@ -55,21 +55,21 @@
 .info-label {
   color: #9aa9c4;
   font-size: 22rpx;
-  font-weight: 760;
+  font-weight: 800;
 }
 
 .info-value {
   margin-top: 4rpx;
   color: #f6f8ff;
   font-size: 28rpx;
-  font-weight: 820;
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
 .copy-hint {
   color: #8fb0ff;
   font-size: 22rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .contact-row {
@@ -111,7 +111,7 @@
 .contact-name {
   color: #f6f8ff;
   font-size: 28rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .handle-row {
@@ -131,7 +131,7 @@
   background: rgba(143, 176, 255, .08);
   color: #dbe5f8;
   font-size: 22rpx;
-  font-weight: 820;
+  font-weight: 800;
   line-height: 48rpx;
 }
 
@@ -157,7 +157,7 @@
   padding: 0;
   color: #8fb0ff;
   font-size: 23rpx;
-  font-weight: 820;
+  font-weight: 800;
   text-align: left;
   line-height: 1.4;
 }

@@ -42,7 +42,7 @@
   margin-top: 12rpx;
   color: #e4c77a;
   font-size: 25rpx;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 .hero-sub,
@@ -88,7 +88,7 @@
   border-radius: 999rpx;
   color: #9bbcff;
   font-size: 23rpx;
-  font-weight: 850;
+  font-weight: 800;
   text-align: center;
 }
 
@@ -134,7 +134,7 @@
 .game-title {
   color: #f6f8ff;
   font-size: 27rpx;
-  font-weight: 850;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -173,7 +173,7 @@
 .leader-name {
   color: #f6f8ff;
   font-size: 29rpx;
-  font-weight: 880;
+  font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

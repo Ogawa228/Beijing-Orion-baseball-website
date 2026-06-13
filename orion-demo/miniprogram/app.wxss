@@ -25,7 +25,8 @@ button::after {
 
 .page {
   min-height: 100vh;
-  padding: 28rpx 28rpx 56rpx;
+  /* 底部留出自定义 tabBar(108rpx)+ 安全区高度,内容不被固定 tabBar 遮挡;非 tab 页多出的底部留白避开 home indicator,无副作用 */
+  padding: 28rpx 28rpx calc(132rpx + env(safe-area-inset-bottom));
   background:
     radial-gradient(circle at 12% 8%, rgba(46, 107, 255, .24), transparent 34%),
     linear-gradient(180deg, #050b18 0%, #0a1628 52%, #050b18 100%);

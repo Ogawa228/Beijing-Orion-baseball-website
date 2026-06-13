@@ -21,7 +21,7 @@
     <button class="btn btn-primary bind-cta-btn" bindtap="go" data-url="/pages/bind/bind">去申请绑定</button>
   </view>
 
-  <view class="quick">
+  <view wx:if="{{user}}" class="quick">
     <view class="quick-cell card" hover-class="quick-cell-hover" bindtap="go" data-url="/pages/points/points">
       <view class="quick-ico">🏆</view>
       <view class="quick-cell-body">

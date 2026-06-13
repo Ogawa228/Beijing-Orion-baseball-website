@@ -64,3 +64,17 @@
   font-size: 24rpx;
   line-height: 1.5;
 }
+
+.welcome-name {
+  margin: 6rpx 0 4rpx;
+  color: #f6f8ff;
+  font-size: 40rpx;
+  font-weight: 800;
+}
+
+.switch-link {
+  margin-top: 4rpx;
+  color: #8fb0ff;
+  font-size: 23rpx;
+  text-align: center;
+}

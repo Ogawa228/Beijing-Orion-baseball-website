@@ -7,13 +7,18 @@
   </view>
 
   <view class="section card panel stack">
-    <view>
+    <view wx:if="{{returning}}" class="welcome-box">
+      <view class="field-label">欢迎回来</view>
+      <view class="welcome-name">{{displayName}}</view>
+      <view class="subtle tip">已记住你的昵称和协议确认，直接点下方一键登录即可。</view>
+    </view>
+    <view wx:else>
       <view class="field-label">队内昵称</view>
       <input class="input" placeholder="例如 江山 / XuTe" value="{{displayName}}" bindinput="onNameInput" />
       <view class="subtle tip">首次登录会先创建试训队员账号；登录成功后可直接选择自己的正式球员档案提交绑定申请。</view>
     </view>
 
-    <view class="legal-card">
+    <view wx:if="{{!returning}}" class="legal-card">
       <view class="legal-title">协议与个人信息保护</view>
       <view class="subtle">
         请先阅读官网同一份
@@ -37,5 +42,6 @@
     </view>
 
     <button class="btn btn-primary" loading="{{loading}}" disabled="{{loading}}" bindtap="login">微信一键登录</button>
+    <view wx:if="{{returning}}" class="subtle switch-link" bindtap="editAgain">修改昵称 / 重新阅读协议</view>
   </view>
 </view>

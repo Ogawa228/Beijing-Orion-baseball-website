@@ -4,6 +4,7 @@ const { showError, toast } = require('../../utils/format');
 const LEGAL_URL = 'https://www.猎户座棒垒球.cn/legal.html';
 const LEGAL_PAGE_URL = `/pages/legal/legal?url=${encodeURIComponent(LEGAL_URL)}`;
 const LEGAL_VERSION = 'orion-legal-2026-05-21';
+const LOGIN_PREFS_KEY = 'orionLoginPrefs';
 
 function wxLogin() {
   return new Promise((resolve, reject) => {
@@ -19,6 +20,21 @@ Page({
     legalPageUrl: LEGAL_PAGE_URL,
     consents: [],
     allConsented: false,
+    returning: false,
+  },
+
+  onLoad() {
+    // 记住上次的昵称和协议确认:二次进入直接预填,点一下即可一键登录,无需重新输入/勾选
+    let prefs = null;
+    try { prefs = wx.getStorageSync(LOGIN_PREFS_KEY); } catch (err) { /* 忽略 */ }
+    if (prefs && prefs.displayName) {
+      this.setData({
+        displayName: prefs.displayName,
+        consents: prefs.consented ? ['terms', 'personal-info', 'guardian'] : [],
+        allConsented: !!prefs.consented,
+        returning: !!(prefs.consented && prefs.displayName),
+      });
+    }
   },
 
   onNameInput(e) {
@@ -31,6 +47,11 @@ Page({
       consents,
       allConsented: ['terms', 'personal-info', 'guardian'].every(key => consents.includes(key)),
     });
+  },
+
+  // 老用户想换昵称或重看协议时,切回完整表单
+  editAgain() {
+    this.setData({ returning: false });
   },
 
   async login() {
@@ -58,6 +79,7 @@ Page({
         legalAcceptedAt: new Date().toISOString(),
       });
       getApp().setIdentity(data);
+      try { wx.setStorageSync(LOGIN_PREFS_KEY, { displayName, consented: true }); } catch (err) { /* 忽略 */ }
       const needsBind = !data.player || data.player.level !== 'verified';
       toast(needsBind ? '已登录，去申请绑定' : '已登录');
       setTimeout(() => {
